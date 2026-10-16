@@ -84,7 +84,7 @@ type Dir = "right" | "down" | "left" | "up";
 type Answer = {
   id: string;
   text: string;
-  start: { row: number; col: number };
+  start: { row: number; col: number } | null; // null until placed on the grid
   dir: Dir;
   turns: { atIndex: number; dir: Dir }[];
   wideSpaces: number[]; // indices of spaces that span two cells
@@ -103,6 +103,16 @@ type Puzzle = {
   includeStartArrow: boolean;
 };
 ```
+
+The real types are in `src/model/puzzle.ts`. `layoutPuzzle` in `src/layout/layout.ts` turns a
+puzzle into cells, markers and issues:
+
+- A turn at letter N means letter N is the corner cell, and the next letters go in the new
+  direction. A turn must be 90°. A turn on a wide space, or on the last letter, is reported and
+  ignored.
+- Issues (shown in the editor, never exported): mismatching crossings, an answer crossing itself,
+  cells outside the page, invalid turns or wide spaces, invalid anagram cells, duplicate anagram
+  numbers.
 
 ## Build order
 
