@@ -1,12 +1,12 @@
 import type { GridSize } from '../model/page'
-import type { CellRef, Puzzle } from '../model/puzzle'
+import type { CellRef } from '../model/puzzle'
 import type { Layout } from './layout'
 
-/** The cells of the anagram bar: one per anagram letter, side by side. Defaults to the middle of the bottom row. */
-export function anagramBarCells(puzzle: Puzzle, layout: Layout, grid: GridSize): CellRef[] {
+/** The cells of the anagram bar: one per anagram letter, side by side in the middle of the bottom row. */
+export function anagramBarCells(layout: Layout, grid: GridSize): CellRef[] {
   const count = layout.anagramCells.length
-  const start = puzzle.anagram.barStart ?? { row: grid.rows - 1, col: Math.floor((grid.columns - count) / 2) }
-  return Array.from({ length: count }, (_, i) => ({ row: start.row, col: start.col + i }))
+  const col = Math.floor((grid.columns - count) / 2)
+  return Array.from({ length: count }, (_, i) => ({ row: grid.rows - 1, col: col + i }))
 }
 
 /** The anagram cells as Sammy usually numbers them: column by column from the left, top to bottom. */

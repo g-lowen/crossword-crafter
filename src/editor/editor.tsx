@@ -17,7 +17,7 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { useEffect, useMemo, useReducer, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { CELL, cellOrigin } from '../grid/geometry'
 import { GridView } from '../grid/grid-view'
-import { anagramBarCells, leftToRightOrder } from '../layout/anagram'
+import { leftToRightOrder } from '../layout/anagram'
 import { describeIssue } from '../layout/describe-issue'
 import { cellKey, layoutAnswer, layoutPuzzle, type Piece } from '../layout/layout'
 import { A4_LANDSCAPE_GRID } from '../model/page'
@@ -26,7 +26,6 @@ import { emptyPuzzle, puzzleReducer } from '../model/puzzle-reducer'
 import { samplePuzzle } from '../model/sample-puzzle'
 import { AnswerList } from './answer-list'
 import {
-  ANAGRAM_BAR_ID,
   ANSWER_LIST_ID,
   GRID_ID,
   answerIdFromListItem,
@@ -64,7 +63,6 @@ export function Editor() {
     return map
   }, [layout])
   const selection = validSelection(layout, rawSelection)
-  const barCells = puzzle.anagram.showNumbersAndBar ? anagramBarCells(puzzle, layout, grid) : []
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -79,20 +77,16 @@ export function Editor() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
-  const draggedAnswer =
-    dragging && dragging.source !== 'bar' ? puzzle.answers.find((a) => a.id === dragging.answerId) : undefined
+  const draggedAnswer = dragging ? puzzle.answers.find((a) => a.id === dragging.answerId) : undefined
 
   /**
-   * Where the dragged thing starts if dropped now. Grid and bar drags snap by whole cells; list
-   * drags put the first letter under the pointer.
+   * Where the dragged answer starts if dropped now. Grid drags snap by whole cells; list drags put
+   * the first letter under the pointer.
    */
   function targetStart(event: DragMoveEvent | DragEndEvent): CellRef | null {
     const data = event.active.data.current as DragData | undefined
     const rect = pageRef.current?.getBoundingClientRect()
     if (!data || !rect) return null
-    if (data.source === 'bar') {
-      return barCells.length > 0 ? moveByPixels(barCells[0], event.delta, rect.width / grid.columns) : null
-    }
     const answer = puzzle.answers.find((a) => a.id === data.answerId)
     if (!answer) return null
 
@@ -119,10 +113,7 @@ export function Editor() {
     setPreviewStart(null)
     if (!data || !overId) return
 
-    if (data.source === 'bar') {
-      const start = overId === GRID_ID ? targetStart(event) : null
-      if (start) dispatch({ type: 'move-anagram-bar', start })
-    } else if (overId === GRID_ID) {
+    if (overId === GRID_ID) {
       const start = targetStart(event)
       if (start) dispatch({ type: 'place', id: data.answerId, start })
     } else if (data.source === 'grid' && (overId === ANSWER_LIST_ID || isListItemId(overId))) {
@@ -137,23 +128,10 @@ export function Editor() {
     setPreviewStart(null)
   }
 
-  function previewPieces(): Piece[] | undefined {
-    if (!previewStart) return undefined
-    if (dragging?.source === 'bar') {
-      return barCells.map((_, i) => ({
-        row: previewStart.row,
-        col: previewStart.col + i,
-        answerId: ANAGRAM_BAR_ID,
-        index: i,
-        kind: 'letter',
-        char: '',
-        dir: 'right',
-      }))
-    }
-    return draggedAnswer && layoutAnswer(draggedAnswer, previewStart).pieces
-  }
-  const pieces = previewPieces()
-  const preview = pieces ? { pieces, color: puzzle.highlightColor } : undefined
+  const preview =
+    draggedAnswer && previewStart
+      ? { pieces: layoutAnswer(draggedAnswer, previewStart).pieces, color: puzzle.highlightColor }
+      : undefined
 
   function handleCellClick(answerId: string, cell: CellRef) {
     setSelection(selectAt(layout, cell, answerId, selection))
@@ -237,7 +215,6 @@ export function Editor() {
                   color={puzzle.highlightColor}
                 />
               )}
-              {barCells.length > 0 && <AnagramBarHandle cells={barCells} />}
               {[...piecesByAnswer].map(([answerId, answerPieces]) => (
                 <AnswerHandle
                   key={answerId}
@@ -373,31 +350,5 @@ function SelectionOverlay({ pieces, cell, color }: { pieces: Piece[]; cell: Cell
         strokeWidth={0.8}
       />
     </g>
-  )
-}
-
-/** Lets the anagram bar, including its number labels, be dragged anywhere on the page. */
-function AnagramBarHandle({ cells }: { cells: CellRef[] }) {
-  const { setNodeRef, listeners, attributes } = useDraggable({
-    id: ANAGRAM_BAR_ID,
-    data: { source: 'bar' } satisfies DragData,
-  })
-  const { x, y } = cellOrigin(cells[0])
-  return (
-    <rect
-      ref={setNodeRef as unknown as Ref<SVGRectElement>}
-      {...listeners}
-      {...attributes}
-      aria-label="Move anagram bar"
-      className="answer-hit-area"
-      data-anagram-bar-handle=""
-      x={x}
-      y={y - 4}
-      width={cells.length * CELL}
-      height={CELL + 4}
-      fill="white"
-      fillOpacity={0}
-      onClick={(event) => event.stopPropagation()}
-    />
   )
 }

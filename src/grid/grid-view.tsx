@@ -4,7 +4,7 @@ import type { Layout, Piece } from '../layout/layout'
 import { cellKey } from '../layout/layout'
 import { A4_LANDSCAPE_GRID, type GridSize } from '../model/page'
 import type { Puzzle } from '../model/puzzle'
-import { CELL, cellOrigin, separatorLine, startArrow, turnArrow, wideSpaceShape } from './geometry'
+import { CELL, cellOrigin, separatorLine, turnArrow, wideSpaceShape } from './geometry'
 
 type GridViewProps = {
   puzzle: Puzzle
@@ -39,10 +39,7 @@ export function GridView({
     layout.issues.flatMap((issue) => (issue.type === 'conflict' ? [cellKey(issue.cell)] : [])),
   )
   const cells = [...layout.cells.values()]
-  const markedStarts = layout.startMarkers.filter(
-    (marker) => puzzle.answers.find((answer) => answer.id === marker.answerId)?.showStartMarker,
-  )
-  const barCells = puzzle.anagram.showNumbersAndBar ? anagramBarCells(puzzle, layout, grid) : []
+  const barCells = puzzle.anagram.showNumbersAndBar ? anagramBarCells(layout, grid) : []
 
   return (
     <svg
@@ -136,16 +133,6 @@ export function GridView({
         const arrow = turnArrow(marker.cell, marker.from, marker.to)
         return (
           <g key={`${marker.answerId}-${cellKey(marker.cell)}`} data-turn-marker="">
-            <polyline points={arrow.line} fill="none" stroke="black" strokeWidth={0.4} />
-            <polygon points={arrow.head} fill="black" />
-          </g>
-        )
-      })}
-
-      {markedStarts.map((marker) => {
-        const arrow = startArrow(marker.cell, marker.dir)
-        return (
-          <g key={marker.answerId} data-start-marker="">
             <polyline points={arrow.line} fill="none" stroke="black" strokeWidth={0.4} />
             <polygon points={arrow.head} fill="black" />
           </g>

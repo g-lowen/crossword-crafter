@@ -4,10 +4,10 @@ import { describeIssue } from './describe-issue'
 
 const puzzle: Puzzle = {
   answers: [
-    { id: 'a', text: 'CAT', start: { row: 0, col: 0 }, dir: 'right', turns: [], wideSpaces: [], showStartMarker: false },
-    { id: 'b', text: 'BED', start: { row: 0, col: 0 }, dir: 'down', turns: [], wideSpaces: [], showStartMarker: false },
+    { id: 'a', text: 'CAT', start: { row: 0, col: 0 }, dir: 'right', turns: [], wideSpaces: [] },
+    { id: 'b', text: 'BED', start: { row: 0, col: 0 }, dir: 'down', turns: [], wideSpaces: [] },
   ],
-  anagram: { showNumbersAndBar: false, cells: [], barStart: null },
+  anagram: { showNumbersAndBar: false, cells: [] },
   separators: [],
   highlightColor: '#1e88e5',
   includeStartArrow: false,

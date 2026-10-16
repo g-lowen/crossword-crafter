@@ -33,9 +33,10 @@ automate layout but to make manual layout fast.
 - Each answer in the list has a button to switch it between across and down.
 - The list order is changed by dragging answers within the list.
 - An answer reads right or down, and can turn 90° at any letter. Usually at most once, but more
-  turns must be possible. A small corner arrow marks where an answer turns.
-- Each answer has a "Start arrow" option that draws a small arrow in its first cell. Sammy decides
-  per answer.
+  turns must be possible.
+- Arrows in cells only ever mean one of two things: a small corner arrow where an answer turns,
+  and the white arrow in a wide space showing that the answer continues after it. There are no
+  arrows at the start of an answer.
 
 ## Editing a placed answer
 
@@ -43,7 +44,7 @@ Clicking a cell selects that character of the answer and opens a panel above the
 crossing cell again switches to the other answer. Esc or a click on an empty spot closes it. The
 panel has:
 
-- Answer: direction, start arrow, take off grid.
+- Answer: direction, take off grid.
 - Turn here: none, or one of the two 90° directions.
 - Cell: "Wide space" for a space, or "Anagram letter" with its number for a letter.
 - Thick border: top, right, bottom, left of the selected cell.
@@ -65,7 +66,7 @@ panel has:
   - Checked: anagram cells show a small number, and a bar of empty cells (one per anagram letter)
     is drawn on the page, numbered 1, 2, 3… above each cell.
   - Unchecked: only the red borders are drawn.
-- The bar starts in the middle of the bottom row and can be dragged anywhere on the page.
+- The bar sits in the middle of the bottom row of the page.
 - Sammy sets the numbering order himself. It's usually left to right, but not always. A new anagram
   letter gets the next free number, and "Number anagram left to right" renumbers them all by column.
 - An anagram cell is tied to an answer letter, so it moves with the answer.
@@ -106,7 +107,6 @@ type Answer = {
   dir: Dir;
   turns: { atIndex: number; dir: Dir }[];
   wideSpaces: number[]; // indices of spaces that span two cells
-  showStartMarker: boolean;
 };
 
 type CellRef = { row: number; col: number };
@@ -116,7 +116,6 @@ type Puzzle = {
   anagram: {
     showNumbersAndBar: boolean;
     cells: { answerId: string; letterIndex: number; number?: number }[];
-    barStart: CellRef | null; // null = middle of the bottom row
   };
   separators: { a: CellRef; b: CellRef }[];
   highlightColor: string;

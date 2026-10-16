@@ -4,12 +4,12 @@ import type { Answer, Puzzle } from '../model/puzzle'
 import { selectAt, validSelection } from './selection'
 
 function answer(id: string, text: string, row: number, col: number, dir: Answer['dir']): Answer {
-  return { id, text, start: { row, col }, dir, turns: [], wideSpaces: [], showStartMarker: false }
+  return { id, text, start: { row, col }, dir, turns: [], wideSpaces: [] }
 }
 
 const puzzle: Puzzle = {
   answers: [answer('cat', 'CAT', 1, 0, 'right'), answer('bad', 'BAD', 0, 1, 'down')],
-  anagram: { showNumbersAndBar: false, cells: [], barStart: null },
+  anagram: { showNumbersAndBar: false, cells: [] },
   separators: [],
   highlightColor: '#1e88e5',
   includeStartArrow: false,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cellOrigin, separatorLine, startArrow, turnArrow, wideSpaceShape } from './geometry'
+import { cellOrigin, separatorLine, turnArrow, wideSpaceShape } from './geometry'
 
 describe('cellOrigin', () => {
   it('uses 10 mm cells', () => {
@@ -12,14 +12,6 @@ describe('turnArrow', () => {
     const arrow = turnArrow({ row: 0, col: 0 }, 'right', 'down')
     expect(arrow.line).toBe('6.3,7.6 7.6,7.6 7.6,8.9')
     expect(arrow.head).toBe('7.6,9.6 6.95,8.7 8.25,8.7')
-  })
-})
-
-describe('startArrow', () => {
-  it('points along the reading direction', () => {
-    const arrow = startArrow({ row: 0, col: 0 }, 'down')
-    expect(arrow.line).toBe('7.4,6 7.4,8')
-    expect(arrow.head).toBe('7.4,8.9 6.75,8 8.05,8')
   })
 })
 

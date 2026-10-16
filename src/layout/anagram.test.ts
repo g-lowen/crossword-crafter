@@ -6,13 +6,13 @@ import { layoutPuzzle } from './layout'
 const grid = { rows: 21, columns: 29 }
 
 function answer(id: string, text: string, row: number, col: number, dir: Answer['dir'] = 'right'): Answer {
-  return { id, text, start: { row, col }, dir, turns: [], wideSpaces: [], showStartMarker: false }
+  return { id, text, start: { row, col }, dir, turns: [], wideSpaces: [] }
 }
 
-function puzzle(cells: Puzzle['anagram']['cells'], barStart: Puzzle['anagram']['barStart'] = null): Puzzle {
+function puzzle(cells: Puzzle['anagram']['cells']): Puzzle {
   return {
     answers: [answer('a', 'ABC', 5, 10), answer('b', 'XYZ', 2, 3, 'down')],
-    anagram: { showNumbersAndBar: true, cells, barStart },
+    anagram: { showNumbersAndBar: true, cells },
     separators: [],
     highlightColor: '#1e88e5',
     includeStartArrow: false,
@@ -20,27 +20,22 @@ function puzzle(cells: Puzzle['anagram']['cells'], barStart: Puzzle['anagram']['
 }
 
 describe('anagramBarCells', () => {
-  it('centres one cell per anagram letter on the bottom row by default', () => {
+  it('centres one cell per anagram letter on the bottom row', () => {
     const p = puzzle([
       { answerId: 'a', letterIndex: 0 },
       { answerId: 'a', letterIndex: 2 },
       { answerId: 'b', letterIndex: 1 },
     ])
-    expect(anagramBarCells(p, layoutPuzzle(p), grid)).toEqual([
+    expect(anagramBarCells(layoutPuzzle(p), grid)).toEqual([
       { row: 20, col: 13 },
       { row: 20, col: 14 },
       { row: 20, col: 15 },
     ])
   })
 
-  it('starts where the bar was moved to', () => {
-    const p = puzzle([{ answerId: 'a', letterIndex: 0 }], { row: 3, col: 4 })
-    expect(anagramBarCells(p, layoutPuzzle(p), grid)).toEqual([{ row: 3, col: 4 }])
-  })
-
   it('is empty without anagram letters', () => {
     const p = puzzle([])
-    expect(anagramBarCells(p, layoutPuzzle(p), grid)).toEqual([])
+    expect(anagramBarCells(layoutPuzzle(p), grid)).toEqual([])
   })
 })
 

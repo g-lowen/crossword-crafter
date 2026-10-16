@@ -3,13 +3,13 @@ import type { Answer, Puzzle } from '../model/puzzle'
 import { cellKey, layoutAnswer, layoutPuzzle, type Piece } from './layout'
 
 function answer(overrides: Partial<Answer> & Pick<Answer, 'id' | 'text'>): Answer {
-  return { start: { row: 0, col: 0 }, dir: 'right', turns: [], wideSpaces: [], showStartMarker: false, ...overrides }
+  return { start: { row: 0, col: 0 }, dir: 'right', turns: [], wideSpaces: [], ...overrides }
 }
 
 function puzzle(answers: Answer[], anagramCells: Puzzle['anagram']['cells'] = []): Puzzle {
   return {
     answers,
-    anagram: { showNumbersAndBar: false, cells: anagramCells, barStart: null },
+    anagram: { showNumbersAndBar: false, cells: anagramCells },
     separators: [],
     highlightColor: '#e53935',
     includeStartArrow: false,

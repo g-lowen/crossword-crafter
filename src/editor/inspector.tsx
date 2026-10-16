@@ -69,14 +69,6 @@ export function Inspector({ puzzle, layout, selection, dispatch, onClose }: Insp
           <button type="button" onClick={() => dispatch({ type: 'toggle-direction', id })}>
             Direction {ARROW[answer.dir]}
           </button>
-          <label>
-            <input
-              type="checkbox"
-              checked={answer.showStartMarker}
-              onChange={() => dispatch({ type: 'toggle-start-marker', id })}
-            />{' '}
-            Start arrow
-          </label>
           <button type="button" onClick={() => dispatch({ type: 'unplace', id })}>
             Take off grid
           </button>

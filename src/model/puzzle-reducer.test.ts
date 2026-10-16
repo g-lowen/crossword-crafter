@@ -15,8 +15,8 @@ describe('puzzleReducer', () => {
   it('imports answers off the grid, going right', () => {
     const puzzle = withAnswers('ABBA', 'QUEEN')
     expect(puzzle.answers).toEqual([
-      { id: 'abba', text: 'ABBA', start: null, dir: 'right', turns: [], wideSpaces: [], showStartMarker: false },
-      { id: 'queen', text: 'QUEEN', start: null, dir: 'right', turns: [], wideSpaces: [], showStartMarker: false },
+      { id: 'abba', text: 'ABBA', start: null, dir: 'right', turns: [], wideSpaces: [] },
+      { id: 'queen', text: 'QUEEN', start: null, dir: 'right', turns: [], wideSpaces: [] },
     ])
   })
 
@@ -41,7 +41,6 @@ describe('puzzleReducer', () => {
           { answerId: 'abba', letterIndex: 0, number: 1 },
           { answerId: 'queen', letterIndex: 1, number: 2 },
         ],
-        barStart: null,
       },
     }
     const removed = puzzleReducer(puzzle, { type: 'remove', id: 'abba' })
@@ -97,10 +96,6 @@ describe('puzzleReducer editing', () => {
     expect(puzzleReducer(wide, { type: 'toggle-wide-space', id, index: 4 }).answers[0].wideSpaces).toEqual([])
   })
 
-  it('toggles the start marker', () => {
-    expect(puzzleReducer(placed, { type: 'toggle-start-marker', id }).answers[0].showStartMarker).toBe(true)
-  })
-
   it('numbers new anagram cells after the highest number, and removes them again', () => {
     let p = puzzleReducer(placed, { type: 'toggle-anagram-cell', answerId: id, letterIndex: 0 })
     p = puzzleReducer(p, { type: 'set-anagram-number', answerId: id, letterIndex: 0, number: 7 })
@@ -129,11 +124,9 @@ describe('puzzleReducer editing', () => {
     ])
   })
 
-  it('sets the anagram display option and moves the bar', () => {
+  it('sets the anagram display option', () => {
     const shown = puzzleReducer(placed, { type: 'set-show-anagram-numbers', value: true })
     expect(shown.anagram.showNumbersAndBar).toBe(true)
-    const moved = puzzleReducer(shown, { type: 'move-anagram-bar', start: { row: 18, col: 2 } })
-    expect(moved.anagram.barStart).toEqual({ row: 18, col: 2 })
   })
 
   it('toggles a separator regardless of cell order', () => {

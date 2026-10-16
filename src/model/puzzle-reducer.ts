@@ -3,7 +3,7 @@ import type { AnagramCell, Answer, CellRef, Dir, Puzzle, Separator } from './puz
 
 export const emptyPuzzle: Puzzle = {
   answers: [],
-  anagram: { showNumbersAndBar: false, cells: [], barStart: null },
+  anagram: { showNumbersAndBar: false, cells: [] },
   separators: [],
   highlightColor: '#1e88e5',
   includeStartArrow: false,
@@ -21,13 +21,11 @@ export type PuzzleAction =
   /** A null `dir` removes the turn at that letter. */
   | { type: 'set-turn'; id: string; atIndex: number; dir: Dir | null }
   | { type: 'toggle-wide-space'; id: string; index: number }
-  | { type: 'toggle-start-marker'; id: string }
   | { type: 'toggle-anagram-cell'; answerId: string; letterIndex: number }
   | { type: 'set-anagram-number'; answerId: string; letterIndex: number; number: number | undefined }
   /** Numbers the anagram cells 1, 2, 3… in the given order. */
   | { type: 'renumber-anagram'; order: { answerId: string; letterIndex: number }[] }
   | { type: 'set-show-anagram-numbers'; value: boolean }
-  | { type: 'move-anagram-bar'; start: CellRef }
   | { type: 'toggle-separator'; separator: Separator }
 
 const sameAnagramCell = (a: AnagramCell, b: { answerId: string; letterIndex: number }) =>
@@ -67,7 +65,6 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
             dir: 'right' as const,
             turns: [],
             wideSpaces: [],
-            showStartMarker: false,
           })),
         ],
       }
@@ -114,9 +111,6 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
         wideSpaces: toggle(answer.wideSpaces, action.index),
       }))
 
-    case 'toggle-start-marker':
-      return updateAnswer(puzzle, action.id, (answer) => ({ ...answer, showStartMarker: !answer.showStartMarker }))
-
     case 'toggle-anagram-cell':
       return updateAnagramCells(puzzle, (cells) => {
         if (cells.some((cell) => sameAnagramCell(cell, action))) {
@@ -142,9 +136,6 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
 
     case 'set-show-anagram-numbers':
       return { ...puzzle, anagram: { ...puzzle.anagram, showNumbersAndBar: action.value } }
-
-    case 'move-anagram-bar':
-      return { ...puzzle, anagram: { ...puzzle.anagram, barStart: action.start } }
 
     case 'toggle-separator': {
       const exists = puzzle.separators.some((separator) => sameSeparator(separator, action.separator))

@@ -15,8 +15,6 @@ export type Answer = {
   turns: Turn[]
   /** Indices of spaces that span two cells. */
   wideSpaces: number[]
-  /** Draws a small arrow in the first cell showing which way the answer reads. */
-  showStartMarker: boolean
 }
 
 export type AnagramCell = {
@@ -34,8 +32,6 @@ export type Puzzle = {
   anagram: {
     showNumbersAndBar: boolean
     cells: AnagramCell[]
-    /** First cell of the anagram bar, or null for the default spot on the bottom row. */
-    barStart: CellRef | null
   }
   separators: Separator[]
   highlightColor: string

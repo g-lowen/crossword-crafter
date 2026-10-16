@@ -50,15 +50,6 @@ export function turnArrow(cell: CellRef, from: Dir, to: Dir): { line: string; he
   }
 }
 
-/** A small straight arrow in the bottom-right corner of an answer's first cell, along its direction. */
-export function startArrow(cell: CellRef, dir: Dir): { line: string; head: string } {
-  const center = add(cellOrigin(cell), { x: 7.4, y: 7.4 })
-  return {
-    line: points(add(center, VECTOR[dir], -1.4), add(center, VECTOR[dir], 0.6)),
-    head: arrowHead(add(center, VECTOR[dir], 1.5), dir, 0.9, 0.65),
-  }
-}
-
 /** The black block of a wide space, with a white arrow along its reading direction. */
 export function wideSpaceShape(
   cells: [CellRef, CellRef],
