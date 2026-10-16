@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { Layout, Piece } from '../layout/layout'
 import { cellKey } from '../layout/layout'
 import { A4_LANDSCAPE_GRID, type GridSize } from '../model/page'
@@ -11,6 +12,10 @@ type GridViewProps = {
   mode: 'editor' | 'export'
   showLetters: boolean
   grid?: GridSize
+  /** Where an answer would land while it is being dragged. Editor only. */
+  preview?: { pieces: Piece[]; color: string }
+  /** Extra SVG content drawn on top, such as drag handles. */
+  children?: ReactNode
 }
 
 const LINE = 0.35
@@ -18,7 +23,15 @@ const SEPARATOR = 1.4
 const ANAGRAM_BORDER = 1
 const ANAGRAM_RED = '#d32f2f'
 
-export function GridView({ puzzle, layout, mode, showLetters, grid = A4_LANDSCAPE_GRID }: GridViewProps) {
+export function GridView({
+  puzzle,
+  layout,
+  mode,
+  showLetters,
+  grid = A4_LANDSCAPE_GRID,
+  preview,
+  children,
+}: GridViewProps) {
   const width = grid.columns * CELL
   const height = grid.rows * CELL
   const conflictKeys = new Set(
@@ -157,12 +170,54 @@ export function GridView({ puzzle, layout, mode, showLetters, grid = A4_LANDSCAP
             />
           )
         })}
+
+      {mode === 'editor' && preview && <Preview {...preview} />}
+
+      {children}
     </svg>
   )
 }
 
 function firstLetter(pieces: Piece[]): Piece | undefined {
   return pieces.find((piece) => piece.kind === 'letter')
+}
+
+function Preview({ pieces, color }: { pieces: Piece[]; color: string }) {
+  return (
+    <g data-preview="" pointerEvents="none">
+      {pieces.map((piece) => {
+        const { x, y } = cellOrigin(piece)
+        return (
+          <g key={`${piece.index}-${piece.widePart ?? 0}`}>
+            <rect
+              x={x}
+              y={y}
+              width={CELL}
+              height={CELL}
+              fill={piece.kind === 'space' ? color : 'white'}
+              fillOpacity={piece.kind === 'space' ? 0.6 : 0.85}
+              stroke={color}
+              strokeWidth={0.8}
+            />
+            {piece.kind === 'letter' && (
+              <text
+                x={x + CELL / 2}
+                y={y + CELL / 2 + 0.4}
+                fontSize={5.5}
+                fontFamily="Arial, Helvetica, sans-serif"
+                fontWeight="bold"
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill={color}
+              >
+                {piece.char}
+              </text>
+            )}
+          </g>
+        )
+      })}
+    </g>
+  )
 }
 
 function EditorBackground({ width, height, grid }: { width: number; height: number; grid: GridSize }) {

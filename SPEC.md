@@ -27,8 +27,11 @@ automate layout but to make manual layout fast.
 - A space inside an answer is drawn as a black cell.
 - A space can be widened to span two cells to make an answer fit. A wide space is drawn as one
   black block with a white arrow showing the reading direction.
-- Answers are placed by dragging them from the list onto the grid, and can be dragged again to
-  move them.
+- Answers are placed by dragging them from the list onto the grid. The first letter lands under
+  the pointer, and a preview shows where the answer will go. A placed answer can be dragged by any
+  of its cells to move it, or dragged back to the list to take it off the grid.
+- Each answer in the list has a button to switch it between across and down.
+- The list order is changed by dragging answers within the list.
 - An answer reads right or down, and can turn 90° at any letter. Usually at most once, but more
   turns must be possible. A small corner arrow (↱ ↳ etc.) marks where an answer starts or turns.
 

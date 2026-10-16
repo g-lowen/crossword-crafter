@@ -9,19 +9,148 @@ body {
   margin: 0;
 }
 
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
 .app {
   padding: 16px 24px;
 }
 
+.editor {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-areas:
+    'header header'
+    'answers workspace';
+  gap: 16px 24px;
+  align-items: start;
+}
+
 .app-header {
+  grid-area: header;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 24px;
 }
 
 .app-header h1 {
-  margin: 0 0 12px;
+  margin: 0;
   font-size: 1.4rem;
+}
+
+.answer-panel {
+  grid-area: answers;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.import {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.import textarea {
+  font: inherit;
+  resize: vertical;
+}
+
+.answer-list {
+  margin-top: 8px;
+  padding: 8px;
+  min-height: 80px;
+  border: 2px dashed transparent;
+  border-radius: 6px;
+}
+
+.answer-list--over {
+  border-color: #1e88e5;
+  background: #e3f2fd;
+}
+
+.answer-list ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hint {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.answer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 4px;
+  padding: 2px 4px 2px 8px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.answer--placed {
+  background: #eef6ee;
+  border-color: #9ccc9c;
+}
+
+.answer--dragging {
+  opacity: 0.4;
+}
+
+.answer-handle {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.answer-number {
+  color: #888;
+  min-width: 1.6em;
+  text-align: right;
+}
+
+.answer-text {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.icon-button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 4px;
+}
+
+.icon-button:hover {
+  background: #eee;
+}
+
+.drag-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: white;
+  border: 1px solid #1e88e5;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.2);
+  white-space: nowrap;
+}
+
+.workspace {
+  grid-area: workspace;
 }
 
 /* The page keeps its A4 proportions and scales to the window. */
@@ -34,6 +163,11 @@ body {
   width: 100%;
   height: auto;
   box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+}
+
+.answer-hit-area {
+  cursor: grab;
+  outline: none;
 }
 
 .issues {
