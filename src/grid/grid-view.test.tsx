@@ -5,13 +5,13 @@ import type { Answer, Puzzle } from '../model/puzzle'
 import { GridView } from './grid-view'
 
 function answer(overrides: Partial<Answer> & Pick<Answer, 'id' | 'text'>): Answer {
-  return { start: { row: 0, col: 0 }, dir: 'right', turns: [], wideSpaces: [], ...overrides }
+  return { start: { row: 0, col: 0 }, dir: 'right', turns: [], wideSpaces: [], showStartMarker: false, ...overrides }
 }
 
 function puzzle(overrides: Partial<Puzzle>): Puzzle {
   return {
     answers: [],
-    anagram: { showNumbersAndBar: false, cells: [] },
+    anagram: { showNumbersAndBar: false, cells: [], barStart: null },
     separators: [],
     highlightColor: '#1e88e5',
     includeStartArrow: false,
@@ -82,11 +82,11 @@ describe('GridView', () => {
     const answers = [answer({ id: 'a', text: 'ABC' })]
     const cells = [{ answerId: 'a', letterIndex: 1, number: 4 }]
 
-    const hidden = renderGrid(puzzle({ answers, anagram: { showNumbersAndBar: false, cells } }))
+    const hidden = renderGrid(puzzle({ answers, anagram: { showNumbersAndBar: false, cells, barStart: null } }))
     expect(hidden.all('[data-anagram-cell]')).toHaveLength(1)
     expect(hidden.all('[data-anagram-number]')).toHaveLength(0)
 
-    const shown = renderGrid(puzzle({ answers, anagram: { showNumbersAndBar: true, cells } }))
+    const shown = renderGrid(puzzle({ answers, anagram: { showNumbersAndBar: true, cells, barStart: null } }))
     expect([...shown.all('[data-anagram-number]')].map((el) => el.textContent)).toEqual(['4'])
   })
 
@@ -105,5 +105,30 @@ describe('GridView', () => {
     const exported = renderGrid(p, { mode: 'export' })
     expect(exported.all('[data-conflict]')).toHaveLength(0)
     expect(exported.all('[data-editor-background]')).toHaveLength(0)
+  })
+
+  it('draws start arrows only for answers that want one', () => {
+    const { all } = renderGrid(
+      puzzle({
+        answers: [
+          answer({ id: 'a', text: 'ABC', showStartMarker: true }),
+          answer({ id: 'b', text: 'XYZ', start: { row: 3, col: 0 } }),
+        ],
+      }),
+    )
+    expect(all('[data-start-marker]')).toHaveLength(1)
+  })
+
+  it('draws the anagram bar with one numbered cell per anagram letter when enabled', () => {
+    const answers = [answer({ id: 'a', text: 'ABC' })]
+    const cells = [
+      { answerId: 'a', letterIndex: 0, number: 1 },
+      { answerId: 'a', letterIndex: 2, number: 2 },
+    ]
+    const shown = renderGrid(puzzle({ answers, anagram: { showNumbersAndBar: true, cells, barStart: null } }))
+    expect([...shown.all('[data-anagram-bar] text')].map((el) => el.textContent)).toEqual(['1', '2'])
+
+    const hidden = renderGrid(puzzle({ answers, anagram: { showNumbersAndBar: false, cells, barStart: null } }))
+    expect(hidden.all('[data-anagram-bar]')).toHaveLength(0)
   })
 })

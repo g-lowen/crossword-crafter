@@ -14,17 +14,19 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
-import { useMemo, useReducer, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
+import { useEffect, useMemo, useReducer, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { CELL, cellOrigin } from '../grid/geometry'
 import { GridView } from '../grid/grid-view'
+import { anagramBarCells, leftToRightOrder } from '../layout/anagram'
 import { describeIssue } from '../layout/describe-issue'
-import { layoutAnswer, layoutPuzzle, type Piece } from '../layout/layout'
+import { cellKey, layoutAnswer, layoutPuzzle, type Piece } from '../layout/layout'
 import { A4_LANDSCAPE_GRID } from '../model/page'
 import type { CellRef } from '../model/puzzle'
 import { emptyPuzzle, puzzleReducer } from '../model/puzzle-reducer'
 import { samplePuzzle } from '../model/sample-puzzle'
 import { AnswerList } from './answer-list'
 import {
+  ANAGRAM_BAR_ID,
   ANSWER_LIST_ID,
   GRID_ID,
   answerIdFromListItem,
@@ -33,6 +35,8 @@ import {
   type DragData,
 } from './drag-ids'
 import { cellAtPoint, moveByPixels } from './grid-coordinates'
+import { Inspector } from './inspector'
+import { selectAt, validSelection, type Selection } from './selection'
 
 const grid = A4_LANDSCAPE_GRID
 
@@ -48,6 +52,7 @@ export function Editor() {
   const [showLetters, setShowLetters] = useState(true)
   const [dragging, setDragging] = useState<DragData | null>(null)
   const [previewStart, setPreviewStart] = useState<CellRef | null>(null)
+  const [rawSelection, setSelection] = useState<Selection | null>(null)
   const pageRef = useRef<HTMLDivElement | null>(null)
 
   const layout = useMemo(() => layoutPuzzle(puzzle, grid), [puzzle])
@@ -58,20 +63,38 @@ export function Editor() {
     }
     return map
   }, [layout])
+  const selection = validSelection(layout, rawSelection)
+  const barCells = puzzle.anagram.showNumbersAndBar ? anagramBarCells(puzzle, layout, grid) : []
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelection(null)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
-  const draggedAnswer = dragging ? puzzle.answers.find((a) => a.id === dragging.answerId) : undefined
+  const draggedAnswer =
+    dragging && dragging.source !== 'bar' ? puzzle.answers.find((a) => a.id === dragging.answerId) : undefined
 
-  /** Where the dragged answer starts if dropped now. Grid drags snap by cells; list drags put the first letter under the pointer. */
+  /**
+   * Where the dragged thing starts if dropped now. Grid and bar drags snap by whole cells; list
+   * drags put the first letter under the pointer.
+   */
   function targetStart(event: DragMoveEvent | DragEndEvent): CellRef | null {
     const data = event.active.data.current as DragData | undefined
     const rect = pageRef.current?.getBoundingClientRect()
-    const answer = data && puzzle.answers.find((a) => a.id === data.answerId)
-    if (!data || !rect || !answer) return null
+    if (!data || !rect) return null
+    if (data.source === 'bar') {
+      return barCells.length > 0 ? moveByPixels(barCells[0], event.delta, rect.width / grid.columns) : null
+    }
+    const answer = puzzle.answers.find((a) => a.id === data.answerId)
+    if (!answer) return null
 
     if (data.source === 'grid' && answer.start) {
       return moveByPixels(answer.start, event.delta, rect.width / grid.columns)
@@ -96,7 +119,10 @@ export function Editor() {
     setPreviewStart(null)
     if (!data || !overId) return
 
-    if (overId === GRID_ID) {
+    if (data.source === 'bar') {
+      const start = overId === GRID_ID ? targetStart(event) : null
+      if (start) dispatch({ type: 'move-anagram-bar', start })
+    } else if (overId === GRID_ID) {
       const start = targetStart(event)
       if (start) dispatch({ type: 'place', id: data.answerId, start })
     } else if (data.source === 'grid' && (overId === ANSWER_LIST_ID || isListItemId(overId))) {
@@ -111,10 +137,27 @@ export function Editor() {
     setPreviewStart(null)
   }
 
-  const preview =
-    draggedAnswer && previewStart
-      ? { pieces: layoutAnswer(draggedAnswer, previewStart).pieces, color: puzzle.highlightColor }
-      : undefined
+  function previewPieces(): Piece[] | undefined {
+    if (!previewStart) return undefined
+    if (dragging?.source === 'bar') {
+      return barCells.map((_, i) => ({
+        row: previewStart.row,
+        col: previewStart.col + i,
+        answerId: ANAGRAM_BAR_ID,
+        index: i,
+        kind: 'letter',
+        char: '',
+        dir: 'right',
+      }))
+    }
+    return draggedAnswer && layoutAnswer(draggedAnswer, previewStart).pieces
+  }
+  const pieces = previewPieces()
+  const preview = pieces ? { pieces, color: puzzle.highlightColor } : undefined
+
+  function handleCellClick(answerId: string, cell: CellRef) {
+    setSelection(selectAt(layout, cell, answerId, selection))
+  }
 
   return (
     <DndContext
@@ -132,6 +175,22 @@ export function Editor() {
             <input type="checkbox" checked={showLetters} onChange={(e) => setShowLetters(e.target.checked)} /> Show
             letters
           </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={puzzle.anagram.showNumbersAndBar}
+              onChange={(e) => dispatch({ type: 'set-show-anagram-numbers', value: e.target.checked })}
+            />{' '}
+            Show anagram numbers and bar
+          </label>
+          <button
+            type="button"
+            disabled={layout.anagramCells.length === 0}
+            onClick={() => dispatch({ type: 'renumber-anagram', order: leftToRightOrder(layout) })}
+            title="Number the anagram letters column by column from the left"
+          >
+            Number anagram left to right
+          </button>
           <button type="button" onClick={() => dispatch({ type: 'load', puzzle: samplePuzzle })}>
             Load sample
           </button>
@@ -147,10 +206,46 @@ export function Editor() {
         />
 
         <div className="workspace">
-          <GridDropArea pageRef={pageRef}>
-            <GridView puzzle={puzzle} layout={layout} mode="editor" showLetters={showLetters} grid={grid} preview={preview}>
-              {[...piecesByAnswer].map(([answerId, pieces]) => (
-                <AnswerHandle key={answerId} answerId={answerId} pieces={pieces} dimmed={dragging?.answerId === answerId} />
+          {/* Fixed height, so the grid doesn't jump when a cell is selected. */}
+          <div className="inspector-slot">
+            {selection ? (
+              <Inspector
+                puzzle={puzzle}
+                layout={layout}
+                selection={selection}
+                dispatch={dispatch}
+                onClose={() => setSelection(null)}
+              />
+            ) : (
+              <p className="hint">Click a cell to add turns, wide spaces, anagram letters and thick borders.</p>
+            )}
+          </div>
+
+          <GridDropArea pageRef={pageRef} onBackgroundClick={() => setSelection(null)}>
+            <GridView
+              puzzle={puzzle}
+              layout={layout}
+              mode="editor"
+              showLetters={showLetters}
+              grid={grid}
+              preview={preview}
+            >
+              {selection && (
+                <SelectionOverlay
+                  pieces={piecesByAnswer.get(selection.answerId) ?? []}
+                  cell={selection.cell}
+                  color={puzzle.highlightColor}
+                />
+              )}
+              {barCells.length > 0 && <AnagramBarHandle cells={barCells} />}
+              {[...piecesByAnswer].map(([answerId, answerPieces]) => (
+                <AnswerHandle
+                  key={answerId}
+                  answerId={answerId}
+                  pieces={answerPieces}
+                  dimmed={dragging?.source === 'grid' && dragging.answerId === answerId}
+                  onCellClick={handleCellClick}
+                />
               ))}
             </GridView>
           </GridDropArea>
@@ -178,7 +273,15 @@ export function Editor() {
 }
 
 /** The page the grid sits on. It has to be a child of DndContext to register as a drop target. */
-function GridDropArea({ pageRef, children }: { pageRef: RefObject<HTMLDivElement | null>; children: ReactNode }) {
+function GridDropArea({
+  pageRef,
+  onBackgroundClick,
+  children,
+}: {
+  pageRef: RefObject<HTMLDivElement | null>
+  onBackgroundClick: () => void
+  children: ReactNode
+}) {
   const { setNodeRef } = useDroppable({ id: GRID_ID })
   return (
     <div
@@ -187,14 +290,25 @@ function GridDropArea({ pageRef, children }: { pageRef: RefObject<HTMLDivElement
         pageRef.current = element
         setNodeRef(element)
       }}
+      onClick={onBackgroundClick}
     >
       {children}
     </div>
   )
 }
 
-/** An invisible hit area over a placed answer's cells, so it can be dragged around the grid. */
-function AnswerHandle({ answerId, pieces, dimmed }: { answerId: string; pieces: Piece[]; dimmed: boolean }) {
+/** An invisible hit area over a placed answer's cells, so it can be clicked and dragged around the grid. */
+function AnswerHandle({
+  answerId,
+  pieces,
+  dimmed,
+  onCellClick,
+}: {
+  answerId: string
+  pieces: Piece[]
+  dimmed: boolean
+  onCellClick: (answerId: string, cell: CellRef) => void
+}) {
   const { setNodeRef, listeners, attributes } = useDraggable({
     id: gridHandleId(answerId),
     data: { answerId, source: 'grid' } satisfies DragData,
@@ -218,9 +332,72 @@ function AnswerHandle({ answerId, pieces, dimmed }: { answerId: string; pieces: 
             height={CELL}
             fill="white"
             fillOpacity={dimmed ? 0.6 : 0}
+            data-cell={cellKey(piece)}
+            onClick={(event) => {
+              event.stopPropagation()
+              onCellClick(answerId, { row: piece.row, col: piece.col })
+            }}
           />
         )
       })}
     </g>
+  )
+}
+
+/** Tints the selected answer and outlines the selected cell. */
+function SelectionOverlay({ pieces, cell, color }: { pieces: Piece[]; cell: CellRef; color: string }) {
+  const selected = cellOrigin(cell)
+  return (
+    <g data-selection="" pointerEvents="none">
+      {pieces.map((piece) => {
+        const { x, y } = cellOrigin(piece)
+        return (
+          <rect
+            key={`${piece.index}-${piece.widePart ?? 0}`}
+            x={x}
+            y={y}
+            width={CELL}
+            height={CELL}
+            fill={color}
+            fillOpacity={0.12}
+          />
+        )
+      })}
+      <rect
+        x={selected.x + 0.4}
+        y={selected.y + 0.4}
+        width={CELL - 0.8}
+        height={CELL - 0.8}
+        fill="none"
+        stroke={color}
+        strokeWidth={0.8}
+      />
+    </g>
+  )
+}
+
+/** Lets the anagram bar, including its number labels, be dragged anywhere on the page. */
+function AnagramBarHandle({ cells }: { cells: CellRef[] }) {
+  const { setNodeRef, listeners, attributes } = useDraggable({
+    id: ANAGRAM_BAR_ID,
+    data: { source: 'bar' } satisfies DragData,
+  })
+  const { x, y } = cellOrigin(cells[0])
+  return (
+    <rect
+      ref={setNodeRef as unknown as Ref<SVGRectElement>}
+      {...listeners}
+      {...attributes}
+      aria-label="Move anagram bar"
+      className="answer-hit-area"
+      data-anagram-bar-handle=""
+      x={x}
+      y={y - 4}
+      width={cells.length * CELL}
+      height={CELL + 4}
+      fill="white"
+      fillOpacity={0}
+      onClick={(event) => event.stopPropagation()}
+    />
   )
 }

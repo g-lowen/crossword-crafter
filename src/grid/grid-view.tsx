@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react'
+import { anagramBarCells } from '../layout/anagram'
 import type { Layout, Piece } from '../layout/layout'
 import { cellKey } from '../layout/layout'
 import { A4_LANDSCAPE_GRID, type GridSize } from '../model/page'
 import type { Puzzle } from '../model/puzzle'
-import { CELL, cellOrigin, separatorLine, turnArrow, wideSpaceShape } from './geometry'
+import { CELL, cellOrigin, separatorLine, startArrow, turnArrow, wideSpaceShape } from './geometry'
 
 type GridViewProps = {
   puzzle: Puzzle
@@ -38,6 +39,10 @@ export function GridView({
     layout.issues.flatMap((issue) => (issue.type === 'conflict' ? [cellKey(issue.cell)] : [])),
   )
   const cells = [...layout.cells.values()]
+  const markedStarts = layout.startMarkers.filter(
+    (marker) => puzzle.answers.find((answer) => answer.id === marker.answerId)?.showStartMarker,
+  )
+  const barCells = puzzle.anagram.showNumbersAndBar ? anagramBarCells(puzzle, layout, grid) : []
 
   return (
     <svg
@@ -136,6 +141,38 @@ export function GridView({
           </g>
         )
       })}
+
+      {markedStarts.map((marker) => {
+        const arrow = startArrow(marker.cell, marker.dir)
+        return (
+          <g key={marker.answerId} data-start-marker="">
+            <polyline points={arrow.line} fill="none" stroke="black" strokeWidth={0.4} />
+            <polygon points={arrow.head} fill="black" />
+          </g>
+        )
+      })}
+
+      {barCells.length > 0 && (
+        <g data-anagram-bar="">
+          {barCells.map((cell, i) => {
+            const { x, y } = cellOrigin(cell)
+            return (
+              <g key={i}>
+                <rect x={x} y={y} width={CELL} height={CELL} fill="white" stroke="black" strokeWidth={LINE} />
+                <text
+                  x={x + CELL / 2}
+                  y={y - 1.2}
+                  fontSize={2.8}
+                  fontFamily="Arial, Helvetica, sans-serif"
+                  textAnchor="middle"
+                >
+                  {i + 1}
+                </text>
+              </g>
+            )
+          })}
+        </g>
+      )}
 
       {puzzle.separators.map((separator) => {
         const line = separatorLine(separator)

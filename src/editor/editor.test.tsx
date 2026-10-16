@@ -47,4 +47,50 @@ describe('Editor', () => {
     expect(listedAnswers()).toContain('PINK FLOYD')
     expect(container.querySelectorAll('[data-answer-handle]')).toHaveLength(6)
   })
+
+  describe('inspector', () => {
+    function loadSampleAndClick(cell: string) {
+      const view = render(<Editor />)
+      fireEvent.click(screen.getByRole('button', { name: 'Load sample' }))
+      fireEvent.click(view.container.querySelector(`[data-cell="${cell}"]`)!)
+      return view
+    }
+
+    it('opens for the clicked cell and closes with Escape', () => {
+      loadSampleAndClick('2,3')
+      const inspector = screen.getByRole('region', { name: 'Selected cell' })
+      expect(inspector).toHaveTextContent('THE BEATLES')
+      expect(inspector).toHaveTextContent('character 2 (H)')
+      fireEvent.keyDown(window, { key: 'Escape' })
+      expect(screen.queryByRole('region', { name: 'Selected cell' })).not.toBeInTheDocument()
+    })
+
+    it('adds a turn, which moves the rest of the answer', () => {
+      const { container } = loadSampleAndClick('2,3')
+      fireEvent.click(screen.getByRole('button', { name: 'Turn down' }))
+      expect(container.querySelectorAll('[data-turn-marker]')).toHaveLength(2)
+      expect(container.querySelector('[data-cell="3,3"]')).not.toBeNull()
+    })
+
+    it('marks an anagram letter with the next number', () => {
+      const { container } = loadSampleAndClick('2,3')
+      fireEvent.click(screen.getByLabelText('Anagram letter'))
+      expect(screen.getByLabelText('Number')).toHaveValue(4)
+      expect(container.querySelectorAll('[data-anagram-cell]')).toHaveLength(4)
+    })
+
+    it('makes a space wide', () => {
+      const { container } = loadSampleAndClick('2,5')
+      fireEvent.click(screen.getByLabelText('Wide space (2 cells)'))
+      expect(container.querySelectorAll('[data-wide-space]')).toHaveLength(2)
+    })
+
+    it('toggles a thick border', () => {
+      const { container } = loadSampleAndClick('2,3')
+      fireEvent.click(screen.getByRole('button', { name: 'Bottom' }))
+      expect(container.querySelectorAll('[data-separator]')).toHaveLength(2)
+      fireEvent.click(screen.getByRole('button', { name: 'Bottom' }))
+      expect(container.querySelectorAll('[data-separator]')).toHaveLength(1)
+    })
+  })
 })

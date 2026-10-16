@@ -187,3 +187,91 @@ button {
   margin: 4px 0;
   padding-left: 20px;
 }
+
+.inspector-slot {
+  max-width: 1160px;
+  height: 116px;
+  margin-bottom: 8px;
+}
+
+.inspector {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #cfd8dc;
+  border-radius: 6px;
+}
+
+.inspector-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.inspector-title span {
+  flex: 1;
+  color: #555;
+}
+
+.inspector-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.inspector fieldset {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 10px 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.inspector legend {
+  padding: 0 4px;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.segmented {
+  display: inline-flex;
+}
+
+.segmented button {
+  min-width: 36px;
+  padding: 2px 8px;
+  border: 1px solid #b0bec5;
+  background: white;
+}
+
+.segmented button + button {
+  border-left: none;
+}
+
+.segmented button:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.segmented button:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.segmented button[aria-pressed='true'] {
+  background: #1e88e5;
+  border-color: #1e88e5;
+  color: white;
+}
+
+.segmented button:disabled {
+  color: #bbb;
+  cursor: default;
+}
+
+.number-input {
+  width: 4em;
+  font: inherit;
+}

@@ -8,6 +8,7 @@ export const isListItemId = (id: string) => id.startsWith(LIST_PREFIX)
 export const answerIdFromListItem = (id: string) => id.slice(LIST_PREFIX.length)
 
 export const gridHandleId = (answerId: string) => `grid:${answerId}`
+export const ANAGRAM_BAR_ID = 'anagram-bar'
 
-/** Attached to every draggable answer, so a drop knows what moved and from where. */
-export type DragData = { answerId: string; source: 'list' | 'grid' }
+/** Attached to everything draggable, so a drop knows what moved and from where. */
+export type DragData = { source: 'list' | 'grid'; answerId: string } | { source: 'bar' }

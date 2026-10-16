@@ -24,6 +24,8 @@ export type Piece = CellRef & {
   index: number
   kind: 'letter' | 'space'
   char: string
+  /** The reading direction at this cell, before any turn here. */
+  dir: Dir
   /** Set on both cells of a wide space. */
   widePart?: 0 | 1
 }
@@ -103,12 +105,12 @@ export function layoutAnswer(answer: Answer, start: CellRef): AnswerPath {
 
     if (wideSpaces.has(index)) {
       const second = move(cell, dir)
-      pieces.push({ ...cell, answerId: answer.id, index, kind, char, widePart: 0 })
-      pieces.push({ ...second, answerId: answer.id, index, kind, char, widePart: 1 })
+      pieces.push({ ...cell, answerId: answer.id, index, kind, char, dir, widePart: 0 })
+      pieces.push({ ...second, answerId: answer.id, index, kind, char, dir, widePart: 1 })
       wideSpaceBlocks.push({ answerId: answer.id, index, cells: [cell, second], dir })
       cell = second
     } else {
-      pieces.push({ ...cell, answerId: answer.id, index, kind, char })
+      pieces.push({ ...cell, answerId: answer.id, index, kind, char, dir })
     }
 
     const turnDir = turns.get(index)

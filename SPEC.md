@@ -33,7 +33,20 @@ automate layout but to make manual layout fast.
 - Each answer in the list has a button to switch it between across and down.
 - The list order is changed by dragging answers within the list.
 - An answer reads right or down, and can turn 90° at any letter. Usually at most once, but more
-  turns must be possible. A small corner arrow (↱ ↳ etc.) marks where an answer starts or turns.
+  turns must be possible. A small corner arrow marks where an answer turns.
+- Each answer has a "Start arrow" option that draws a small arrow in its first cell. Sammy decides
+  per answer.
+
+## Editing a placed answer
+
+Clicking a cell selects that character of the answer and opens a panel above the grid. Clicking a
+crossing cell again switches to the other answer. Esc or a click on an empty spot closes it. The
+panel has:
+
+- Answer: direction, start arrow, take off grid.
+- Turn here: none, or one of the two 90° directions.
+- Cell: "Wide space" for a space, or "Anagram letter" with its number for a letter.
+- Thick border: top, right, bottom, left of the selected cell.
 
 ## Crossings
 
@@ -50,9 +63,11 @@ automate layout but to make manual layout fast.
 - Any letter cell can be marked as an anagram cell. Anagram cells always have a red, thick border.
 - Checkbox "Show anagram numbers and bar":
   - Checked: anagram cells show a small number, and a bar of empty cells (one per anagram letter)
-    is drawn below the grid, labelled with the same numbers.
+    is drawn on the page, numbered 1, 2, 3… above each cell.
   - Unchecked: only the red borders are drawn.
-- Sammy sets the numbering order himself. It's usually left to right, but not always.
+- The bar starts in the middle of the bottom row and can be dragged anywhere on the page.
+- Sammy sets the numbering order himself. It's usually left to right, but not always. A new anagram
+  letter gets the next free number, and "Number anagram left to right" renumbers them all by column.
 - An anagram cell is tied to an answer letter, so it moves with the answer.
 
 ## Exports
@@ -77,7 +92,7 @@ Delivered as one zip with numbered file names.
 - "Copy state" / "Paste state" as JSON text, to move a puzzle to another computer.
 - No backend.
 
-## Data model (draft)
+## Data model
 
 Grid cells are computed from the answers, not stored.
 
@@ -91,6 +106,7 @@ type Answer = {
   dir: Dir;
   turns: { atIndex: number; dir: Dir }[];
   wideSpaces: number[]; // indices of spaces that span two cells
+  showStartMarker: boolean;
 };
 
 type CellRef = { row: number; col: number };
@@ -100,6 +116,7 @@ type Puzzle = {
   anagram: {
     showNumbersAndBar: boolean;
     cells: { answerId: string; letterIndex: number; number?: number }[];
+    barStart: CellRef | null; // null = middle of the bottom row
   };
   separators: { a: CellRef; b: CellRef }[];
   highlightColor: string;
