@@ -1,0 +1,184 @@
+import type { Layout, Piece } from '../layout/layout'
+import { cellKey } from '../layout/layout'
+import { A4_LANDSCAPE_GRID, type GridSize } from '../model/page'
+import type { Puzzle } from '../model/puzzle'
+import { CELL, cellOrigin, separatorLine, turnArrow, wideSpaceShape } from './geometry'
+
+type GridViewProps = {
+  puzzle: Puzzle
+  layout: Layout
+  /** The editor adds a page background, guide lines and conflict warnings. Exports get none of them. */
+  mode: 'editor' | 'export'
+  showLetters: boolean
+  grid?: GridSize
+}
+
+const LINE = 0.35
+const SEPARATOR = 1.4
+const ANAGRAM_BORDER = 1
+const ANAGRAM_RED = '#d32f2f'
+
+export function GridView({ puzzle, layout, mode, showLetters, grid = A4_LANDSCAPE_GRID }: GridViewProps) {
+  const width = grid.columns * CELL
+  const height = grid.rows * CELL
+  const conflictKeys = new Set(
+    layout.issues.flatMap((issue) => (issue.type === 'conflict' ? [cellKey(issue.cell)] : [])),
+  )
+  const cells = [...layout.cells.values()]
+
+  return (
+    <svg
+      className="grid-view"
+      viewBox={`0 0 ${width} ${height}`}
+      width={`${width}mm`}
+      height={`${height}mm`}
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="Crossword grid"
+    >
+      {mode === 'editor' && <EditorBackground width={width} height={height} grid={grid} />}
+
+      {cells.map((pieces) => {
+        const cell = pieces[0]
+        const { x, y } = cellOrigin(cell)
+        const isSpace = pieces.every((piece) => piece.kind === 'space')
+        if (isSpace && pieces.some((piece) => piece.widePart !== undefined)) return null
+        return (
+          <rect
+            key={cellKey(cell)}
+            data-cell-kind={isSpace ? 'space' : 'letter'}
+            x={x}
+            y={y}
+            width={CELL}
+            height={CELL}
+            fill={isSpace ? 'black' : 'white'}
+            stroke="black"
+            strokeWidth={LINE}
+          />
+        )
+      })}
+
+      {layout.wideSpaceBlocks.map((block) => {
+        const shape = wideSpaceShape(block.cells, block.dir)
+        return (
+          <g key={`${block.answerId}-${block.index}`} data-wide-space="">
+            <rect {...shape.rect} fill="black" stroke="black" strokeWidth={LINE} />
+            <polyline points={shape.line} fill="none" stroke="white" strokeWidth={1} />
+            <polygon points={shape.head} fill="white" />
+          </g>
+        )
+      })}
+
+      {showLetters &&
+        cells.map((pieces) => {
+          const letter = firstLetter(pieces)
+          if (!letter) return null
+          const { x, y } = cellOrigin(letter)
+          return (
+            <text
+              key={cellKey(letter)}
+              data-letter=""
+              x={x + CELL / 2}
+              y={y + CELL / 2 + 0.4}
+              fontSize={5.5}
+              fontFamily="Arial, Helvetica, sans-serif"
+              fontWeight="bold"
+              textAnchor="middle"
+              dominantBaseline="central"
+            >
+              {letter.char}
+            </text>
+          )
+        })}
+
+      {layout.anagramCells.map(({ cell, number }) => {
+        const { x, y } = cellOrigin(cell)
+        const inset = ANAGRAM_BORDER / 2
+        return (
+          <g key={cellKey(cell)} data-anagram-cell="">
+            <rect
+              x={x + inset}
+              y={y + inset}
+              width={CELL - ANAGRAM_BORDER}
+              height={CELL - ANAGRAM_BORDER}
+              fill="none"
+              stroke={ANAGRAM_RED}
+              strokeWidth={ANAGRAM_BORDER}
+            />
+            {puzzle.anagram.showNumbersAndBar && number !== undefined && (
+              <text data-anagram-number="" x={x + 1.6} y={y + 3.2} fontSize={2.6} fontFamily="Arial, Helvetica, sans-serif">
+                {number}
+              </text>
+            )}
+          </g>
+        )
+      })}
+
+      {layout.turnMarkers.map((marker) => {
+        const arrow = turnArrow(marker.cell, marker.from, marker.to)
+        return (
+          <g key={`${marker.answerId}-${cellKey(marker.cell)}`} data-turn-marker="">
+            <polyline points={arrow.line} fill="none" stroke="black" strokeWidth={0.4} />
+            <polygon points={arrow.head} fill="black" />
+          </g>
+        )
+      })}
+
+      {puzzle.separators.map((separator) => {
+        const line = separatorLine(separator)
+        if (!line) return null
+        return (
+          <line
+            key={`${cellKey(separator.a)}|${cellKey(separator.b)}`}
+            data-separator=""
+            {...line}
+            stroke="black"
+            strokeWidth={SEPARATOR}
+            strokeLinecap="square"
+          />
+        )
+      })}
+
+      {mode === 'editor' &&
+        [...conflictKeys].map((key) => {
+          const [row, col] = key.split(',').map(Number)
+          const { x, y } = cellOrigin({ row, col })
+          return (
+            <rect
+              key={key}
+              data-conflict=""
+              x={x}
+              y={y}
+              width={CELL}
+              height={CELL}
+              fill="#ff9800"
+              fillOpacity={0.45}
+              pointerEvents="none"
+            />
+          )
+        })}
+    </svg>
+  )
+}
+
+function firstLetter(pieces: Piece[]): Piece | undefined {
+  return pieces.find((piece) => piece.kind === 'letter')
+}
+
+function EditorBackground({ width, height, grid }: { width: number; height: number; grid: GridSize }) {
+  const lines = []
+  for (let col = 1; col < grid.columns; col++) {
+    lines.push(<line key={`c${col}`} x1={col * CELL} y1={0} x2={col * CELL} y2={height} />)
+  }
+  for (let row = 1; row < grid.rows; row++) {
+    lines.push(<line key={`r${row}`} x1={0} y1={row * CELL} x2={width} y2={row * CELL} />)
+  }
+  return (
+    <g data-editor-background="">
+      <rect width={width} height={height} fill="white" />
+      <g stroke="#e3e3e3" strokeWidth={0.2}>
+        {lines}
+      </g>
+    </g>
+  )
+}

@@ -114,6 +114,10 @@ puzzle into cells, markers and issues:
   cells outside the page, invalid turns or wide spaces, invalid anagram cells, duplicate anagram
   numbers.
 
+`GridView` in `src/grid/grid-view.tsx` draws a layout as SVG, with 1 unit = 1 mm. The same
+component draws the editor (page background, guide lines, conflict warnings) and the exports
+(none of those, transparent background), so what Sammy sees is what gets exported.
+
 ## Build order
 
 1. Scaffold: Vite, React, TypeScript, dnd kit, Vitest.
