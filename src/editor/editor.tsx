@@ -14,16 +14,15 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
-import { useEffect, useMemo, useReducer, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
 import { CELL, cellOrigin } from '../grid/geometry'
 import { GridView } from '../grid/grid-view'
 import { leftToRightOrder } from '../layout/anagram'
 import { describeIssue } from '../layout/describe-issue'
 import { cellKey, layoutAnswer, layoutPuzzle, type Piece } from '../layout/layout'
 import { A4_LANDSCAPE_GRID } from '../model/page'
-import type { CellRef } from '../model/puzzle'
-import { loadSavedPuzzle, savePuzzle } from '../model/persistence'
-import { emptyPuzzle, puzzleReducer } from '../model/puzzle-reducer'
+import type { CellRef, Puzzle } from '../model/puzzle'
+import type { PuzzleAction } from '../model/puzzle-reducer'
 import { AnswerList } from './answer-list'
 import {
   ANSWER_LIST_ID,
@@ -35,7 +34,6 @@ import {
 } from './drag-ids'
 import { cellAtPoint, moveByPixels } from './grid-coordinates'
 import { Inspector } from './inspector'
-import { PuzzleMenu } from './puzzle-menu'
 import { selectAt, validSelection, type Selection } from './selection'
 
 const grid = A4_LANDSCAPE_GRID
@@ -47,22 +45,17 @@ const collisionDetection: CollisionDetection = (args) => {
   return item ? [item] : hits
 }
 
-/** localStorage, or undefined where the browser blocks it. */
-function browserStorage(): Storage | undefined {
-  try {
-    return window.localStorage
-  } catch {
-    return undefined
-  }
+type EditorProps = {
+  puzzle: Puzzle
+  dispatch: (action: PuzzleAction) => void
+  /** Shown next to the title. */
+  nameField: ReactNode
+  /** Puzzle-level actions such as New puzzle and Copy state. */
+  menu: ReactNode
+  saveFailed: boolean
 }
 
-export function Editor() {
-  const [puzzle, dispatch] = useReducer(
-    puzzleReducer,
-    undefined,
-    () => loadSavedPuzzle(browserStorage()) ?? emptyPuzzle,
-  )
-  const [saved, setSaved] = useState(true)
+export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: EditorProps) {
   const [showLetters, setShowLetters] = useState(true)
   const [dragging, setDragging] = useState<DragData | null>(null)
   const [previewStart, setPreviewStart] = useState<CellRef | null>(null)
@@ -78,10 +71,6 @@ export function Editor() {
     return map
   }, [layout])
   const selection = validSelection(layout, rawSelection)
-
-  useEffect(() => {
-    setSaved(savePuzzle(browserStorage(), puzzle))
-  }, [puzzle])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -168,6 +157,7 @@ export function Editor() {
       <div className="editor">
         <header className="app-header">
           <h1>Crossword Crafter</h1>
+          {nameField}
           <label>
             <input type="checkbox" checked={showLetters} onChange={(e) => setShowLetters(e.target.checked)} /> Show
             letters
@@ -188,11 +178,11 @@ export function Editor() {
           >
             Number anagram left to right
           </button>
-          <PuzzleMenu puzzle={puzzle} onLoad={(next) => dispatch({ type: 'load', puzzle: next })} />
-          {!saved && (
+          {menu}
+          {saveFailed && (
             <p className="save-warning" role="alert">
-              This browser won't save the puzzle, so it will be lost when the page closes. Use Copy state
-              to keep it.
+              This browser won't save your puzzles, so they will be lost when the page closes. Use Copy
+              state to keep them.
             </p>
           )}
         </header>

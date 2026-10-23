@@ -90,19 +90,29 @@ PowerPoint.
 
 Delivered as one zip with numbered file names.
 
-## Saving
+## Saving and My puzzles
 
-- Autosave to `localStorage` on every change, restored when the page opens. If the browser won't
-  store it, a warning says so and points to Copy state.
-- "Copy state" puts the puzzle on the clipboard as JSON. "Paste state" opens a box to paste it
-  into, on the same or another computer. A broken or incomplete paste shows what's wrong and
-  changes nothing.
-- "New puzzle", "Load sample" and "Paste state" replace the current puzzle, so they ask first when
-  it has answers. There is no undo.
-- The saved JSON is `{ version, puzzle }`. `src/model/persistence.ts` validates it field by field,
-  fills in defaults for missing optional parts, and has to keep reading old versions when the
-  format changes.
-- No backend.
+There is no backend. Everything is saved in the browser Sammy uses, and nowhere else.
+
+- Sammy can keep several puzzles. Each has a name (edited next to the title) and a last-changed
+  time. The open puzzle autosaves to `localStorage` on every change, and the last one opened comes
+  back when the page opens. If the browser won't store anything, a warning says so and points to
+  Copy state.
+- "My puzzles" lists them all, most recently changed first, with their answer counts. Each can be
+  opened, duplicated (as "Name (copy)") or deleted after a confirm. Deleting the last one leaves
+  one empty puzzle.
+- "New puzzle" and "Load sample" add a puzzle to the list and open it. Nothing is replaced.
+- "Copy state" puts the open puzzle and its name on the clipboard as JSON. "Paste state" adds a
+  pasted puzzle to the list as a new puzzle. A broken or incomplete paste shows what's wrong and
+  changes nothing. This is how a puzzle moves to another computer or gets kept somewhere safe.
+- Saved shapes, in `src/model/persistence.ts`:
+  - The list: `{ version, library: { currentId, entries: [{ id, name, updatedAt, puzzle }] } }`.
+  - Copy state: `{ version, name, puzzle }`.
+  - Before the list existed, a single puzzle was saved under `crossword-crafter/puzzle`. It is
+    carried over as the first entry the first time the list is loaded.
+  - Everything is validated field by field, with defaults for missing optional parts. Old versions
+    must stay readable when a shape changes.
+- There is no undo.
 
 ## Data model
 
@@ -155,7 +165,7 @@ component draws the editor (page background, guide lines, conflict warnings) and
 3. Grid UI at fixed cell size, A4 landscape.
 4. Answer import and drag and drop onto the grid.
 5. Editing: turns, wide spaces, separators, anagram cells and numbering.
-6. Save and load: autosave, Copy state, Paste state.
+6. Save and load: autosave, My puzzles, Copy state, Paste state.
 7. PNG exports as a zip.
 
 ## Open decisions
@@ -166,3 +176,5 @@ component draws the editor (page background, guide lines, conflict warnings) and
   (e.g. with `pptxgenjs`) once PNG rendering exists. Revisit after step 7.
 - **Page margins.** Whether the 29 × 21 grid needs a margin for printing.
 - **Special characters** in answers. Wait for Sammy's feedback.
+- **Download backup.** A button that downloads all puzzles as one file, and a way to load it back.
+  Wanted, but not now.

@@ -1,17 +1,21 @@
+import { UNTITLED, createLibrary, type Library, type LibraryEntry } from './library'
 import type { AnagramCell, Answer, CellRef, Dir, Puzzle, Separator, Turn } from './puzzle'
 import { emptyPuzzle } from './puzzle-reducer'
 
+/** Where the single autosaved puzzle lived before there was a puzzle list. Read once, to carry it over. */
 export const STORAGE_KEY = 'crossword-crafter/puzzle'
+export const LIBRARY_KEY = 'crossword-crafter/library'
 
-/** Bump when the saved shape changes, and teach `parsePuzzle` to read the old one. */
+/** Bump when a saved shape changes, and teach the parsers to read the old one. */
 const VERSION = 1
 
-type SavedPuzzle = { version: number; puzzle: Puzzle }
+type SavedPuzzle = { version: number; name?: string; puzzle: Puzzle }
 
-export type ParseResult = { ok: true; puzzle: Puzzle } | { ok: false; error: string }
+export type ParseResult = { ok: true; puzzle: Puzzle; name?: string } | { ok: false; error: string }
 
-export function serializePuzzle(puzzle: Puzzle): string {
-  const saved: SavedPuzzle = { version: VERSION, puzzle }
+/** The text Copy state puts on the clipboard. */
+export function serializePuzzle(puzzle: Puzzle, name?: string): string {
+  const saved: SavedPuzzle = { version: VERSION, name, puzzle }
   return JSON.stringify(saved)
 }
 
@@ -100,7 +104,7 @@ function readPuzzle(value: unknown): Puzzle {
 }
 
 /**
- * Reads a puzzle saved by `serializePuzzle`. Optional parts that are missing get their defaults;
+ * Reads a puzzle copied with `serializePuzzle`. Optional parts that are missing get their defaults;
  * anything malformed is rejected with a message Sammy can make sense of.
  */
 export function parsePuzzle(text: string): ParseResult {
@@ -113,29 +117,77 @@ export function parsePuzzle(text: string): ParseResult {
   try {
     if (!isObject(data) || !('version' in data)) fail("That isn't a saved puzzle.")
     if (data.version !== VERSION) fail(`It was saved by a version of the app this one can't read (${String(data.version)}).`)
-    return { ok: true, puzzle: readPuzzle(data.puzzle) }
+    const name = typeof data.name === 'string' && data.name.trim() !== '' ? data.name : undefined
+    return { ok: true, puzzle: readPuzzle(data.puzzle), name }
   } catch (error) {
     if (error instanceof InvalidPuzzle) return { ok: false, error: error.message }
     throw error
   }
 }
 
-/** The autosaved puzzle, or null when there is none or it can't be read. Never throws. */
-export function loadSavedPuzzle(storage: Pick<Storage, 'getItem'> | undefined): Puzzle | null {
+type SavedLibrary = { version: number; library: Library }
+
+export function serializeLibrary(library: Library): string {
+  const saved: SavedLibrary = { version: VERSION, library }
+  return JSON.stringify(saved)
+}
+
+function readLibrary(value: unknown): Library {
+  if (!isObject(value)) fail('There is no puzzle list in it.')
+  const entries = readArray(value.entries, 'The puzzle list').map((entry, i): LibraryEntry => {
+    if (!isObject(entry) || typeof entry.id !== 'string' || typeof entry.name !== 'string') {
+      fail(`Puzzle ${i + 1} is broken.`)
+    }
+    return {
+      id: entry.id,
+      name: entry.name,
+      updatedAt: typeof entry.updatedAt === 'string' ? entry.updatedAt : new Date(0).toISOString(),
+      puzzle: readPuzzle(entry.puzzle),
+    }
+  })
+  if (entries.length === 0) fail('The puzzle list is empty.')
+  const currentId = entries.some((entry) => entry.id === value.currentId) ? (value.currentId as string) : entries[0].id
+  return { currentId, entries }
+}
+
+function parseLibrary(text: string): Library | null {
   try {
-    const text = storage?.getItem(STORAGE_KEY)
-    if (!text) return null
-    const result = parsePuzzle(text)
-    return result.ok ? result.puzzle : null
+    const data: unknown = JSON.parse(text)
+    if (!isObject(data) || data.version !== VERSION) return null
+    return readLibrary(data.library)
   } catch {
     return null
   }
 }
 
-/** Saves the puzzle for next time. Returns false when the browser won't store it. */
-export function savePuzzle(storage: Pick<Storage, 'setItem'> | undefined, puzzle: Puzzle): boolean {
+/**
+ * The saved puzzle list. Before the list existed only one puzzle was saved, under STORAGE_KEY; that
+ * one becomes the first entry. With nothing saved, starts a list with one empty puzzle. Never throws.
+ */
+export function loadLibrary(storage: Pick<Storage, 'getItem'> | undefined, newId: string, now: string): Library {
+  const read = (key: string) => {
+    try {
+      return storage?.getItem(key) ?? null
+    } catch {
+      return null
+    }
+  }
+
+  const libraryText = read(LIBRARY_KEY)
+  const library = libraryText ? parseLibrary(libraryText) : null
+  if (library) return library
+
+  const puzzleText = read(STORAGE_KEY)
+  const old = puzzleText ? parsePuzzle(puzzleText) : null
+  if (old?.ok) return createLibrary(newId, now, UNTITLED, old.puzzle)
+
+  return createLibrary(newId, now)
+}
+
+/** Saves the puzzle list for next time. Returns false when the browser won't store it. */
+export function saveLibrary(storage: Pick<Storage, 'setItem'> | undefined, library: Library): boolean {
   try {
-    storage?.setItem(STORAGE_KEY, serializePuzzle(puzzle))
+    storage?.setItem(LIBRARY_KEY, serializeLibrary(library))
     return storage !== undefined
   } catch {
     return false

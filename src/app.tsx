@@ -1,9 +1,9 @@
-import { Editor } from './editor/editor'
+import { AppShell } from './editor/app-shell'
 
 function App() {
   return (
     <main className="app">
-      <Editor />
+      <AppShell />
     </main>
   )
 }

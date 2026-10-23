@@ -55,7 +55,7 @@ button {
   border-radius: 4px;
 }
 
-.paste-panel {
+.menu-panel {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
@@ -68,14 +68,14 @@ button {
   box-shadow: 0 4px 16px rgb(0 0 0 / 0.15);
 }
 
-.paste-panel label {
+.menu-panel label {
   display: flex;
   flex-direction: column;
   gap: 4px;
   font-size: 0.9rem;
 }
 
-.paste-panel textarea {
+.menu-panel textarea {
   font: 0.8rem ui-monospace, Consolas, monospace;
   resize: vertical;
 }
@@ -86,10 +86,85 @@ button {
   font-size: 0.9rem;
 }
 
-.paste-actions {
+.panel-actions {
   display: flex;
   gap: 8px;
   margin-top: 8px;
+}
+
+.puzzle-name {
+  width: 220px;
+  padding: 2px 6px;
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+}
+
+.puzzle-name:hover,
+.puzzle-name:focus {
+  border-color: #b0bec5;
+  background: white;
+}
+
+.puzzle-list {
+  width: 480px;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.puzzle-list .hint {
+  margin: 0 0 8px;
+}
+
+.puzzle-list ul {
+  max-height: 60vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.puzzle-entry {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-top: 1px solid #eceff1;
+}
+
+.puzzle-entry--open {
+  background: #e3f2fd;
+}
+
+.puzzle-entry-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.puzzle-entry-name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.puzzle-entry-meta {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.puzzle-entry-open {
+  padding: 0 8px;
+  font-size: 0.85rem;
+  color: #1565c0;
 }
 
 .save-warning {

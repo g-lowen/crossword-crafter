@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { STORAGE_KEY, loadSavedPuzzle, parsePuzzle, savePuzzle, serializePuzzle } from './persistence'
+import { createLibrary, libraryReducer } from './library'
+import { LIBRARY_KEY, STORAGE_KEY, loadLibrary, parsePuzzle, saveLibrary, serializeLibrary, serializePuzzle } from './persistence'
 import type { Puzzle } from './puzzle'
 import { samplePuzzle } from './sample-puzzle'
 
@@ -19,6 +20,14 @@ const saved = (puzzle: unknown, version: unknown = 1) => JSON.stringify({ versio
 describe('serializePuzzle and parsePuzzle', () => {
   it('round-trips a puzzle', () => {
     expect(parsePuzzle(serializePuzzle(samplePuzzle))).toEqual({ ok: true, puzzle: samplePuzzle })
+  })
+
+  it('keeps the puzzle name', () => {
+    expect(parsePuzzle(serializePuzzle(samplePuzzle, 'Quiz 18'))).toEqual({
+      ok: true,
+      puzzle: samplePuzzle,
+      name: 'Quiz 18',
+    })
   })
 
   it('fills in missing optional parts with defaults', () => {
@@ -71,17 +80,48 @@ describe('serializePuzzle and parsePuzzle', () => {
   })
 })
 
-describe('savePuzzle and loadSavedPuzzle', () => {
-  it('saves and loads the puzzle', () => {
-    const storage = memoryStorage()
-    expect(savePuzzle(storage, samplePuzzle)).toBe(true)
-    expect(loadSavedPuzzle(storage)).toEqual(samplePuzzle)
+describe('saveLibrary and loadLibrary', () => {
+  const now = '2026-10-23T10:00:00.000Z'
+  const library = libraryReducer(createLibrary('a', now, 'Quiz 1'), {
+    type: 'add',
+    id: 'b',
+    name: 'Quiz 2',
+    puzzle: samplePuzzle,
+    now,
   })
 
-  it('returns null when nothing is saved or it is unreadable', () => {
-    expect(loadSavedPuzzle(memoryStorage())).toBeNull()
-    expect(loadSavedPuzzle(memoryStorage({ [STORAGE_KEY]: 'garbage' }))).toBeNull()
-    expect(loadSavedPuzzle(undefined)).toBeNull()
+  it('saves and loads the puzzle list', () => {
+    const storage = memoryStorage()
+    expect(saveLibrary(storage, library)).toBe(true)
+    expect(loadLibrary(storage, 'new', now)).toEqual(library)
+  })
+
+  it('starts a list with one empty puzzle when nothing is saved', () => {
+    expect(loadLibrary(memoryStorage(), 'new', now)).toEqual(createLibrary('new', now))
+    expect(loadLibrary(undefined, 'new', now)).toEqual(createLibrary('new', now))
+  })
+
+  it('carries over the single puzzle saved before the list existed', () => {
+    const storage = memoryStorage({ [STORAGE_KEY]: serializePuzzle(samplePuzzle) })
+    expect(loadLibrary(storage, 'new', now)).toEqual(createLibrary('new', now, 'Untitled puzzle', samplePuzzle))
+  })
+
+  it('prefers the list over the old single puzzle', () => {
+    const storage = memoryStorage({
+      [STORAGE_KEY]: serializePuzzle(samplePuzzle),
+      [LIBRARY_KEY]: serializeLibrary(library),
+    })
+    expect(loadLibrary(storage, 'new', now)).toEqual(library)
+  })
+
+  it('opens the first puzzle when the open one is missing', () => {
+    const storage = memoryStorage({ [LIBRARY_KEY]: serializeLibrary({ ...library, currentId: 'gone' }) })
+    expect(loadLibrary(storage, 'new', now).currentId).toBe('a')
+  })
+
+  it('starts fresh when the saved list is unreadable', () => {
+    const storage = memoryStorage({ [LIBRARY_KEY]: 'garbage' })
+    expect(loadLibrary(storage, 'new', now)).toEqual(createLibrary('new', now))
   })
 
   it('reports when the browser refuses to store it', () => {
@@ -90,8 +130,8 @@ describe('savePuzzle and loadSavedPuzzle', () => {
         throw new Error('QuotaExceededError')
       },
     }
-    expect(savePuzzle(full, samplePuzzle)).toBe(false)
-    expect(savePuzzle(undefined, samplePuzzle)).toBe(false)
+    expect(saveLibrary(full, library)).toBe(false)
+    expect(saveLibrary(undefined, library)).toBe(false)
   })
 
   it('never throws when reading fails', () => {
@@ -100,6 +140,6 @@ describe('savePuzzle and loadSavedPuzzle', () => {
         throw new Error('SecurityError')
       },
     }
-    expect(loadSavedPuzzle(broken)).toBeNull()
+    expect(loadLibrary(broken, 'new', now)).toEqual(createLibrary('new', now))
   })
 })

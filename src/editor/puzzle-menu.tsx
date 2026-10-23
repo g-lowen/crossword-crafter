@@ -1,18 +1,25 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type Dispatch } from 'react'
+import { UNTITLED, currentEntry, type Library, type LibraryAction } from '../model/library'
 import { parsePuzzle, serializePuzzle } from '../model/persistence'
 import type { Puzzle } from '../model/puzzle'
 import { emptyPuzzle } from '../model/puzzle-reducer'
 import { samplePuzzle } from '../model/sample-puzzle'
+import { PuzzleList } from './puzzle-list'
 
 type PuzzleMenuProps = {
-  puzzle: Puzzle
-  onLoad: (puzzle: Puzzle) => void
+  library: Library
+  dispatch: Dispatch<LibraryAction>
 }
 
-/** Starting over, loading the sample, and moving a puzzle between computers as text. */
-export function PuzzleMenu({ puzzle, onLoad }: PuzzleMenuProps) {
+type Panel = 'list' | 'paste' | null
+
+const now = () => new Date().toISOString()
+
+/** Starting puzzles, switching between them, and moving one between computers as text. */
+export function PuzzleMenu({ library, dispatch }: PuzzleMenuProps) {
   const [status, setStatus] = useState<string | null>(null)
-  const [pasting, setPasting] = useState(false)
+  const [panel, setPanel] = useState<Panel>(null)
+  const current = currentEntry(library)
 
   useEffect(() => {
     if (!status) return
@@ -20,37 +27,36 @@ export function PuzzleMenu({ puzzle, onLoad }: PuzzleMenuProps) {
     return () => clearTimeout(timer)
   }, [status])
 
-  /** Replacing a puzzle with answers in it can't be undone, so ask first. */
-  function replace(next: Puzzle, question: string): boolean {
-    if (puzzle.answers.length > 0 && !window.confirm(question)) return false
-    onLoad(next)
-    return true
+  function add(name: string, puzzle: Puzzle) {
+    dispatch({ type: 'add', id: crypto.randomUUID(), name, puzzle, now: now() })
   }
 
   async function copyState() {
     try {
-      await navigator.clipboard.writeText(serializePuzzle(puzzle))
+      await navigator.clipboard.writeText(serializePuzzle(current.puzzle, current.name))
       setStatus('Copied. Paste it with Paste state on the other computer.')
     } catch {
       setStatus("Couldn't copy. The browser blocked the clipboard.")
     }
   }
 
+  const toggle = (next: Panel) => setPanel(panel === next ? null : next)
+
   return (
     <div className="puzzle-menu">
-      <button type="button" onClick={() => replace(emptyPuzzle, 'Start a new puzzle? The current one will be lost.')}>
+      <button type="button" onClick={() => add(UNTITLED, emptyPuzzle)}>
         New puzzle
+      </button>
+      <button type="button" onClick={() => toggle('list')} aria-expanded={panel === 'list'}>
+        My puzzles ({library.entries.length})
       </button>
       <button type="button" onClick={copyState}>
         Copy state
       </button>
-      <button type="button" onClick={() => setPasting(true)} aria-expanded={pasting}>
+      <button type="button" onClick={() => toggle('paste')} aria-expanded={panel === 'paste'}>
         Paste state
       </button>
-      <button
-        type="button"
-        onClick={() => replace(samplePuzzle, 'Load the sample? The current puzzle will be replaced.')}
-      >
+      <button type="button" onClick={() => add('Sample puzzle', samplePuzzle)}>
         Load sample
       </button>
       {status && (
@@ -58,14 +64,16 @@ export function PuzzleMenu({ puzzle, onLoad }: PuzzleMenuProps) {
           {status}
         </span>
       )}
-      {pasting && (
+      {panel === 'list' && (
+        <PuzzleList library={library} dispatch={dispatch} onClose={() => setPanel(null)} />
+      )}
+      {panel === 'paste' && (
         <PastePanel
-          onCancel={() => setPasting(false)}
-          onPaste={(next) => {
-            if (replace(next, 'Replace the current puzzle with the pasted one?')) {
-              setPasting(false)
-              setStatus('Puzzle loaded.')
-            }
+          onCancel={() => setPanel(null)}
+          onPaste={(puzzle, name) => {
+            add(name ?? 'Pasted puzzle', puzzle)
+            setPanel(null)
+            setStatus('Pasted puzzle added to My puzzles.')
           }}
         />
       )}
@@ -73,20 +81,26 @@ export function PuzzleMenu({ puzzle, onLoad }: PuzzleMenuProps) {
   )
 }
 
-function PastePanel({ onPaste, onCancel }: { onPaste: (puzzle: Puzzle) => void; onCancel: () => void }) {
+function PastePanel({
+  onPaste,
+  onCancel,
+}: {
+  onPaste: (puzzle: Puzzle, name: string | undefined) => void
+  onCancel: () => void
+}) {
   const [text, setText] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   function load() {
     const result = parsePuzzle(text.trim())
-    if (result.ok) onPaste(result.puzzle)
+    if (result.ok) onPaste(result.puzzle, result.name)
     else setError(result.error)
   }
 
   return (
-    <div className="paste-panel" role="dialog" aria-label="Paste state">
+    <div className="menu-panel" role="dialog" aria-label="Paste state">
       <label>
-        <span>Paste a puzzle copied with Copy state</span>
+        <span>Paste a puzzle copied with Copy state. It's added as a new puzzle.</span>
         <textarea
           value={text}
           onChange={(e) => {
@@ -108,9 +122,9 @@ function PastePanel({ onPaste, onCancel }: { onPaste: (puzzle: Puzzle) => void; 
           {error}
         </p>
       )}
-      <div className="paste-actions">
+      <div className="panel-actions">
         <button type="button" onClick={load} disabled={text.trim() === ''}>
-          Load
+          Add puzzle
         </button>
         <button type="button" onClick={onCancel}>
           Cancel
