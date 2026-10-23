@@ -92,8 +92,16 @@ Delivered as one zip with numbered file names.
 
 ## Saving
 
-- Autosave to `localStorage`.
-- "Copy state" / "Paste state" as JSON text, to move a puzzle to another computer.
+- Autosave to `localStorage` on every change, restored when the page opens. If the browser won't
+  store it, a warning says so and points to Copy state.
+- "Copy state" puts the puzzle on the clipboard as JSON. "Paste state" opens a box to paste it
+  into, on the same or another computer. A broken or incomplete paste shows what's wrong and
+  changes nothing.
+- "New puzzle", "Load sample" and "Paste state" replace the current puzzle, so they ask first when
+  it has answers. There is no undo.
+- The saved JSON is `{ version, puzzle }`. `src/model/persistence.ts` validates it field by field,
+  fills in defaults for missing optional parts, and has to keep reading old versions when the
+  format changes.
 - No backend.
 
 ## Data model
@@ -147,7 +155,7 @@ component draws the editor (page background, guide lines, conflict warnings) and
 3. Grid UI at fixed cell size, A4 landscape.
 4. Answer import and drag and drop onto the grid.
 5. Editing: turns, wide spaces, separators, anagram cells and numbering.
-6. Save and load.
+6. Save and load: autosave, Copy state, Paste state.
 7. PNG exports as a zip.
 
 ## Open decisions

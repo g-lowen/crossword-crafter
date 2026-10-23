@@ -22,8 +22,8 @@ import { describeIssue } from '../layout/describe-issue'
 import { cellKey, layoutAnswer, layoutPuzzle, type Piece } from '../layout/layout'
 import { A4_LANDSCAPE_GRID } from '../model/page'
 import type { CellRef } from '../model/puzzle'
+import { loadSavedPuzzle, savePuzzle } from '../model/persistence'
 import { emptyPuzzle, puzzleReducer } from '../model/puzzle-reducer'
-import { samplePuzzle } from '../model/sample-puzzle'
 import { AnswerList } from './answer-list'
 import {
   ANSWER_LIST_ID,
@@ -35,6 +35,7 @@ import {
 } from './drag-ids'
 import { cellAtPoint, moveByPixels } from './grid-coordinates'
 import { Inspector } from './inspector'
+import { PuzzleMenu } from './puzzle-menu'
 import { selectAt, validSelection, type Selection } from './selection'
 
 const grid = A4_LANDSCAPE_GRID
@@ -46,8 +47,22 @@ const collisionDetection: CollisionDetection = (args) => {
   return item ? [item] : hits
 }
 
+/** localStorage, or undefined where the browser blocks it. */
+function browserStorage(): Storage | undefined {
+  try {
+    return window.localStorage
+  } catch {
+    return undefined
+  }
+}
+
 export function Editor() {
-  const [puzzle, dispatch] = useReducer(puzzleReducer, emptyPuzzle)
+  const [puzzle, dispatch] = useReducer(
+    puzzleReducer,
+    undefined,
+    () => loadSavedPuzzle(browserStorage()) ?? emptyPuzzle,
+  )
+  const [saved, setSaved] = useState(true)
   const [showLetters, setShowLetters] = useState(true)
   const [dragging, setDragging] = useState<DragData | null>(null)
   const [previewStart, setPreviewStart] = useState<CellRef | null>(null)
@@ -63,6 +78,10 @@ export function Editor() {
     return map
   }, [layout])
   const selection = validSelection(layout, rawSelection)
+
+  useEffect(() => {
+    setSaved(savePuzzle(browserStorage(), puzzle))
+  }, [puzzle])
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -169,9 +188,13 @@ export function Editor() {
           >
             Number anagram left to right
           </button>
-          <button type="button" onClick={() => dispatch({ type: 'load', puzzle: samplePuzzle })}>
-            Load sample
-          </button>
+          <PuzzleMenu puzzle={puzzle} onLoad={(next) => dispatch({ type: 'load', puzzle: next })} />
+          {!saved && (
+            <p className="save-warning" role="alert">
+              This browser won't save the puzzle, so it will be lost when the page closes. Use Copy state
+              to keep it.
+            </p>
+          )}
         </header>
 
         <AnswerList

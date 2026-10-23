@@ -31,8 +31,74 @@ button {
 .app-header {
   grid-area: header;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 24px;
+  gap: 8px 24px;
+}
+
+.puzzle-menu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.menu-status {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  padding: 2px 8px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  background: #e8f5e9;
+  border-radius: 4px;
+}
+
+.paste-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 10;
+  width: 420px;
+  padding: 12px;
+  background: white;
+  border: 1px solid #cfd8dc;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.15);
+}
+
+.paste-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.paste-panel textarea {
+  font: 0.8rem ui-monospace, Consolas, monospace;
+  resize: vertical;
+}
+
+.paste-error {
+  margin: 8px 0 0;
+  color: #c62828;
+  font-size: 0.9rem;
+}
+
+.paste-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.save-warning {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 4px 12px;
+  color: #b71c1c;
+  background: #ffebee;
+  border-radius: 4px;
 }
 
 .app-header h1 {

@@ -1,5 +1,7 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { serializePuzzle } from '../model/persistence'
+import { samplePuzzle } from '../model/sample-puzzle'
 import { Editor } from './editor'
 
 function importAnswers(text: string) {
@@ -46,6 +48,70 @@ describe('Editor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Load sample' }))
     expect(listedAnswers()).toContain('PINK FLOYD')
     expect(container.querySelectorAll('[data-answer-handle]')).toHaveLength(6)
+  })
+
+  describe('saving', () => {
+    it('keeps the puzzle after a reload', () => {
+      const first = render(<Editor />)
+      importAnswers('abba\nqueen')
+      first.unmount()
+      render(<Editor />)
+      expect(listedAnswers()).toEqual(['ABBA', 'QUEEN'])
+    })
+
+    it('asks before replacing a puzzle with answers, and keeps it on cancel', () => {
+      render(<Editor />)
+      importAnswers('abba')
+      const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+      fireEvent.click(screen.getByRole('button', { name: 'New puzzle' }))
+      expect(confirm).toHaveBeenCalledOnce()
+      expect(listedAnswers()).toEqual(['ABBA'])
+
+      confirm.mockReturnValue(true)
+      fireEvent.click(screen.getByRole('button', { name: 'New puzzle' }))
+      expect(screen.getByText('No answers yet.')).toBeInTheDocument()
+    })
+
+    it("doesn't ask when the puzzle is empty", () => {
+      render(<Editor />)
+      const confirm = vi.spyOn(window, 'confirm')
+      fireEvent.click(screen.getByRole('button', { name: 'Load sample' }))
+      expect(confirm).not.toHaveBeenCalled()
+    })
+
+    it('copies the puzzle to the clipboard', async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined)
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+      render(<Editor />)
+      importAnswers('abba')
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: 'Copy state' }))
+      })
+      expect(JSON.parse(writeText.mock.calls[0][0]).puzzle.answers[0].text).toBe('ABBA')
+      expect(screen.getByText(/^Copied\./)).toBeInTheDocument()
+    })
+
+    it('loads a pasted puzzle', () => {
+      render(<Editor />)
+      fireEvent.click(screen.getByRole('button', { name: 'Paste state' }))
+      fireEvent.change(screen.getByLabelText('Paste a puzzle copied with Copy state'), {
+        target: { value: serializePuzzle(samplePuzzle) },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Load' }))
+      expect(listedAnswers()).toContain('PINK FLOYD')
+      expect(screen.queryByRole('dialog', { name: 'Paste state' })).not.toBeInTheDocument()
+    })
+
+    it('explains why a pasted text could not be loaded', () => {
+      render(<Editor />)
+      fireEvent.click(screen.getByRole('button', { name: 'Paste state' }))
+      fireEvent.change(screen.getByLabelText('Paste a puzzle copied with Copy state'), {
+        target: { value: 'hello' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'Load' }))
+      expect(screen.getByRole('alert')).toHaveTextContent("That isn't a saved puzzle.")
+      expect(screen.getByRole('dialog', { name: 'Paste state' })).toBeInTheDocument()
+    })
   })
 
   describe('inspector', () => {
