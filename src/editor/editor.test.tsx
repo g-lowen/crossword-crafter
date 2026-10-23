@@ -181,7 +181,8 @@ describe('Editor', () => {
       const list = openList()
       const names = list.getAllByRole('listitem').map((item) => item.querySelector('.puzzle-entry-name')?.textContent)
       expect(names).toEqual(['Sample puzzle', 'Quiz 18'])
-      expect(list.getAllByRole('listitem')[0]).toHaveTextContent('6 answers')
+      expect(list.getAllByRole('listitem')[0]).toHaveTextContent(/6 answers · Edited \d{4}-\d{2}-\d{2} \d{2}:\d{2}/)
+      expect(list.getAllByTitle('Last edited')).toHaveLength(2)
     })
 
     it('duplicates a puzzle', () => {

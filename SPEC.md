@@ -98,7 +98,7 @@ There is no backend. Everything is saved in the browser Sammy uses, and nowhere 
   autosaves to `localStorage` on every change, and the last one opened comes back when the page
   opens. If the browser won't store anything, a warning says so and points to Copy state.
 - The name of the open puzzle is a clearly visible "Name" field next to the title.
-- "My puzzles" lists them all, most recently changed first, with their answer counts. The open one
+- "My puzzles" lists them all, most recently changed first, with their answer counts and "Edited <date>". The open one
   has a highlighted background. Each can be opened, renamed in place with the pen next to its
   name (Enter or clicking away saves, Esc cancels), duplicated, or deleted after a confirm. Deleting the last one leaves one
   empty puzzle. Renaming doesn't count as a change, so the list doesn't reorder.

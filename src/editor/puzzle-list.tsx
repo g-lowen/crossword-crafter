@@ -57,7 +57,8 @@ export function PuzzleList({ library, dispatch, onClose }: PuzzleListProps) {
                   </span>
                 )}
                 <span className="puzzle-entry-meta">
-                  {count} {count === 1 ? 'answer' : 'answers'} · {formatter.format(new Date(entry.updatedAt))}
+                  {count} {count === 1 ? 'answer' : 'answers'} ·{' '}
+                  <span title="Last edited">Edited {formatter.format(new Date(entry.updatedAt))}</span>
                 </span>
               </div>
               {!isOpen && (
