@@ -1,4 +1,4 @@
-import { useEffect, useState, type Dispatch } from 'react'
+import { useEffect, useRef, useState, type Dispatch } from 'react'
 import { UNTITLED, currentEntry, type Library, type LibraryAction } from '../model/library'
 import { parsePuzzle, serializePuzzle } from '../model/persistence'
 import type { Puzzle } from '../model/puzzle'
@@ -19,7 +19,25 @@ const now = () => new Date().toISOString()
 export function PuzzleMenu({ library, dispatch }: PuzzleMenuProps) {
   const [status, setStatus] = useState<string | null>(null)
   const [panel, setPanel] = useState<Panel>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
   const current = currentEntry(library)
+
+  // An open panel closes on Esc or on a click anywhere outside the menu.
+  useEffect(() => {
+    if (!panel) return
+    const onPointerDown = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setPanel(null)
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPanel(null)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [panel])
 
   useEffect(() => {
     if (!status) return
@@ -43,7 +61,7 @@ export function PuzzleMenu({ library, dispatch }: PuzzleMenuProps) {
   const toggle = (next: Panel) => setPanel(panel === next ? null : next)
 
   return (
-    <div className="puzzle-menu">
+    <div className="puzzle-menu" ref={menuRef}>
       <button type="button" onClick={() => add(UNTITLED, emptyPuzzle)}>
         New puzzle
       </button>
@@ -106,12 +124,6 @@ function PastePanel({
           onChange={(e) => {
             setText(e.target.value)
             setError(null)
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
-              e.stopPropagation()
-              onCancel()
-            }
           }}
           rows={6}
           autoFocus

@@ -1,5 +1,5 @@
-import type { Dispatch } from 'react'
-import { UNTITLED, entriesByRecent, type Library, type LibraryAction } from '../model/library'
+import { useRef, useState, type Dispatch } from 'react'
+import { UNTITLED, entriesByRecent, type Library, type LibraryAction, type LibraryEntry } from '../model/library'
 
 type PuzzleListProps = {
   library: Library
@@ -11,9 +11,11 @@ const formatter = new Intl.DateTimeFormat('sv-SE', { dateStyle: 'short', timeSty
 
 const displayName = (name: string) => (name.trim() === '' ? UNTITLED : name)
 
+const now = () => new Date().toISOString()
+
 /** Every puzzle saved in this browser, most recently changed first. */
 export function PuzzleList({ library, dispatch, onClose }: PuzzleListProps) {
-  const now = () => new Date().toISOString()
+  const [renamingId, setRenamingId] = useState<string | null>(null)
 
   return (
     <div className="menu-panel puzzle-list" role="dialog" aria-label="My puzzles">
@@ -32,14 +34,22 @@ export function PuzzleList({ library, dispatch, onClose }: PuzzleListProps) {
           return (
             <li key={entry.id} className={isOpen ? 'puzzle-entry puzzle-entry--open' : 'puzzle-entry'}>
               <div className="puzzle-entry-info">
-                <span className="puzzle-entry-name">{name}</span>
+                {renamingId === entry.id ? (
+                  <RenameField
+                    entry={entry}
+                    onDone={(newName) => {
+                      if (newName !== null) dispatch({ type: 'rename', id: entry.id, name: newName })
+                      setRenamingId(null)
+                    }}
+                  />
+                ) : (
+                  <span className="puzzle-entry-name">{name}</span>
+                )}
                 <span className="puzzle-entry-meta">
                   {count} {count === 1 ? 'answer' : 'answers'} · {formatter.format(new Date(entry.updatedAt))}
                 </span>
               </div>
-              {isOpen ? (
-                <span className="puzzle-entry-open">Open</span>
-              ) : (
+              {!isOpen && (
                 <button
                   type="button"
                   aria-label={`Open ${name}`}
@@ -51,6 +61,9 @@ export function PuzzleList({ library, dispatch, onClose }: PuzzleListProps) {
                   Open
                 </button>
               )}
+              <button type="button" aria-label={`Rename ${name}`} onClick={() => setRenamingId(entry.id)}>
+                Rename
+              </button>
               <button
                 type="button"
                 aria-label={`Duplicate ${name}`}
@@ -74,5 +87,35 @@ export function PuzzleList({ library, dispatch, onClose }: PuzzleListProps) {
         })}
       </ul>
     </div>
+  )
+}
+
+/** Enter or leaving the field saves; Esc cancels without closing the list. */
+function RenameField({ entry, onDone }: { entry: LibraryEntry; onDone: (name: string | null) => void }) {
+  const [value, setValue] = useState(entry.name)
+  // Enter or Esc removes the field, which can also fire blur. Only the first one counts.
+  const done = useRef(false)
+  const finish = (name: string | null) => {
+    if (done.current) return
+    done.current = true
+    onDone(name)
+  }
+  return (
+    <input
+      className="puzzle-entry-rename"
+      aria-label={`New name for ${displayName(entry.name)}`}
+      value={value}
+      autoFocus
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={() => finish(value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') finish(value)
+        if (e.key === 'Escape') {
+          e.stopPropagation()
+          finish(null)
+        }
+      }}
+    />
   )
 }

@@ -38,15 +38,18 @@ export function AppShell() {
       puzzle={entry.puzzle}
       dispatch={dispatch}
       nameField={
-        <input
-          className="puzzle-name"
-          aria-label="Puzzle name"
-          placeholder="Untitled puzzle"
-          value={entry.name}
-          onChange={(e) =>
-            dispatchLibrary({ type: 'rename', id: entry.id, name: e.target.value, now: new Date().toISOString() })
-          }
-        />
+        <label className="puzzle-name-field">
+          Name
+          <input
+            className="puzzle-name"
+            aria-label="Puzzle name"
+            placeholder="Untitled puzzle"
+            value={entry.name}
+            onChange={(e) =>
+              dispatchLibrary({ type: 'rename', id: entry.id, name: e.target.value })
+            }
+          />
+        </label>
       }
       menu={<PuzzleMenu library={library} dispatch={dispatchLibrary} />}
       saveFailed={!saved}

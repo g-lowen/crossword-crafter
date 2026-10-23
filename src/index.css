@@ -92,20 +92,41 @@ button {
   margin-top: 8px;
 }
 
-.puzzle-name {
-  width: 220px;
-  padding: 2px 6px;
-  font: inherit;
-  font-weight: 600;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  background: transparent;
+.puzzle-name-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #555;
 }
 
-.puzzle-name:hover,
-.puzzle-name:focus {
-  border-color: #b0bec5;
+.puzzle-name {
+  width: 240px;
+  padding: 3px 8px;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1a1a;
   background: white;
+  border: 1px solid #90a4ae;
+  border-radius: 4px;
+}
+
+.puzzle-name:hover {
+  border-color: #546e7a;
+}
+
+.puzzle-name:focus {
+  border-color: #1e88e5;
+  outline: 2px solid rgb(30 136 229 / 0.25);
+}
+
+.puzzle-entry-rename {
+  padding: 1px 4px;
+  font: inherit;
+  font-weight: 600;
+  border: 1px solid #1e88e5;
+  border-radius: 3px;
 }
 
 .puzzle-list {
@@ -159,12 +180,6 @@ button {
 .puzzle-entry-meta {
   font-size: 0.8rem;
   color: #666;
-}
-
-.puzzle-entry-open {
-  padding: 0 8px;
-  font-size: 0.85rem;
-  color: #1565c0;
 }
 
 .save-warning {

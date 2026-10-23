@@ -112,6 +112,56 @@ describe('Editor', () => {
       return within(screen.getByRole('dialog', { name: 'My puzzles' }))
     }
 
+    const listIsOpen = () => screen.queryByRole('dialog', { name: 'My puzzles' }) !== null
+
+    it('numbers a new puzzle whose name is taken', () => {
+      render(<App />)
+      fireEvent.click(screen.getByRole('button', { name: 'New puzzle' }))
+      expect(screen.getByLabelText('Puzzle name')).toHaveValue('Untitled puzzle (1)')
+    })
+
+    it('renames a puzzle from the list, and Esc cancels', () => {
+      render(<App />)
+      fireEvent.click(screen.getByRole('button', { name: 'Load sample' }))
+      const list = openList()
+      fireEvent.click(list.getByRole('button', { name: 'Rename Untitled puzzle' }))
+      const field = list.getByLabelText('New name for Untitled puzzle')
+      fireEvent.change(field, { target: { value: 'Quiz 18' } })
+      fireEvent.keyDown(field, { key: 'Enter' })
+      expect(list.getByText('Quiz 18')).toBeInTheDocument()
+
+      fireEvent.click(list.getByRole('button', { name: 'Rename Quiz 18' }))
+      const again = list.getByLabelText('New name for Quiz 18')
+      fireEvent.change(again, { target: { value: 'Nope' } })
+      fireEvent.keyDown(again, { key: 'Escape' })
+      expect(list.getByText('Quiz 18')).toBeInTheDocument()
+      expect(listIsOpen()).toBe(true)
+    })
+
+    it('has no Open button for the puzzle that is already open', () => {
+      render(<App />)
+      const list = openList()
+      expect(list.queryByRole('button', { name: /^Open/ })).not.toBeInTheDocument()
+    })
+
+    it('closes with Esc and with a click outside', () => {
+      render(<App />)
+      openList()
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(listIsOpen()).toBe(false)
+
+      openList()
+      fireEvent.pointerDown(screen.getByRole('heading', { name: 'Crossword Crafter' }))
+      expect(listIsOpen()).toBe(false)
+    })
+
+    it('stays open when clicking inside it', () => {
+      render(<App />)
+      const list = openList()
+      fireEvent.pointerDown(list.getByText('My puzzles'))
+      expect(listIsOpen()).toBe(true)
+    })
+
     it('starts a new puzzle without losing the old one', () => {
       render(<App />)
       fireEvent.change(screen.getByLabelText('Puzzle name'), { target: { value: 'Quiz 18' } })
@@ -139,7 +189,7 @@ describe('Editor', () => {
       fireEvent.change(screen.getByLabelText('Puzzle name'), { target: { value: 'Quiz 18' } })
       importAnswers('abba')
       fireEvent.click(openList().getByRole('button', { name: 'Duplicate Quiz 18' }))
-      expect(screen.getByLabelText('Puzzle name')).toHaveValue('Quiz 18 (copy)')
+      expect(screen.getByLabelText('Puzzle name')).toHaveValue('Quiz 18 (1)')
       expect(listedAnswers()).toEqual(['ABBA'])
     })
 

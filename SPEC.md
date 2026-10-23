@@ -94,14 +94,18 @@ Delivered as one zip with numbered file names.
 
 There is no backend. Everything is saved in the browser Sammy uses, and nowhere else.
 
-- Sammy can keep several puzzles. Each has a name (edited next to the title) and a last-changed
-  time. The open puzzle autosaves to `localStorage` on every change, and the last one opened comes
-  back when the page opens. If the browser won't store anything, a warning says so and points to
-  Copy state.
-- "My puzzles" lists them all, most recently changed first, with their answer counts. Each can be
-  opened, duplicated (as "Name (copy)") or deleted after a confirm. Deleting the last one leaves
-  one empty puzzle.
+- Sammy can keep several puzzles. Each has a name and a last-changed time. The open puzzle
+  autosaves to `localStorage` on every change, and the last one opened comes back when the page
+  opens. If the browser won't store anything, a warning says so and points to Copy state.
+- The name of the open puzzle is a clearly visible "Name" field next to the title.
+- "My puzzles" lists them all, most recently changed first, with their answer counts. The open one
+  has a highlighted background. Each can be opened, renamed in place (Enter or clicking away
+  saves, Esc cancels), duplicated, or deleted after a confirm. Deleting the last one leaves one
+  empty puzzle. Renaming doesn't count as a change, so the list doesn't reorder.
+- The My puzzles and Paste state panels close on Esc or a click outside them.
 - "New puzzle" and "Load sample" add a puzzle to the list and open it. Nothing is replaced.
+- A new puzzle (from New puzzle, Load sample, Paste state or Duplicate) whose name is taken gets
+  the lowest free number: "Untitled puzzle (1)", "Quiz 18 (2)". Renaming doesn't add numbers.
 - "Copy state" puts the open puzzle and its name on the clipboard as JSON. "Paste state" adds a
   pasted puzzle to the list as a new puzzle. A broken or incomplete paste shows what's wrong and
   changes nothing. This is how a puzzle moves to another computer or gets kept somewhere safe.
