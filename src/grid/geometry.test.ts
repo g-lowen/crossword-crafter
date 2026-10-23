@@ -10,8 +10,17 @@ describe('cellOrigin', () => {
 describe('turnArrow', () => {
   it('comes in along the old direction and leaves along the new one', () => {
     const arrow = turnArrow({ row: 0, col: 0 }, 'right', 'down')
-    expect(arrow.line).toBe('6.3,7.6 7.6,7.6 7.6,8.9')
-    expect(arrow.head).toBe('7.6,9.6 6.95,8.7 8.25,8.7')
+    expect(arrow.line).toBe('7.2,1.5 8.5,1.5 8.5,2.8')
+    expect(arrow.head).toBe('8.5,3.5 7.85,2.6 9.15,2.6')
+  })
+
+  it('puts the bend in the matching corner of the cell', () => {
+    const bend = (from: Parameters<typeof turnArrow>[1], to: Parameters<typeof turnArrow>[2]) =>
+      turnArrow({ row: 1, col: 1 }, from, to).line.split(' ')[1]
+    expect(bend('down', 'right')).toBe('11.5,18.5') // ↳ bottom-left
+    expect(bend('up', 'right')).toBe('11.5,11.5') // ↱ top-left
+    expect(bend('down', 'left')).toBe('18.5,18.5') // ↲ bottom-right
+    expect(bend('right', 'down')).toBe('18.5,11.5') // ↴ top-right
   })
 })
 

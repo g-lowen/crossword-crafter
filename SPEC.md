@@ -44,8 +44,11 @@ Clicking a cell selects that character of the answer and opens a panel above the
 crossing cell again switches to the other answer. Esc or a click on an empty spot closes it. The
 panel has:
 
-- Answer: direction, take off grid.
-- Turn here: none, or one of the two 90° directions.
+- Whole answer: direction, take off grid.
+- Turn here: one button per 90° direction. Clicking the active one again removes the turn.
+
+A turn arrow sits in the corner of the cell where its bend is: ↳ in the bottom-left, ↱ in the
+top-left, and so on.
 - Cell: "Wide space" for a space, or "Anagram letter" with its number for a letter.
 - Thick border: top, right, bottom, left of the selected cell.
 

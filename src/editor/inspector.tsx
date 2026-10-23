@@ -65,7 +65,7 @@ export function Inspector({ puzzle, layout, selection, dispatch, onClose }: Insp
 
       <div className="inspector-groups">
         <fieldset>
-          <legend>Answer</legend>
+          <legend>Whole answer</legend>
           <button type="button" onClick={() => dispatch({ type: 'toggle-direction', id })}>
             Direction {ARROW[answer.dir]}
           </button>
@@ -77,17 +77,17 @@ export function Inspector({ puzzle, layout, selection, dispatch, onClose }: Insp
         <fieldset>
           <legend>Turn here</legend>
           <div className="segmented" role="group" aria-label="Turn here">
-            <button type="button" aria-pressed={!turn} onClick={() => dispatch({ type: 'set-turn', id, atIndex: index, dir: null })}>
-              None
-            </button>
             {perpendicular(piece.dir).map((dir) => (
               <button
                 key={dir}
                 type="button"
                 aria-pressed={turn?.dir === dir}
                 aria-label={`Turn ${dir}`}
+                title={turn?.dir === dir ? 'Click again to remove the turn' : undefined}
                 disabled={isLast || isWide}
-                onClick={() => dispatch({ type: 'set-turn', id, atIndex: index, dir })}
+                onClick={() =>
+                  dispatch({ type: 'set-turn', id, atIndex: index, dir: turn?.dir === dir ? null : dir })
+                }
               >
                 {ARROW[dir]}
               </button>

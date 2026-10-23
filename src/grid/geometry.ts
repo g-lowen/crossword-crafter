@@ -37,11 +37,14 @@ export function cellOrigin(cell: CellRef): Point {
 }
 
 /**
- * A small bent arrow in the bottom-right corner of the cell where an answer turns. It comes in
- * along `from` and leaves along `to`.
+ * A small bent arrow in the cell where an answer turns. It comes in along `from` and leaves along
+ * `to`, and sits in the corner where its bend is: ↳ (down, then right) goes in the bottom-left
+ * corner, ↱ (up, then right) in the top-left, and so on.
  */
 export function turnArrow(cell: CellRef, from: Dir, to: Dir): { line: string; head: string } {
-  const corner = add(cellOrigin(cell), { x: 7.6, y: 7.6 })
+  const offset = CELL / 2 - 1.5
+  const center = add(cellOrigin(cell), { x: CELL / 2, y: CELL / 2 })
+  const corner = add(add(center, VECTOR[from], offset), VECTOR[to], -offset)
   const arm = 1.3
   const end = add(corner, VECTOR[to], arm)
   return {

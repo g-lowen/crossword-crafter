@@ -72,6 +72,15 @@ describe('Editor', () => {
       expect(container.querySelector('[data-cell="3,3"]')).not.toBeNull()
     })
 
+    it('removes a turn when its button is clicked again', () => {
+      const { container } = loadSampleAndClick('2,3')
+      fireEvent.click(screen.getByRole('button', { name: 'Turn down' }))
+      expect(screen.getByRole('button', { name: 'Turn down' })).toHaveAttribute('aria-pressed', 'true')
+      fireEvent.click(screen.getByRole('button', { name: 'Turn down' }))
+      expect(screen.getByRole('button', { name: 'Turn down' })).toHaveAttribute('aria-pressed', 'false')
+      expect(container.querySelectorAll('[data-turn-marker]')).toHaveLength(1)
+    })
+
     it('marks an anagram letter with the next number', () => {
       const { container } = loadSampleAndClick('2,3')
       fireEvent.click(screen.getByLabelText('Anagram letter'))
