@@ -76,8 +76,9 @@ top-left, and so on.
 
 ## Exports
 
-"Export images" opens a panel with the export settings, a preview of the first quiz image, and a
-"Download zip" button. Images are transparent PNGs of the whole A4 page, 2283 × 1654 pixels
+"Export images" opens a panel with "Export as" (Images (zip) or PowerPoint), the highlight
+settings, a preview of the first quiz image, and one download button. Sammy decides which format
+suits him; both contain the same images. Images are transparent PNGs of the whole A4 page, 2283 × 1654 pixels
 (200 dpi), so they stack exactly on top of each other in PowerPoint. Only answers on the grid get
 images; the panel lists the ones left out, and says when the puzzle has issues.
 
@@ -93,8 +94,16 @@ images; the panel lists the ones left out, and says when the puzzle has issues.
 3. **Correction images** (`correction/01-the-beatles.png`, …): one per answer, in list order. The
    skeleton with answers filled in cumulatively: image N shows answers 1 to N.
 
-The zip is named after the puzzle. The image rendering (`src/export/render-image.tsx`) is loaded
-only when Sammy downloads, because it pulls in `react-dom/server`.
+- **Images (zip):** the PNGs in the folders above.
+- **PowerPoint (.pptx):** a 16:9 deck (13.33 × 7.5 in) with one slide per image, in the same order.
+  Each image fills the slide height and is centred, in the same spot on every slide, so stepping
+  through the slides behaves like stacked images. The deck has the sections "Empty grid", "Quiz"
+  and "Correction", and each slide's notes say "Question 3: MADONNA" or "Answer 3: MADONNA".
+  Sammy can copy the slides into his own deck and add titles there.
+
+Both are named after the puzzle. The rendering (`src/export/render-image.tsx`, `react-dom/server`)
+and the deck builder (`src/export/export-pptx.ts`, `pptxgenjs`) are loaded only when Sammy
+downloads, to keep the editor small.
 
 ## Saving and My puzzles
 
@@ -181,10 +190,8 @@ component draws the editor (page background, guide lines, conflict warnings) and
 
 ## Open decisions
 
-- **Exporting a `.pptx`.** A generated deck can contain the same PNGs, one per slide, already
-  stacked in order. It costs no flexibility: Sammy can still copy slides into his own deck and add
-  titles. It saves placing 20+ images by hand. Plan: ship the PNG zip first; add the `.pptx`
-  (e.g. with `pptxgenjs`) now that PNG rendering exists. Up next for discussion.
+- **Export format.** Both a zip and a PowerPoint deck exist; see which one Sammy uses. Possible
+  follow-ups: 4:3 slides, or putting everything on one slide with appear animations.
 - **Page margins.** Whether the 29 × 21 grid needs a margin for printing.
 - **Special characters** in answers. Wait for Sammy's feedback.
 - **Download backup.** A button that downloads all puzzles as one file, and a way to load it back.

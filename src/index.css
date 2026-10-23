@@ -511,3 +511,13 @@ button {
   font-size: 0.9rem;
   color: #e65100;
 }
+
+.export-format {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.export-settings .hint {
+  margin: 0;
+}

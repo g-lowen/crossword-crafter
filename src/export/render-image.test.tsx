@@ -22,7 +22,7 @@ const letters = (doc: Document) => [...doc.querySelectorAll('[data-letter]')].ma
 
 describe('renderImageSvg', () => {
   it('is a standalone SVG at the export size, with a transparent background', () => {
-    const doc = parse(renderImageSvg(puzzle, layout, { path: 'skeleton.png', revealed: [] }))
+    const doc = parse(renderImageSvg(puzzle, layout, { path: 'skeleton.png', part: 'skeleton', label: '', revealed: [] }))
     const svg = doc.documentElement
     expect(svg.getAttribute('xmlns')).toBe('http://www.w3.org/2000/svg')
     expect(svg.getAttribute('width')).toBe(String(IMAGE_SIZE.width))
@@ -35,11 +35,11 @@ describe('renderImageSvg', () => {
   })
 
   it('shows no letters on the skeleton', () => {
-    expect(letters(parse(renderImageSvg(puzzle, layout, { path: 'skeleton.png', revealed: [] })))).toEqual([])
+    expect(letters(parse(renderImageSvg(puzzle, layout, { path: 'skeleton.png', part: 'skeleton', label: '', revealed: [] })))).toEqual([])
   })
 
   it('outlines the asked answer in the highlight color, without letters', () => {
-    const doc = parse(renderImageSvg(puzzle, layout, { path: 'quiz/01.png', revealed: [], highlightId: 'cat' }))
+    const doc = parse(renderImageSvg(puzzle, layout, { path: 'quiz/01.png', part: 'quiz' as const, label: '', revealed: [], highlightId: 'cat' }))
     const highlight = doc.querySelector('[data-highlight="cat"]')!
     expect(highlight.querySelectorAll('line')).toHaveLength(8)
     expect(highlight.querySelector('line')!.getAttribute('stroke')).toBe('#ff00aa')
@@ -47,16 +47,16 @@ describe('renderImageSvg', () => {
   })
 
   it('adds the start arrow only when asked to', () => {
-    const image = { path: 'quiz/01.png', revealed: [], highlightId: 'cat' }
+    const image = { path: 'quiz/01.png', part: 'quiz' as const, label: '', revealed: [], highlightId: 'cat' }
     expect(parse(renderImageSvg(puzzle, layout, image)).querySelector('[data-pointer-arrow]')).toBeNull()
     const withArrow = { ...puzzle, includeStartArrow: true }
     expect(parse(renderImageSvg(withArrow, layout, image)).querySelector('[data-pointer-arrow]')).not.toBeNull()
   })
 
   it('fills in only the revealed answers, including shared letters', () => {
-    const doc = parse(renderImageSvg(puzzle, layout, { path: 'correction/01.png', revealed: ['cat'] }))
+    const doc = parse(renderImageSvg(puzzle, layout, { path: 'correction/01.png', part: 'correction', label: '', revealed: ['cat'] }))
     expect(letters(doc)).toEqual(['A', 'C', 'T'])
-    const both = parse(renderImageSvg(puzzle, layout, { path: 'correction/02.png', revealed: ['cat', 'bad'] }))
+    const both = parse(renderImageSvg(puzzle, layout, { path: 'correction/02.png', part: 'correction', label: '', revealed: ['cat', 'bad'] }))
     expect(letters(both)).toEqual(['A', 'B', 'C', 'D', 'T'])
   })
 })

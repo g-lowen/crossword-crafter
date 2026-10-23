@@ -53,18 +53,26 @@ async function svgToPng(svg: string): Promise<Uint8Array> {
   }
 }
 
-/** Renders every image in the plan and zips them. Reports progress as (done, total). */
-export async function buildExportZip(
+export type RenderedImage = ExportImage & { png: Uint8Array }
+
+/** Renders every image in the plan, in order. Reports progress as (done, total). */
+export async function renderAllImages(
   puzzle: Puzzle,
   layout: Layout,
   onProgress: (done: number, total: number) => void,
-): Promise<Blob> {
+): Promise<RenderedImage[]> {
   const { images } = exportPlan(puzzle)
-  const files: Record<string, Uint8Array> = {}
+  const rendered: RenderedImage[] = []
   for (const [i, image] of images.entries()) {
-    files[image.path] = await svgToPng(renderImageSvg(puzzle, layout, image))
+    rendered.push({ ...image, png: await svgToPng(renderImageSvg(puzzle, layout, image)) })
     onProgress(i + 1, images.length)
   }
+  return rendered
+}
+
+/** All images in one zip, in the folders from the plan. */
+export function buildZip(images: RenderedImage[]): Blob {
+  const files = Object.fromEntries(images.map((image) => [image.path, image.png]))
   // PNGs are already compressed, so store them as they are.
   const zip = zipSync(files, { level: 0 })
   return new Blob([zip], { type: 'application/zip' })

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Puzzle } from '../model/puzzle'
 import { emptyPuzzle } from '../model/puzzle-reducer'
-import { exportPlan, fileSlug, zipFileName } from './export-plan'
+import { exportFileName, exportPlan, fileSlug } from './export-plan'
 
 const puzzle: Puzzle = {
   ...emptyPuzzle,
@@ -16,11 +16,28 @@ describe('exportPlan', () => {
   it('makes a skeleton, then quiz and correction images for placed answers in list order', () => {
     const { images } = exportPlan(puzzle)
     expect(images).toEqual([
-      { path: 'skeleton.png', revealed: [] },
-      { path: 'quiz/01-the-beatles.png', revealed: [], highlightId: 'a' },
-      { path: 'quiz/02-håkan-hellström.png', revealed: [], highlightId: 'c' },
-      { path: 'correction/01-the-beatles.png', revealed: ['a'] },
-      { path: 'correction/02-håkan-hellström.png', revealed: ['a', 'c'] },
+      { path: 'skeleton.png', part: 'skeleton', label: 'Empty grid', revealed: [] },
+      {
+        path: 'quiz/01-the-beatles.png',
+        part: 'quiz',
+        label: 'Question 1: THE BEATLES',
+        revealed: [],
+        highlightId: 'a',
+      },
+      {
+        path: 'quiz/02-håkan-hellström.png',
+        part: 'quiz',
+        label: 'Question 2: HÅKAN HELLSTRÖM',
+        revealed: [],
+        highlightId: 'c',
+      },
+      { path: 'correction/01-the-beatles.png', part: 'correction', label: 'Answer 1: THE BEATLES', revealed: ['a'] },
+      {
+        path: 'correction/02-håkan-hellström.png',
+        part: 'correction',
+        label: 'Answer 2: HÅKAN HELLSTRÖM',
+        revealed: ['a', 'c'],
+      },
     ])
   })
 
@@ -41,10 +58,10 @@ describe('fileSlug', () => {
   })
 })
 
-describe('zipFileName', () => {
+describe('exportFileName', () => {
   it('uses the puzzle name without characters Windows rejects', () => {
-    expect(zipFileName('Quiz 18')).toBe('Quiz 18.zip')
-    expect(zipFileName('Quiz: 18/19?')).toBe('Quiz 18 19.zip')
-    expect(zipFileName('  ')).toBe('crossword.zip')
+    expect(exportFileName('Quiz 18', 'zip')).toBe('Quiz 18.zip')
+    expect(exportFileName('Quiz: 18/19?', 'pptx')).toBe('Quiz 18 19.pptx')
+    expect(exportFileName('  ', 'zip')).toBe('crossword.zip')
   })
 })

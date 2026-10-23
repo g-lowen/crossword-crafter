@@ -3,7 +3,7 @@ import { GridView } from '../grid/grid-view'
 import { layoutPuzzle } from '../layout/layout'
 import type { Puzzle } from '../model/puzzle'
 import type { PuzzleAction } from '../model/puzzle-reducer'
-import { exportPlan, zipFileName } from './export-plan'
+import { exportFileName, exportPlan } from './export-plan'
 
 type ExportPanelProps = {
   puzzle: Puzzle
@@ -11,7 +11,26 @@ type ExportPanelProps = {
   dispatch: (action: PuzzleAction) => void
 }
 
+type Format = 'zip' | 'pptx'
+
 type Progress = { done: number; total: number } | null
+
+const FORMATS: { value: Format; label: string; description: string; button: string }[] = [
+  {
+    value: 'zip',
+    label: 'Images (zip)',
+    description:
+      'Transparent PNGs of the whole A4 page in quiz and correction folders, so they line up exactly when stacked in PowerPoint.',
+    button: 'Download zip',
+  },
+  {
+    value: 'pptx',
+    label: 'PowerPoint',
+    description:
+      'A 16:9 deck with one slide per image, all in the same spot: the empty grid, then the quiz, then the correction. The notes say which question each slide is.',
+    button: 'Download PowerPoint',
+  },
+]
 
 /** Settings for the exported images, a preview, and the download. */
 export function ExportPanel({ puzzle, name, dispatch }: ExportPanelProps) {
@@ -19,19 +38,27 @@ export function ExportPanel({ puzzle, name, dispatch }: ExportPanelProps) {
   const { images, leftOut } = exportPlan(puzzle)
   const quizCount = images.filter((image) => image.highlightId).length
   const firstQuiz = images.find((image) => image.highlightId)
+  const [format, setFormat] = useState<Format>('zip')
   const [progress, setProgress] = useState<Progress>(null)
   const [error, setError] = useState<string | null>(null)
+  const chosen = FORMATS.find((f) => f.value === format)!
 
   async function download() {
     setError(null)
     setProgress({ done: 0, total: images.length })
     try {
-      // Loaded on demand: rendering pulls in react-dom/server, which the editor doesn't need.
-      const { buildExportZip, downloadBlob } = await import('./render-image')
-      const zip = await buildExportZip(puzzle, layout, (done, total) => setProgress({ done, total }))
-      downloadBlob(zip, zipFileName(name))
+      // Loaded on demand: rendering pulls in react-dom/server, and the deck pptxgenjs, which the
+      // editor doesn't need.
+      const { buildZip, downloadBlob, renderAllImages } = await import('./render-image')
+      const rendered = await renderAllImages(puzzle, layout, (done, total) => setProgress({ done, total }))
+      if (format === 'zip') {
+        downloadBlob(buildZip(rendered), exportFileName(name, 'zip'))
+      } else {
+        const { buildPptx } = await import('./export-pptx')
+        downloadBlob(await buildPptx(rendered, name), exportFileName(name, 'pptx'))
+      }
     } catch (e) {
-      setError(`Couldn't create the images: ${e instanceof Error ? e.message : String(e)}`)
+      setError(`Couldn't create the export: ${e instanceof Error ? e.message : String(e)}`)
     } finally {
       setProgress(null)
     }
@@ -40,11 +67,24 @@ export function ExportPanel({ puzzle, name, dispatch }: ExportPanelProps) {
   return (
     <div className="menu-panel export-panel" role="dialog" aria-label="Export images">
       <strong>Export images</strong>
-      <p className="hint">
-        Transparent PNGs of the whole A4 page, so they line up exactly when stacked in PowerPoint.
-      </p>
 
       <div className="export-settings">
+        <div className="export-format">
+          <span>Export as</span>
+          <div className="segmented" role="group" aria-label="Export as">
+            {FORMATS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                aria-pressed={format === f.value}
+                onClick={() => setFormat(f.value)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="hint">{chosen.description}</p>
         <label>
           Highlight color{' '}
           <input
@@ -82,7 +122,8 @@ export function ExportPanel({ puzzle, name, dispatch }: ExportPanelProps) {
 
       <p className="export-summary">
         1 empty grid, {quizCount} quiz {quizCount === 1 ? 'image' : 'images'} and {quizCount} correction{' '}
-        {quizCount === 1 ? 'image' : 'images'}.
+        {quizCount === 1 ? 'image' : 'images'}
+        {format === 'pptx' ? `, one slide each (${images.length} slides).` : '.'}
       </p>
       {leftOut.length > 0 && (
         <p className="export-warning">
@@ -103,7 +144,7 @@ export function ExportPanel({ puzzle, name, dispatch }: ExportPanelProps) {
 
       <div className="panel-actions">
         <button type="button" className="primary-button" onClick={download} disabled={progress !== null}>
-          {progress ? `Creating images… ${progress.done}/${progress.total}` : 'Download zip'}
+          {progress ? `Creating images… ${progress.done}/${progress.total}` : chosen.button}
         </button>
       </div>
     </div>
