@@ -4,7 +4,7 @@ import type { Layout, Piece } from '../layout/layout'
 import { cellKey } from '../layout/layout'
 import { A4_LANDSCAPE_GRID, type GridSize } from '../model/page'
 import type { Puzzle } from '../model/puzzle'
-import { CELL, cellOrigin, separatorLine, turnArrow, wideSpaceShape } from './geometry'
+import { CELL, cellOrigin, outlineSegments, pointerArrow, separatorLine, turnArrow, wideSpaceShape } from './geometry'
 
 type GridViewProps = {
   puzzle: Puzzle
@@ -12,6 +12,12 @@ type GridViewProps = {
   /** The editor adds a page background, guide lines and conflict warnings. Exports get none of them. */
   mode: 'editor' | 'export'
   showLetters: boolean
+  /** When set, only these answers' letters are shown. Used for the correction images. */
+  revealedAnswers?: ReadonlySet<string>
+  /** Marks one answer with a thick colored outline, optionally with an arrow to its start. */
+  highlight?: { answerId: string; color: string; startArrow: boolean }
+  /** Pixel size for exported images. The editor scales with the page instead. */
+  size?: { width: number; height: number }
   grid?: GridSize
   /** Where an answer would land while it is being dragged. Editor only. */
   preview?: { pieces: Piece[]; color: string }
@@ -29,6 +35,9 @@ export function GridView({
   layout,
   mode,
   showLetters,
+  revealedAnswers,
+  highlight,
+  size,
   grid = A4_LANDSCAPE_GRID,
   preview,
   children,
@@ -45,8 +54,8 @@ export function GridView({
     <svg
       className="grid-view"
       viewBox={`0 0 ${width} ${height}`}
-      width={`${width}mm`}
-      height={`${height}mm`}
+      width={size ? size.width : `${width}mm`}
+      height={size ? size.height : `${height}mm`}
       xmlns="http://www.w3.org/2000/svg"
       role="img"
       aria-label="Crossword grid"
@@ -86,7 +95,9 @@ export function GridView({
 
       {showLetters &&
         cells.map((pieces) => {
-          const letter = firstLetter(pieces)
+          const letter = pieces.find(
+            (piece) => piece.kind === 'letter' && (!revealedAnswers || revealedAnswers.has(piece.answerId)),
+          )
           if (!letter) return null
           const { x, y } = cellOrigin(letter)
           return (
@@ -176,6 +187,8 @@ export function GridView({
         )
       })}
 
+      {highlight && <Highlight layout={layout} {...highlight} />}
+
       {mode === 'editor' &&
         [...conflictKeys].map((key) => {
           const [row, col] = key.split(',').map(Number)
@@ -202,8 +215,28 @@ export function GridView({
   )
 }
 
-function firstLetter(pieces: Piece[]): Piece | undefined {
-  return pieces.find((piece) => piece.kind === 'letter')
+function Highlight({
+  layout,
+  answerId,
+  color,
+  startArrow,
+}: { layout: Layout } & NonNullable<GridViewProps['highlight']>) {
+  const pieces = [...layout.cells.values()].flat().filter((piece) => piece.answerId === answerId)
+  const start = layout.startMarkers.find((marker) => marker.answerId === answerId)
+  const arrow = startArrow && start ? pointerArrow(start.cell, start.dir) : null
+  return (
+    <g data-highlight={answerId}>
+      {outlineSegments(pieces).map((segment, i) => (
+        <line key={i} {...segment} stroke={color} strokeWidth={1.4} strokeLinecap="square" />
+      ))}
+      {arrow && (
+        <g data-pointer-arrow="">
+          <polyline points={arrow.line} fill="none" stroke={color} strokeWidth={1.8} />
+          <polygon points={arrow.head} fill={color} />
+        </g>
+      )}
+    </g>
+  )
 }
 
 function Preview({ pieces, color }: { pieces: Piece[]; color: string }) {

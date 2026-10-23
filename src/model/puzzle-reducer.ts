@@ -27,6 +27,8 @@ export type PuzzleAction =
   | { type: 'renumber-anagram'; order: { answerId: string; letterIndex: number }[] }
   | { type: 'set-show-anagram-numbers'; value: boolean }
   | { type: 'toggle-separator'; separator: Separator }
+  | { type: 'set-highlight-color'; color: string }
+  | { type: 'set-include-start-arrow'; value: boolean }
 
 const sameAnagramCell = (a: AnagramCell, b: { answerId: string; letterIndex: number }) =>
   a.answerId === b.answerId && a.letterIndex === b.letterIndex
@@ -146,5 +148,11 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
           : [...puzzle.separators, action.separator],
       }
     }
+
+    case 'set-highlight-color':
+      return { ...puzzle, highlightColor: action.color }
+
+    case 'set-include-start-arrow':
+      return { ...puzzle, includeStartArrow: action.value }
   }
 }

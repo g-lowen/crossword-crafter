@@ -4,6 +4,7 @@ import { parsePuzzle, serializePuzzle } from '../model/persistence'
 import type { Puzzle } from '../model/puzzle'
 import { emptyPuzzle } from '../model/puzzle-reducer'
 import { samplePuzzle } from '../model/sample-puzzle'
+import { ExportPanel } from '../export/export-panel'
 import { PuzzleList } from './puzzle-list'
 
 type PuzzleMenuProps = {
@@ -11,11 +12,11 @@ type PuzzleMenuProps = {
   dispatch: Dispatch<LibraryAction>
 }
 
-type Panel = 'list' | 'paste' | null
+type Panel = 'list' | 'paste' | 'export' | null
 
 const now = () => new Date().toISOString()
 
-/** Starting puzzles, switching between them, and moving one between computers as text. */
+/** Starting puzzles, switching between them, moving one between computers as text, and exporting images. */
 export function PuzzleMenu({ library, dispatch }: PuzzleMenuProps) {
   const [status, setStatus] = useState<string | null>(null)
   const [panel, setPanel] = useState<Panel>(null)
@@ -77,6 +78,14 @@ export function PuzzleMenu({ library, dispatch }: PuzzleMenuProps) {
       <button type="button" onClick={() => add('Sample puzzle', samplePuzzle)}>
         Load sample
       </button>
+      <button
+        type="button"
+        className="primary-button"
+        onClick={() => toggle('export')}
+        aria-expanded={panel === 'export'}
+      >
+        Export images
+      </button>
       {status && (
         <span className="menu-status" role="status">
           {status}
@@ -84,6 +93,13 @@ export function PuzzleMenu({ library, dispatch }: PuzzleMenuProps) {
       )}
       {panel === 'list' && (
         <PuzzleList library={library} dispatch={dispatch} onClose={() => setPanel(null)} />
+      )}
+      {panel === 'export' && (
+        <ExportPanel
+          puzzle={current.puzzle}
+          name={current.name}
+          dispatch={(action) => dispatch({ type: 'edit', action, now: now() })}
+        />
       )}
       {panel === 'paste' && (
         <PastePanel

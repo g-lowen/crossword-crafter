@@ -72,6 +72,41 @@ export function wideSpaceShape(
   }
 }
 
+type Segment = { x1: number; y1: number; x2: number; y2: number }
+
+/**
+ * The outer edges of a group of cells: every cell edge that isn't shared with another cell in the
+ * group. Drawn together they outline the whole answer as one shape, turns included.
+ */
+export function outlineSegments(cells: CellRef[]): Segment[] {
+  const keys = new Set(cells.map((cell) => `${cell.row},${cell.col}`))
+  const has = (row: number, col: number) => keys.has(`${row},${col}`)
+  const segments: Segment[] = []
+  for (const key of keys) {
+    const [row, col] = key.split(',').map(Number)
+    const x = col * CELL
+    const y = row * CELL
+    if (!has(row - 1, col)) segments.push({ x1: x, y1: y, x2: x + CELL, y2: y })
+    if (!has(row + 1, col)) segments.push({ x1: x, y1: y + CELL, x2: x + CELL, y2: y + CELL })
+    if (!has(row, col - 1)) segments.push({ x1: x, y1: y, x2: x, y2: y + CELL })
+    if (!has(row, col + 1)) segments.push({ x1: x + CELL, y1: y, x2: x + CELL, y2: y + CELL })
+  }
+  return segments
+}
+
+/**
+ * A big arrow pointing at an answer's first cell from the cell before it. It's only shown while the
+ * answer is asked, so it may cover other cells.
+ */
+export function pointerArrow(start: CellRef, dir: Dir): { line: string; head: string } {
+  const center = add(cellOrigin(start), { x: CELL / 2, y: CELL / 2 })
+  const tip = add(center, VECTOR[dir], -CELL / 2 - 0.6)
+  return {
+    line: points(add(tip, VECTOR[dir], -14), add(tip, VECTOR[dir], -3)),
+    head: arrowHead(tip, dir, 4, 2.6),
+  }
+}
+
 /** The shared edge of two adjacent cells, or null when they are not adjacent. */
 export function separatorLine(separator: Separator): { x1: number; y1: number; x2: number; y2: number } | null {
   const { a, b } = separator

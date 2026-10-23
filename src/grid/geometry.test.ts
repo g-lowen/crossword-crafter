@@ -1,5 +1,37 @@
 import { describe, expect, it } from 'vitest'
-import { cellOrigin, separatorLine, turnArrow, wideSpaceShape } from './geometry'
+import { cellOrigin, outlineSegments, pointerArrow, separatorLine, turnArrow, wideSpaceShape } from './geometry'
+
+describe('outlineSegments', () => {
+  it('outlines a straight answer as one rectangle', () => {
+    const segments = outlineSegments([
+      { row: 0, col: 0 },
+      { row: 0, col: 1 },
+    ])
+    expect(segments).toHaveLength(6)
+    expect(segments).not.toContainEqual({ x1: 10, y1: 0, x2: 10, y2: 10 })
+  })
+
+  it('follows a turn', () => {
+    const segments = outlineSegments([
+      { row: 0, col: 0 },
+      { row: 0, col: 1 },
+      { row: 1, col: 1 },
+    ])
+    expect(segments).toHaveLength(8)
+  })
+
+  it('counts a cell listed twice once', () => {
+    expect(outlineSegments([{ row: 0, col: 0 }, { row: 0, col: 0 }])).toHaveLength(4)
+  })
+})
+
+describe('pointerArrow', () => {
+  it('ends just before the start cell and points in the reading direction', () => {
+    const arrow = pointerArrow({ row: 0, col: 2 }, 'right')
+    expect(arrow.line).toBe('5.4,5 16.4,5')
+    expect(arrow.head).toBe('19.4,5 15.4,7.6 15.4,2.4')
+  })
+})
 
 describe('cellOrigin', () => {
   it('uses 10 mm cells', () => {

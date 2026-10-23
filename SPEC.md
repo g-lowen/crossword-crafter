@@ -76,19 +76,25 @@ top-left, and so on.
 
 ## Exports
 
-Images are transparent PNGs at a fixed size, so they stack exactly on top of each other in
-PowerPoint.
+"Export images" opens a panel with the export settings, a preview of the first quiz image, and a
+"Download zip" button. Images are transparent PNGs of the whole A4 page, 2283 × 1654 pixels
+(200 dpi), so they stack exactly on top of each other in PowerPoint. Only answers on the grid get
+images; the panel lists the ones left out, and says when the puzzle has issues.
 
-1. **Skeleton:** the empty grid with spaces, turn arrows, separators, red anagram borders, and the
-   anagram numbers and bar if enabled.
-2. **Quiz images:** one per answer, in list order. The skeleton with that answer marked by a thick
-   border in a color Sammy picks. Only the current answer is marked.
-   - Sammy normally adds the pointer arrow to the start of the answer himself in PowerPoint.
-     Checkbox "Include start arrow" adds it to the image instead.
-3. **Correction images:** one per answer, in list order. The skeleton with answers filled in
-   cumulatively: image N shows answers 1 to N.
+1. **Skeleton** (`skeleton.png`): the empty grid with spaces, turn arrows, separators, red anagram
+   borders, and the anagram numbers and bar if enabled.
+2. **Quiz images** (`quiz/01-the-beatles.png`, …): one per answer, in list order. The skeleton
+   with that answer outlined as one shape in the highlight color Sammy picks. Only the current
+   answer is marked.
+   - Sammy normally adds the pointer arrow to the start of the answer himself in PowerPoint. The
+     checkbox "Arrow to the start of the answer in quiz images" draws one in the cell before the
+     start instead. It may cover other cells, and is cut off for an answer starting at the page
+     edge.
+3. **Correction images** (`correction/01-the-beatles.png`, …): one per answer, in list order. The
+   skeleton with answers filled in cumulatively: image N shows answers 1 to N.
 
-Delivered as one zip with numbered file names.
+The zip is named after the puzzle. The image rendering (`src/export/render-image.tsx`) is loaded
+only when Sammy downloads, because it pulls in `react-dom/server`.
 
 ## Saving and My puzzles
 
@@ -171,14 +177,14 @@ component draws the editor (page background, guide lines, conflict warnings) and
 4. Answer import and drag and drop onto the grid.
 5. Editing: turns, wide spaces, separators, anagram cells and numbering.
 6. Save and load: autosave, My puzzles, Copy state, Paste state.
-7. PNG exports as a zip.
+7. PNG exports as a zip: skeleton, quiz and correction images.
 
 ## Open decisions
 
 - **Exporting a `.pptx`.** A generated deck can contain the same PNGs, one per slide, already
   stacked in order. It costs no flexibility: Sammy can still copy slides into his own deck and add
   titles. It saves placing 20+ images by hand. Plan: ship the PNG zip first; add the `.pptx`
-  (e.g. with `pptxgenjs`) once PNG rendering exists. Revisit after step 7.
+  (e.g. with `pptxgenjs`) now that PNG rendering exists. Up next for discussion.
 - **Page margins.** Whether the 29 × 21 grid needs a margin for printing.
 - **Special characters** in answers. Wait for Sammy's feedback.
 - **Download backup.** A button that downloads all puzzles as one file, and a way to load it back.
