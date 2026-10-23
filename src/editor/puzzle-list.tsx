@@ -43,7 +43,18 @@ export function PuzzleList({ library, dispatch, onClose }: PuzzleListProps) {
                     }}
                   />
                 ) : (
-                  <span className="puzzle-entry-name">{name}</span>
+                  <span className="puzzle-entry-title">
+                    <span className="puzzle-entry-name">{name}</span>
+                    <button
+                      type="button"
+                      className="icon-button pen-button"
+                      aria-label={`Rename ${name}`}
+                      title="Rename"
+                      onClick={() => setRenamingId(entry.id)}
+                    >
+                      <PenIcon />
+                    </button>
+                  </span>
                 )}
                 <span className="puzzle-entry-meta">
                   {count} {count === 1 ? 'answer' : 'answers'} · {formatter.format(new Date(entry.updatedAt))}
@@ -61,9 +72,6 @@ export function PuzzleList({ library, dispatch, onClose }: PuzzleListProps) {
                   Open
                 </button>
               )}
-              <button type="button" aria-label={`Rename ${name}`} onClick={() => setRenamingId(entry.id)}>
-                Rename
-              </button>
               <button
                 type="button"
                 aria-label={`Duplicate ${name}`}
@@ -87,6 +95,21 @@ export function PuzzleList({ library, dispatch, onClose }: PuzzleListProps) {
         })}
       </ul>
     </div>
+  )
+}
+
+function PenIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+      <path
+        d="M11.3 1.7a1.5 1.5 0 0 1 2.1 0l.9.9a1.5 1.5 0 0 1 0 2.1L5.6 13.4 2 14l.6-3.6 8.7-8.7Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <path d="M9.8 3.2l3 3" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
   )
 }
 

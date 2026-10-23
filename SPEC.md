@@ -99,8 +99,8 @@ There is no backend. Everything is saved in the browser Sammy uses, and nowhere 
   opens. If the browser won't store anything, a warning says so and points to Copy state.
 - The name of the open puzzle is a clearly visible "Name" field next to the title.
 - "My puzzles" lists them all, most recently changed first, with their answer counts. The open one
-  has a highlighted background. Each can be opened, renamed in place (Enter or clicking away
-  saves, Esc cancels), duplicated, or deleted after a confirm. Deleting the last one leaves one
+  has a highlighted background. Each can be opened, renamed in place with the pen next to its
+  name (Enter or clicking away saves, Esc cancels), duplicated, or deleted after a confirm. Deleting the last one leaves one
   empty puzzle. Renaming doesn't count as a change, so the list doesn't reorder.
 - The My puzzles and Paste state panels close on Esc or a click outside them.
 - "New puzzle" and "Load sample" add a puzzle to the list and open it. Nothing is replaced.
