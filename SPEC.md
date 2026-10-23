@@ -97,7 +97,8 @@ There is no backend. Everything is saved in the browser Sammy uses, and nowhere 
 - Sammy can keep several puzzles. Each has a name and a last-changed time. The open puzzle
   autosaves to `localStorage` on every change, and the last one opened comes back when the page
   opens. If the browser won't store anything, a warning says so and points to Copy state.
-- The name of the open puzzle is a clearly visible "Name" field next to the title.
+- The name of the open puzzle is a clearly visible "Name" field at the start of the header. The
+  page has no app title; the browser tab is still called "Crossword Crafter".
 - "My puzzles" lists them all, most recently changed first, with their answer counts and last-edited time (labelled "Last edited" on hover). The open one
   has a highlighted background. Each can be opened, renamed in place with the pen next to its
   name (Enter or clicking away saves, Esc cancels), duplicated, or deleted after a confirm. Deleting the last one leaves one

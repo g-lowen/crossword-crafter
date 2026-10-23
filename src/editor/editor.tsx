@@ -156,7 +156,6 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
     >
       <div className="editor">
         <header className="app-header">
-          <h1>Crossword Crafter</h1>
           {nameField}
           <label>
             <input type="checkbox" checked={showLetters} onChange={(e) => setShowLetters(e.target.checked)} /> Show

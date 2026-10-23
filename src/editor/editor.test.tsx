@@ -151,7 +151,7 @@ describe('Editor', () => {
       expect(listIsOpen()).toBe(false)
 
       openList()
-      fireEvent.pointerDown(screen.getByRole('heading', { name: 'Crossword Crafter' }))
+      fireEvent.pointerDown(screen.getByRole('img', { name: 'Crossword grid' }))
       expect(listIsOpen()).toBe(false)
     })
 
