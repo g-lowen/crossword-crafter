@@ -39,9 +39,13 @@ import { selectAt, validSelection, type Selection } from './selection'
 
 const grid = A4_LANDSCAPE_GRID
 
+type Point = { x: number; y: number }
+
+const contains = (rect: DOMRect, point: Point) =>
+  point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom
+
 /** Prefer list items over the list itself, so dropping on an item reorders. */
-const collisionDetection: CollisionDetection = (args) => {
-  const hits = pointerWithin(args)
+function preferListItems<T extends { id: string | number }>(hits: T[]): T[] {
   const item = hits.find((hit) => isListItemId(String(hit.id)))
   return item ? [item] : hits
 }
@@ -62,6 +66,38 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
   const [previewStart, setPreviewStart] = useState<CellRef | null>(null)
   const [rawSelection, setSelection] = useState<Selection | null>(null)
   const pageRef = useRef<HTMLDivElement | null>(null)
+
+  // The real pointer position during a mouse drag. dnd-kit's own position is off by the answer
+  // list's scroll when an answer is dragged out of a scrolled list, so drops and hit tests use this
+  // instead. Null during keyboard drags, which fall back to dnd-kit.
+  const pointerRef = useRef<Point | null>(null)
+  const dragOriginRef = useRef<Point | null>(null)
+  useEffect(() => {
+    const onPointerMove = (event: PointerEvent) => {
+      if (dragOriginRef.current) pointerRef.current = { x: event.clientX, y: event.clientY }
+    }
+    window.addEventListener('pointermove', onPointerMove, { capture: true })
+    return () => window.removeEventListener('pointermove', onPointerMove, { capture: true })
+  }, [])
+
+  /**
+   * What's under the real pointer. The grid and the list are measured now, so scrolling can't put
+   * them out of step. List rows use the positions dnd-kit measured when the drag started, because
+   * their current positions slide aside to make room for the dragged answer.
+   */
+  const collisionDetection: CollisionDetection = (args) => {
+    const pointer = pointerRef.current
+    if (!pointer) return preferListItems(pointerWithin(args))
+    const hits = args.droppableContainers
+      .filter((container) => {
+        const rect = isListItemId(String(container.id))
+          ? args.droppableRects.get(container.id)
+          : container.node.current?.getBoundingClientRect()
+        return rect !== undefined && contains(rect as DOMRect, pointer)
+      })
+      .map((container) => ({ id: container.id, data: { droppableContainer: container, value: 0 } }))
+    return preferListItems(hits)
+  }
 
   const layout = useMemo(() => layoutPuzzle(puzzle, grid), [puzzle])
   const piecesByAnswer = useMemo(() => {
@@ -99,16 +135,30 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
     const answer = puzzle.answers.find((a) => a.id === data.answerId)
     if (!answer) return null
 
+    const pointer = pointerRef.current
+    const origin = dragOriginRef.current
+    const delta = pointer && origin ? { x: pointer.x - origin.x, y: pointer.y - origin.y } : event.delta
+
     if (data.source === 'grid' && answer.start) {
-      return moveByPixels(answer.start, event.delta, rect.width / grid.columns)
+      return moveByPixels(answer.start, delta, rect.width / grid.columns)
     }
-    const pointer = event.activatorEvent as PointerEvent
-    if (typeof pointer.clientX !== 'number') return null
-    return cellAtPoint(rect, grid, { x: pointer.clientX + event.delta.x, y: pointer.clientY + event.delta.y })
+    if (pointer) return cellAtPoint(rect, grid, pointer)
+    const activator = event.activatorEvent as PointerEvent
+    if (typeof activator.clientX !== 'number') return null
+    return cellAtPoint(rect, grid, { x: activator.clientX + delta.x, y: activator.clientY + delta.y })
   }
 
   function handleDragStart(event: DragStartEvent) {
     setDragging((event.active.data.current as DragData | undefined) ?? null)
+    const activator = event.activatorEvent as PointerEvent
+    const start = typeof activator.clientX === 'number' ? { x: activator.clientX, y: activator.clientY } : null
+    dragOriginRef.current = start
+    pointerRef.current = start
+  }
+
+  function endPointerTracking() {
+    dragOriginRef.current = null
+    pointerRef.current = null
   }
 
   function handleDragMove(event: DragMoveEvent) {
@@ -118,12 +168,13 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
   function handleDragEnd(event: DragEndEvent) {
     const data = event.active.data.current as DragData | undefined
     const overId = event.over ? String(event.over.id) : null
+    const start = overId === GRID_ID ? targetStart(event) : null
     setDragging(null)
     setPreviewStart(null)
+    endPointerTracking()
     if (!data || !overId) return
 
     if (overId === GRID_ID) {
-      const start = targetStart(event)
       if (start) dispatch({ type: 'place', id: data.answerId, start })
     } else if (data.source === 'grid' && (overId === ANSWER_LIST_ID || isListItemId(overId))) {
       dispatch({ type: 'unplace', id: data.answerId })
@@ -135,6 +186,7 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
   function handleDragCancel() {
     setDragging(null)
     setPreviewStart(null)
+    endPointerTracking()
   }
 
   const preview =
