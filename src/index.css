@@ -785,9 +785,14 @@ button {
   margin: 0;
 }
 
+/* Every header button has the same height, including the theme switch. */
+.app-header button {
+  box-sizing: border-box;
+  height: 30px;
+}
+
 .theme-switch button {
   min-width: 0;
-  padding: 2px 8px;
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  padding: 1px 10px;
+  line-height: inherit;
 }
