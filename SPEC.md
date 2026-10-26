@@ -107,7 +107,8 @@ top-left, and so on. It is black, or white when the turn is at a space (a black 
 - Cell: "Wide space" for a space, or "Anagram letter" with its number for a letter.
 - Thick border: top, right, bottom, left of the selected cell.
 
-Shortcuts for the selected cell (⌘ instead of Ctrl on a Mac), shown when hovering the buttons:
+Shortcuts for the selected cell (⌘ instead of Ctrl on a Mac), shown in small text next to the
+buttons. The direction shortcut is only shown on the first letter, where it applies:
 
 - Ctrl+arrow does what the arrow buttons do. On the first letter, Ctrl+→ and Ctrl+↓ set the
   direction. Elsewhere, an arrow across the reading direction adds a turn at that letter, or

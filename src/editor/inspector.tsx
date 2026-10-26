@@ -15,8 +15,10 @@ type InspectorProps = {
 
 const ARROW: Record<Dir, string> = { right: '→', down: '↓', left: '←', up: '↑' }
 
+const MOD = IS_MAC ? '⌘' : 'Ctrl+'
+
 /** How Ctrl+arrow is written on this computer. */
-const shortcut = (dir: Dir) => `${IS_MAC ? '⌘' : 'Ctrl+'}${ARROW[dir]}`
+const shortcut = (dir: Dir) => `${MOD}${ARROW[dir]}`
 
 const SIDES: { label: string; offset: CellRef }[] = [
   { label: 'Top', offset: { row: -1, col: 0 } },
@@ -77,9 +79,16 @@ export function Inspector({ puzzle, layout, selection, dispatch, onClose }: Insp
           >
             Direction {ARROW[answer.dir]}
           </button>
+          {/* Ctrl+arrow only sets the direction on the first letter; elsewhere it turns. */}
+          {index === 0 && (
+            <kbd className="shortcut">
+              {shortcut('right')} {shortcut('down')}
+            </kbd>
+          )}
           <button type="button" title="Delete" onClick={() => dispatch({ type: 'unplace', id })}>
             Take off grid
           </button>
+          <kbd className="shortcut">Del</kbd>
         </fieldset>
 
         <fieldset>
@@ -101,6 +110,7 @@ export function Inspector({ puzzle, layout, selection, dispatch, onClose }: Insp
               </button>
             ))}
           </div>
+          <kbd className="shortcut">{MOD}arrow</kbd>
         </fieldset>
 
         <fieldset>

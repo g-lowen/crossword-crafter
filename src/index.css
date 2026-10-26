@@ -768,6 +768,14 @@ button {
   border-radius: 4px;
 }
 
+/* A shortcut shown next to the button it stands for. */
+.shortcut {
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
 .inspector legend {
   padding: 0 4px;
   font-size: 0.8rem;
