@@ -147,10 +147,15 @@ export function GridView({
 
       {layout.turnMarkers.map((marker) => {
         const arrow = turnArrow(marker.cell, marker.from, marker.to)
+        // A turn at a space sits on a black cell, so it's drawn in white.
+        const onSpace = layout.cells
+          .get(cellKey(marker.cell))
+          ?.some((piece) => piece.answerId === marker.answerId && piece.kind === 'space')
+        const color = onSpace ? 'white' : 'black'
         return (
           <g key={`${marker.answerId}-${cellKey(marker.cell)}`} data-turn-marker="">
-            <polyline points={arrow.line} fill="none" stroke="black" strokeWidth={0.4} />
-            <polygon points={arrow.head} fill="black" />
+            <polyline points={arrow.line} fill="none" stroke={color} strokeWidth={0.4} />
+            <polygon points={arrow.head} fill={color} />
           </g>
         )
       })}

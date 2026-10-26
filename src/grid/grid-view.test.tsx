@@ -57,6 +57,19 @@ describe('GridView', () => {
     expect([...all('[data-letter]')].map((el) => el.textContent).sort()).toEqual(['A', 'B', 'C', 'X'])
   })
 
+  it('draws a turn arrow in white on a space and in black on a letter', () => {
+    const { all } = renderGrid(
+      puzzle({
+        answers: [
+          answer({ id: 'a', text: 'AB CD', turns: [{ atIndex: 2, dir: 'down' }] }),
+          answer({ id: 'b', text: 'XYZ', start: { row: 5, col: 0 }, turns: [{ atIndex: 1, dir: 'down' }] }),
+        ],
+      }),
+    )
+    const colors = [...all('[data-turn-marker] polygon')].map((el) => el.getAttribute('fill'))
+    expect(colors).toEqual(['white', 'black'])
+  })
+
   it('hides letters for the skeleton', () => {
     const { all } = renderGrid(puzzle({ answers: [answer({ id: 'a', text: 'ABC' })] }), { showLetters: false })
     expect(all('[data-cell-kind="letter"]')).toHaveLength(3)

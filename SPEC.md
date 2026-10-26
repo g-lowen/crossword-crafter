@@ -103,7 +103,7 @@ panel has:
 - Turn here: one button per 90° direction. Clicking the active one again removes the turn.
 
 A turn arrow sits in the corner of the cell where its bend is: ↳ in the bottom-left, ↱ in the
-top-left, and so on.
+top-left, and so on. It is black, or white when the turn is at a space (a black cell).
 - Cell: "Wide space" for a space, or "Anagram letter" with its number for a letter.
 - Thick border: top, right, bottom, left of the selected cell.
 
