@@ -44,9 +44,17 @@ import {
 } from './drag-ids'
 import { cellAtPoint, moveByPixels } from './grid-coordinates'
 import { Inspector } from './inspector'
-import { selectAt, validSelection, type Selection } from './selection'
+import { canMoveBy, selectAt, separatorsMovingWith, validSelection, type Selection } from './selection'
+import { isEditable } from './use-shortcuts'
 
 type Point = { x: number; y: number }
+
+const ARROW_KEYS: Record<string, CellRef> = {
+  ArrowUp: { row: -1, col: 0 },
+  ArrowDown: { row: 1, col: 0 },
+  ArrowLeft: { row: 0, col: -1 },
+  ArrowRight: { row: 0, col: 1 },
+}
 
 const contains = (rect: DOMRect, point: Point) =>
   point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom
@@ -73,6 +81,8 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
   const [dragging, setDragging] = useState<DragData | null>(null)
   const [previewStart, setPreviewStart] = useState<CellRef | null>(null)
   const [rawSelection, setSelection] = useState<Selection | null>(null)
+  // Answers picked with Ctrl+click or Ctrl+A, to move together. Replaces the single selection.
+  const [rawGroup, setGroup] = useState<string[]>([])
   const pageRef = useRef<HTMLDivElement | null>(null)
   const grid = puzzleGrid(puzzle)
 
@@ -117,11 +127,54 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
     return map
   }, [layout])
   const selection = validSelection(layout, rawSelection)
+  const group = rawGroup.filter((id) => piecesByAnswer.has(id))
+  /** The answers the arrow keys move: the group, or the answer of the selected cell. */
+  const movable = group.length > 0 ? group : selection ? [selection.answerId] : []
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setSelection(null)
+  function clearSelection() {
+    setSelection(null)
+    setGroup([])
+  }
+
+  function moveBy(by: CellRef) {
+    if (movable.length === 0 || !canMoveBy(layout, movable, by, grid)) return
+    dispatch({
+      type: 'move-answers',
+      ids: movable,
+      by,
+      separators: separatorsMovingWith(layout, puzzle.separators, movable),
+    })
+    // Keep the same character selected after it moves.
+    if (selection) {
+      setSelection({ ...selection, cell: { row: selection.cell.row + by.row, col: selection.cell.col + by.col } })
     }
+  }
+
+  // Key handling needs the latest state, but the listener is added once.
+  const onKeyDownRef = useRef<(event: KeyboardEvent) => void>(() => {})
+  useEffect(() => {
+    onKeyDownRef.current = (event) => {
+      if (event.key === 'Escape') {
+        clearSelection()
+        return
+      }
+      // dnd-kit uses the arrow keys during a keyboard drag.
+      if (isEditable(event.target) || dragging) return
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+        event.preventDefault()
+        setSelection(null)
+        setGroup([...piecesByAnswer.keys()])
+        return
+      }
+      const by = ARROW_KEYS[event.key]
+      if (by && movable.length > 0 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault()
+        moveBy(by)
+      }
+    }
+  })
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => onKeyDownRef.current(event)
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
@@ -132,6 +185,8 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
   )
 
   const draggedAnswer = dragging ? puzzle.answers.find((a) => a.id === dragging.answerId) : undefined
+  /** A grid drag of an answer in the group moves the whole group. */
+  const groupDrag = dragging?.source === 'grid' && group.length > 1 && group.includes(dragging.answerId)
 
   /**
    * Where the dragged answer starts if dropped now. Grid drags snap by whole cells; list drags put
@@ -183,10 +238,17 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
     endPointerTracking()
     if (!data || !overId) return
 
-    if (overId === GRID_ID) {
+    const answer = puzzle.answers.find((a) => a.id === data.answerId)
+    if (overId === GRID_ID && groupDrag && start && answer?.start) {
+      const by = { row: start.row - answer.start.row, col: start.col - answer.start.col }
+      if (by.row !== 0 || by.col !== 0) {
+        dispatch({ type: 'move-answers', ids: group, by, separators: separatorsMovingWith(layout, puzzle.separators, group) })
+      }
+    } else if (overId === GRID_ID) {
       if (start) dispatch({ type: 'place', id: data.answerId, start })
     } else if (data.source === 'grid' && (overId === ANSWER_LIST_ID || isListItemId(overId))) {
-      dispatch({ type: 'unplace', id: data.answerId })
+      if (groupDrag) dispatch({ type: 'unplace-answers', ids: group })
+      else dispatch({ type: 'unplace', id: data.answerId })
     } else if (data.source === 'list' && isListItemId(overId)) {
       dispatch({ type: 'reorder', fromId: data.answerId, toId: answerIdFromListItem(overId) })
     }
@@ -198,13 +260,28 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
     endPointerTracking()
   }
 
-  const preview =
-    draggedAnswer && previewStart
-      ? { pieces: layoutAnswer(draggedAnswer, previewStart).pieces, color: puzzle.highlightColor }
-      : undefined
+  function previewPieces(): Piece[] {
+    if (!draggedAnswer || !previewStart) return []
+    if (!groupDrag || !draggedAnswer.start) return layoutAnswer(draggedAnswer, previewStart).pieces
+    const by = { row: previewStart.row - draggedAnswer.start.row, col: previewStart.col - draggedAnswer.start.col }
+    return puzzle.answers.flatMap((answer) =>
+      group.includes(answer.id) && answer.start
+        ? layoutAnswer(answer, { row: answer.start.row + by.row, col: answer.start.col + by.col }).pieces
+        : [],
+    )
+  }
+  const preview = previewStart ? { pieces: previewPieces(), color: puzzle.highlightColor } : undefined
 
-  function handleCellClick(answerId: string, cell: CellRef) {
-    setSelection(selectAt(layout, cell, answerId, selection))
+  function handleCellClick(answerId: string, cell: CellRef, addToGroup: boolean) {
+    if (!addToGroup) {
+      setGroup([])
+      setSelection(selectAt(layout, cell, answerId, selection))
+      return
+    }
+    // Ctrl+click starts a group from the selected answer, or adds to or removes from the group.
+    const current = group.length > 0 ? group : selection ? [selection.answerId] : []
+    setGroup(current.includes(answerId) ? current.filter((id) => id !== answerId) : [...current, answerId])
+    setSelection(null)
   }
 
   return (
@@ -245,7 +322,7 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
         />
 
         <div className="workspace">
-          <GridDropArea pageRef={pageRef} grid={grid} onBackgroundClick={() => setSelection(null)}>
+          <GridDropArea pageRef={pageRef} grid={grid} onBackgroundClick={clearSelection}>
             <GridView
               puzzle={puzzle}
               layout={layout}
@@ -261,12 +338,21 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
                   color={puzzle.highlightColor}
                 />
               )}
+              {group.length > 0 && (
+                <SelectionOverlay
+                  pieces={group.flatMap((id) => piecesByAnswer.get(id) ?? [])}
+                  color={puzzle.highlightColor}
+                />
+              )}
               {[...piecesByAnswer].map(([answerId, answerPieces]) => (
                 <AnswerHandle
                   key={answerId}
                   answerId={answerId}
                   pieces={answerPieces}
-                  dimmed={dragging?.source === 'grid' && dragging.answerId === answerId}
+                  dimmed={
+                    dragging?.source === 'grid' &&
+                    (dragging.answerId === answerId || (groupDrag && group.includes(answerId)))
+                  }
                   onCellClick={handleCellClick}
                 />
               ))}
@@ -277,7 +363,22 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
         {/* Everything about the selected cell and the puzzle's display, beside the grid so the grid
             can use the full height of a laptop screen. */}
         <aside className="side-panel">
-          {selection ? (
+          {group.length > 0 ? (
+            <section className="inspector" aria-label="Selected answers">
+              <div className="inspector-title">
+                <strong>
+                  {group.length} {group.length === 1 ? 'answer' : 'answers'} selected
+                </strong>
+                <button type="button" className="icon-button" onClick={clearSelection} aria-label="Close" title="Close (Esc)">
+                  ✕
+                </button>
+              </div>
+              <p className="hint">
+                Drag one of them, or use the arrow keys, to move them together. Ctrl+click adds or removes an
+                answer.
+              </p>
+            </section>
+          ) : selection ? (
             <Inspector
               puzzle={puzzle}
               layout={layout}
@@ -364,7 +465,7 @@ function AnswerHandle({
   answerId: string
   pieces: Piece[]
   dimmed: boolean
-  onCellClick: (answerId: string, cell: CellRef) => void
+  onCellClick: (answerId: string, cell: CellRef, addToGroup: boolean) => void
 }) {
   const { setNodeRef, listeners, attributes } = useDraggable({
     id: gridHandleId(answerId),
@@ -392,7 +493,7 @@ function AnswerHandle({
             data-cell={cellKey(piece)}
             onClick={(event) => {
               event.stopPropagation()
-              onCellClick(answerId, { row: piece.row, col: piece.col })
+              onCellClick(answerId, { row: piece.row, col: piece.col }, event.ctrlKey || event.metaKey)
             }}
           />
         )
@@ -401,9 +502,9 @@ function AnswerHandle({
   )
 }
 
-/** Tints the selected answer and outlines the selected cell. */
-function SelectionOverlay({ pieces, cell, color }: { pieces: Piece[]; cell: CellRef; color: string }) {
-  const selected = cellOrigin(cell)
+/** Tints the selected answers and outlines the selected cell, if there is one. */
+function SelectionOverlay({ pieces, cell, color }: { pieces: Piece[]; cell?: CellRef; color: string }) {
+  const selected = cell && cellOrigin(cell)
   return (
     <g data-selection="" pointerEvents="none">
       {pieces.map((piece) => {
@@ -420,15 +521,17 @@ function SelectionOverlay({ pieces, cell, color }: { pieces: Piece[]; cell: Cell
           />
         )
       })}
-      <rect
-        x={selected.x + 0.4}
-        y={selected.y + 0.4}
-        width={CELL - 0.8}
-        height={CELL - 0.8}
-        fill="none"
-        stroke={color}
-        strokeWidth={0.8}
-      />
+      {selected && (
+        <rect
+          x={selected.x + 0.4}
+          y={selected.y + 0.4}
+          width={CELL - 0.8}
+          height={CELL - 0.8}
+          fill="none"
+          stroke={color}
+          strokeWidth={0.8}
+        />
+      )}
     </g>
   )
 }

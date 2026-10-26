@@ -107,6 +107,21 @@ top-left, and so on.
 - Cell: "Wide space" for a space, or "Anagram letter" with its number for a letter.
 - Thick border: top, right, bottom, left of the selected cell.
 
+## Moving several answers
+
+- Ctrl+click (⌘+click on a Mac) on a cell adds its answer to a selection, or removes it. If one
+  cell was already selected, its answer is the first in the selection. Ctrl+A selects every placed
+  answer, except in text fields. Esc, a plain click or a click on an empty spot ends it.
+- The selected answers are tinted, and the right panel says how many are selected instead of
+  showing the cell settings.
+- Dragging any of them moves them all, with the same preview as a single answer. Dropping them on
+  the answer list takes them all off the grid.
+- The arrow keys move them one cell at a time. They also move the answer of a single selected
+  cell. A move that would push any of their cells off the page does nothing.
+- Thick borders move along when they touch the moving answers and don't touch an answer that
+  stays.
+- Each move is one step for undo.
+
 ## Groups (several mini puzzles in one grid)
 
 Gustav sometimes builds one grid out of several mini puzzles, each with its own background color.

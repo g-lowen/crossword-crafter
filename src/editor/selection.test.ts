@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { layoutPuzzle } from '../layout/layout'
 import type { Answer, Puzzle } from '../model/puzzle'
-import { selectAt, validSelection } from './selection'
+import { A4_LANDSCAPE_GRID } from '../model/page'
+import { canMoveBy, selectAt, separatorsMovingWith, validSelection } from './selection'
 
 function answer(id: string, text: string, row: number, col: number, dir: Answer['dir']): Answer {
   return { id, text, start: { row, col }, dir, turns: [], wideSpaces: [] }
@@ -49,5 +50,30 @@ describe('validSelection', () => {
 
   it('drops a selection whose answer moved away', () => {
     expect(validSelection(layout, { answerId: 'cat', index: 0, cell: { row: 7, col: 7 } })).toBeNull()
+  })
+})
+
+describe('separatorsMovingWith', () => {
+  const below = { a: { row: 1, col: 0 }, b: { row: 2, col: 0 } }
+  const betweenBoth = { a: { row: 1, col: 1 }, b: { row: 1, col: 2 } }
+  const nextToBad = { a: { row: 0, col: 1 }, b: { row: 0, col: 2 } }
+  const separators = [below, betweenBoth, nextToBad]
+
+  it('takes borders touching only the moving answers', () => {
+    // CAT moves, BAD stays: the border between C and an empty cell goes along. The one between
+    // CAT's T and the crossing A touches BAD too, so it stays.
+    expect(separatorsMovingWith(layout, separators, ['cat'])).toEqual([below])
+  })
+
+  it('takes every border touching them when all answers move', () => {
+    expect(separatorsMovingWith(layout, separators, ['cat', 'bad'])).toEqual(separators)
+  })
+})
+
+describe('canMoveBy', () => {
+  it('stops at the edges of the page', () => {
+    expect(canMoveBy(layout, ['cat'], { row: 0, col: -1 }, A4_LANDSCAPE_GRID)).toBe(false)
+    expect(canMoveBy(layout, ['cat'], { row: -1, col: 0 }, A4_LANDSCAPE_GRID)).toBe(true)
+    expect(canMoveBy(layout, ['cat', 'bad'], { row: -1, col: 0 }, A4_LANDSCAPE_GRID)).toBe(false)
   })
 })

@@ -19,6 +19,9 @@ export type PuzzleAction =
   | { type: 'import'; answers: { id: string; text: string }[] }
   | { type: 'place'; id: string; start: CellRef }
   | { type: 'unplace'; id: string }
+  | { type: 'unplace-answers'; ids: string[] }
+  /** Moves placed answers, and the thick borders that go with them, by whole cells. */
+  | { type: 'move-answers'; ids: string[]; by: CellRef; separators: Separator[] }
   | { type: 'remove'; id: string }
   | { type: 'reorder'; fromId: string; toId: string }
   | { type: 'toggle-direction'; id: string }
@@ -90,6 +93,27 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
 
     case 'place':
       return updateAnswer(puzzle, action.id, (answer) => ({ ...answer, start: action.start }))
+
+    case 'unplace-answers':
+      return {
+        ...puzzle,
+        answers: puzzle.answers.map((answer) => (action.ids.includes(answer.id) ? { ...answer, start: null } : answer)),
+      }
+
+    case 'move-answers': {
+      const shift = (cell: CellRef) => ({ row: cell.row + action.by.row, col: cell.col + action.by.col })
+      return {
+        ...puzzle,
+        answers: puzzle.answers.map((answer) =>
+          answer.start && action.ids.includes(answer.id) ? { ...answer, start: shift(answer.start) } : answer,
+        ),
+        separators: puzzle.separators.map((separator) =>
+          action.separators.some((moved) => sameSeparator(moved, separator))
+            ? { a: shift(separator.a), b: shift(separator.b) }
+            : separator,
+        ),
+      }
+    }
 
     case 'unplace':
       return updateAnswer(puzzle, action.id, (answer) => ({ ...answer, start: null }))

@@ -61,6 +61,36 @@ describe('puzzleReducer', () => {
     expect(shorter.anagram.cells.map((cell) => cell.letterIndex)).toEqual([1, 5])
   })
 
+  it('moves answers and the thick borders that go with them', () => {
+    let puzzle = withAnswers('ABBA', 'QUEEN', 'STING')
+    puzzle = puzzleReducer(puzzle, { type: 'place', id: 'abba', start: { row: 3, col: 4 } })
+    puzzle = puzzleReducer(puzzle, { type: 'place', id: 'queen', start: { row: 6, col: 4 } })
+    const border = { a: { row: 3, col: 4 }, b: { row: 4, col: 4 } }
+    const other = { a: { row: 9, col: 9 }, b: { row: 9, col: 10 } }
+    puzzle = { ...puzzle, separators: [border, other] }
+
+    const moved = puzzleReducer(puzzle, {
+      type: 'move-answers',
+      ids: ['abba', 'queen', 'sting'],
+      by: { row: 1, col: -2 },
+      separators: [border],
+    })
+    expect(moved.answers.map((answer) => answer.start)).toEqual([
+      { row: 4, col: 2 },
+      { row: 7, col: 2 },
+      null,
+    ])
+    expect(moved.separators).toEqual([{ a: { row: 4, col: 2 }, b: { row: 5, col: 2 } }, other])
+  })
+
+  it('takes several answers off the grid at once', () => {
+    let puzzle = withAnswers('ABBA', 'QUEEN')
+    puzzle = puzzleReducer(puzzle, { type: 'place', id: 'abba', start: { row: 3, col: 4 } })
+    puzzle = puzzleReducer(puzzle, { type: 'place', id: 'queen', start: { row: 6, col: 4 } })
+    const unplaced = puzzleReducer(puzzle, { type: 'unplace-answers', ids: ['abba', 'queen'] })
+    expect(unplaced.answers.map((answer) => answer.start)).toEqual([null, null])
+  })
+
   it('places and unplaces an answer', () => {
     const placed = puzzleReducer(withAnswers('ABBA'), { type: 'place', id: 'abba', start: { row: 3, col: 4 } })
     expect(placed.answers[0].start).toEqual({ row: 3, col: 4 })

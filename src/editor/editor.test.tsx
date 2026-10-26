@@ -465,6 +465,64 @@ describe('Editor', () => {
     })
   })
 
+  describe('moving several answers', () => {
+    /** The top-left cell of an answer. */
+    const cellOf = (container: HTMLElement, answerId: string) =>
+      [...container.querySelectorAll(`[data-answer-handle="${answerId}"] [data-cell]`)]
+        .map((el) => el.getAttribute('data-cell')!.split(',').map(Number))
+        .sort((a, b) => a[0] - b[0] || a[1] - b[1])
+        .map(([row, col]) => `${row},${col}`)[0]
+
+    it('selects answers with Ctrl+click and moves them with the arrow keys', () => {
+      const { container } = render(<App />)
+      loadSample()
+      const beatles = cellOf(container, 'beatles')
+      const abba = cellOf(container, 'abba')
+      const sting = cellOf(container, 'sting')
+      fireEvent.click(container.querySelector(`[data-answer-handle="beatles"] [data-cell="${beatles}"]`)!, { ctrlKey: true })
+      fireEvent.click(container.querySelector(`[data-answer-handle="abba"] [data-cell="${abba}"]`)!, { ctrlKey: true })
+      expect(screen.getByRole('region', { name: 'Selected answers' })).toHaveTextContent('2 answers selected')
+
+      fireEvent.keyDown(window, { key: 'ArrowDown' })
+      fireEvent.keyDown(window, { key: 'ArrowRight' })
+      const shifted = (key: string | null | undefined) => {
+        const [row, col] = key!.split(',').map(Number)
+        return `${row + 1},${col + 1}`
+      }
+      expect(cellOf(container, 'beatles')).toBe(shifted(beatles))
+      expect(cellOf(container, 'abba')).toBe(shifted(abba))
+      expect(cellOf(container, 'sting')).toBe(sting)
+
+      fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+      expect(cellOf(container, 'beatles')).toBe(`${Number(beatles!.split(',')[0]) + 1},${beatles!.split(',')[1]}`)
+    })
+
+    it('selects every answer with Ctrl+A and clears with Escape', () => {
+      render(<App />)
+      loadSample()
+      fireEvent.keyDown(window, { key: 'a', ctrlKey: true })
+      expect(screen.getByRole('region', { name: 'Selected answers' })).toHaveTextContent('6 answers selected')
+      fireEvent.keyDown(window, { key: 'Escape' })
+      expect(screen.queryByRole('region', { name: 'Selected answers' })).not.toBeInTheDocument()
+    })
+
+    it('leaves Ctrl+A alone in text fields', () => {
+      render(<App />)
+      loadSample()
+      fireEvent.keyDown(screen.getByLabelText('Puzzle name'), { key: 'a', ctrlKey: true })
+      expect(screen.queryByRole('region', { name: 'Selected answers' })).not.toBeInTheDocument()
+    })
+
+    it('does not move answers off the page', () => {
+      const { container } = render(<App />)
+      loadSample()
+      fireEvent.keyDown(window, { key: 'a', ctrlKey: true })
+      const before = cellOf(container, 'beatles')
+      for (let i = 0; i < 40; i++) fireEvent.keyDown(window, { key: 'ArrowUp' })
+      expect(cellOf(container, 'beatles')).toBe(`0,${before!.split(',')[1]}`)
+    })
+  })
+
   describe('inspector', () => {
     function loadSampleAndClick(cell: string) {
       const view = render(<App />)
