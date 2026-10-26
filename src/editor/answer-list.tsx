@@ -5,6 +5,8 @@ import { useState } from 'react'
 import type { Answer } from '../model/puzzle'
 import { ANSWER_LIST_ID, listItemId, type DragData } from './drag-ids'
 import { parseAnswerList } from './parse-answer-list'
+import { embedLink, parseSpotifyPaste, parseSpotifyText, type SpotifyTrack } from './spotify'
+import { SpotifyImport } from './spotify-import'
 
 type AnswerListProps = {
   answers: Answer[]
@@ -19,13 +21,25 @@ export function AnswerList({ answers, onImport, onToggleDirection, onRemove }: A
   const [importOpen, setImportOpen] = useState(answers.length === 0)
   const { setNodeRef, isOver } = useDroppable({ id: ANSWER_LIST_ID })
   const showImport = importOpen || answers.length === 0
+  const [spotifyTracks, setSpotifyTracks] = useState<SpotifyTrack[] | null>(null)
+  const spotifyLink = embedLink(text)
 
-  const importAnswers = () => {
-    const texts = parseAnswerList(text)
-    if (texts.length === 0) return
+  const finish = (texts: string[]) => {
     onImport(texts)
     setText('')
     setImportOpen(false)
+    setSpotifyTracks(null)
+  }
+
+  const importAnswers = () => {
+    // A Spotify list typed or dropped in, rather than pasted, still gets the preview.
+    const tracks = parseSpotifyText(text)
+    if (tracks) {
+      setSpotifyTracks(tracks)
+      return
+    }
+    const texts = parseAnswerList(text)
+    if (texts.length > 0) finish(texts)
   }
 
   return (
@@ -43,12 +57,46 @@ export function AnswerList({ answers, onImport, onToggleDirection, onRemove }: A
         <div className="import">
           <label>
             <span>Paste answers, one per line</span>
-            <textarea value={text} onChange={(e) => setText(e.target.value)} rows={5} autoFocus={answers.length > 0} />
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onPaste={(e) => {
+                const tracks = parseSpotifyPaste(
+                  e.clipboardData.getData('text/html'),
+                  e.clipboardData.getData('text/plain'),
+                )
+                if (tracks) {
+                  e.preventDefault()
+                  setSpotifyTracks(tracks)
+                }
+              }}
+              rows={5}
+              autoFocus={answers.length > 0}
+            />
           </label>
-          <button type="button" onClick={importAnswers} disabled={parseAnswerList(text).length === 0}>
+          {spotifyLink ? (
+            <p className="spotify-hint">
+              That's a Spotify link. Open{' '}
+              <a href={spotifyLink} target="_blank" rel="noreferrer">
+                the simple view of the list
+              </a>
+              , press Ctrl+A and Ctrl+C there, then paste here.
+            </p>
+          ) : (
+            <p className="hint">Or paste a Spotify playlist link to get its artists.</p>
+          )}
+          <button
+            type="button"
+            onClick={importAnswers}
+            disabled={spotifyLink !== null || parseAnswerList(text).length === 0}
+          >
             Add answers
           </button>
         </div>
+      )}
+
+      {spotifyTracks && (
+        <SpotifyImport tracks={spotifyTracks} onAdd={finish} onCancel={() => setSpotifyTracks(null)} />
       )}
 
       <section ref={setNodeRef} className={`answer-list${isOver ? ' answer-list--over' : ''}`} aria-label="Answers">

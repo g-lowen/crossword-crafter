@@ -44,6 +44,23 @@ without scrolling:
 
 - Imported as a list (pasted text, one answer per line). List order is the reveal order.
 - The order can be changed after import.
+- **From a Spotify playlist** (Sammy builds his quizzes from Spotify lists and usually uses the
+  artists as answers):
+  1. He pastes the playlist link (Share, then Copy link to playlist) into the paste box. The app
+     shows a link to Spotify's simplified "embed" view of that list
+     (`open.spotify.com/embed/playlist/<id>`). The normal Spotify player can't be copied because its
+     rows are drag handles; the embed view can.
+  2. There he presses Ctrl+A and Ctrl+C, and pastes into the box.
+  3. The app recognises the list and opens "Add answers from Spotify": one row per track with the
+     title and artists, a suggested answer he can edit, and a checkbox to leave it out. "Use"
+     switches all suggestions between Artist (the first artist, the default), All artists and
+     Title (without "(feat. …)", "- 2005 Remaster" and the like).
+  - The copied HTML is preferred: it marks the explicit badge, which is left out. Plain text is a
+    fallback; there an "E" glued to the front of the artists is removed when followed by a capital
+    or a sign, which can be wrong for artists such as "ELO".
+  - The embed view shows at most 100 tracks. It's only been tried with a public playlist.
+  - No Spotify login and no server: the app never contacts Spotify itself
+    (`src/editor/spotify.ts`).
 - Text is uppercase. Letters (including Å, Ä, Ö) and digits are allowed. Other special characters
   are out of scope for now.
 - A space inside an answer is drawn as a black cell.

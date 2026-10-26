@@ -77,7 +77,68 @@ describe('Editor', () => {
       render(<App />)
       expect(screen.getByLabelText('Puzzle name')).toHaveValue('Quiz 18')
     })
+  })
 
+  describe('adding answers from Spotify', () => {
+    const spotifyHtml = `
+      <li data-testid="tracklist-row-0"><h3>Rötter</h3><h4>Lasse Tennander</h4><div>04:00</div></li>
+      <li data-testid="tracklist-row-1"><h3>Everyday (feat. Rod Stewart)</h3>
+        <h4><span title="Explicit">E</span>A$AP Rocky, Rod Stewart</h4><div>04:20</div></li>
+      <li data-testid="tracklist-row-2"><h3>Barracuda</h3><h4>Heart</h4><div>04:21</div></li>`
+
+    function pasteSpotify() {
+      fireEvent.paste(screen.getByLabelText('Paste answers, one per line'), {
+        clipboardData: { getData: (type: string) => (type === 'text/html' ? spotifyHtml : 'ignored') },
+      })
+      return within(screen.getByRole('dialog', { name: 'Add answers from Spotify' }))
+    }
+
+    it('suggests the first artist of each track and adds them', () => {
+      render(<App />)
+      const dialog = pasteSpotify()
+      const answers = dialog.getAllByRole('textbox').map((input) => (input as HTMLInputElement).value)
+      expect(answers).toEqual(['Lasse Tennander', 'A$AP Rocky', 'Heart'])
+      fireEvent.click(dialog.getByRole('button', { name: 'Add 3 answers' }))
+      expect(listedAnswers()).toEqual(['LASSE TENNANDER', 'A$AP ROCKY', 'HEART'])
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+
+    it('can use titles, skip tracks and take edits', () => {
+      render(<App />)
+      const dialog = pasteSpotify()
+      fireEvent.click(dialog.getByRole('button', { name: 'Title' }))
+      fireEvent.click(dialog.getByLabelText('Include Barracuda'))
+      fireEvent.change(dialog.getByLabelText('Answer for Rötter'), { target: { value: 'Rötterna' } })
+      fireEvent.click(dialog.getByRole('button', { name: 'Add 2 answers' }))
+      expect(listedAnswers()).toEqual(['RÖTTERNA', 'EVERYDAY'])
+    })
+
+    it('adds nothing on cancel', () => {
+      render(<App />)
+      fireEvent.click(pasteSpotify().getByRole('button', { name: 'Cancel' }))
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(screen.getByText('No answers yet.')).toBeInTheDocument()
+    })
+
+    it('links to the simple view when a playlist link is pasted', () => {
+      render(<App />)
+      fireEvent.change(screen.getByLabelText('Paste answers, one per line'), {
+        target: { value: 'https://open.spotify.com/playlist/5EqwTfwVNy778orBaIEWtY?si=x' },
+      })
+      expect(screen.getByRole('link', { name: 'the simple view of the list' })).toHaveAttribute(
+        'href',
+        'https://open.spotify.com/embed/playlist/5EqwTfwVNy778orBaIEWtY',
+      )
+      expect(screen.getByRole('button', { name: 'Add answers' })).toBeDisabled()
+    })
+
+    it('leaves ordinary pasted text alone', () => {
+      render(<App />)
+      fireEvent.paste(screen.getByLabelText('Paste answers, one per line'), {
+        clipboardData: { getData: (type: string) => (type === 'text/plain' ? 'ABBA\nQUEEN' : '') },
+      })
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
   })
 
   describe('edit menu and shortcuts', () => {
