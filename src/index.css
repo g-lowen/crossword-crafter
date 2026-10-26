@@ -48,11 +48,67 @@ button {
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
+  z-index: 20;
   padding: 2px 8px;
   font-size: 0.85rem;
   white-space: nowrap;
   background: #e8f5e9;
   border-radius: 4px;
+}
+
+.menu-status--error {
+  color: #b71c1c;
+  background: #ffebee;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 10;
+  min-width: 240px;
+  padding: 4px 0;
+  background: white;
+  border: 1px solid #cfd8dc;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.15);
+}
+
+.menu-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  width: 100%;
+  padding: 6px 14px;
+  text-align: left;
+  background: none;
+  border: none;
+}
+
+.menu-item:hover:not(:disabled) {
+  background: #e3f2fd;
+}
+
+.menu-item:disabled {
+  color: #aaa;
+  cursor: default;
+}
+
+.menu-item kbd {
+  font: inherit;
+  font-size: 0.85rem;
+  color: #78909c;
+}
+
+.menu-separator {
+  margin: 4px 0;
+  border-top: 1px solid #eceff1;
+}
+
+.menu-note {
+  margin: 4px 14px 6px;
+  font-size: 0.8rem;
+  color: #78909c;
 }
 
 .menu-panel {

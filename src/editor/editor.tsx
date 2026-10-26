@@ -50,7 +50,7 @@ type EditorProps = {
   dispatch: (action: PuzzleAction) => void
   /** Shown next to the title. */
   nameField: ReactNode
-  /** Puzzle-level actions such as New puzzle and Copy state. */
+  /** Puzzle-level actions such as New puzzle, the Edit menu and Export images. */
   menu: ReactNode
   saveFailed: boolean
 }
@@ -181,7 +181,7 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
           {saveFailed && (
             <p className="save-warning" role="alert">
               This browser won't save your puzzles, so they will be lost when the page closes. Use Copy
-              state to keep them.
+              puzzle in the Edit menu to keep them.
             </p>
           )}
         </header>

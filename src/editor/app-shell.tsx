@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useReducer, useState } from 'react'
-import { currentEntry, libraryReducer } from '../model/library'
-import { loadLibrary, saveLibrary } from '../model/persistence'
+import { appReducer, canRedo, canUndo, initialAppState } from '../model/history'
+import { currentEntry } from '../model/library'
+import { loadLibrary, parsePuzzle, saveLibrary, serializePuzzle } from '../model/persistence'
 import type { PuzzleAction } from '../model/puzzle-reducer'
 import { Editor } from './editor'
-import { PuzzleMenu } from './puzzle-menu'
+import { PuzzleMenu, type EditCommands, type Status } from './puzzle-menu'
+import { SHORTCUT_LABELS, useShortcuts } from './use-shortcuts'
 
 /** localStorage, or undefined where the browser blocks it. */
 function browserStorage(): Storage | undefined {
@@ -14,22 +16,70 @@ function browserStorage(): Storage | undefined {
   }
 }
 
-/** Holds the puzzle list, autosaves it, and shows the open puzzle in the editor. */
+const now = () => new Date().toISOString()
+
+/** Holds the puzzle list and its undo history, autosaves, and shows the open puzzle in the editor. */
 export function AppShell() {
-  const [library, dispatchLibrary] = useReducer(libraryReducer, undefined, () =>
-    loadLibrary(browserStorage(), crypto.randomUUID(), new Date().toISOString()),
+  const [state, dispatchApp] = useReducer(appReducer, undefined, () =>
+    initialAppState(loadLibrary(browserStorage(), crypto.randomUUID(), now())),
   )
+  const { library } = state
   const [saved, setSaved] = useState(true)
+  const [status, setStatus] = useState<Status | null>(null)
   const entry = currentEntry(library)
 
   useEffect(() => {
     setSaved(saveLibrary(browserStorage(), library))
   }, [library])
 
-  const dispatch = useCallback(
-    (action: PuzzleAction) => dispatchLibrary({ type: 'edit', action, now: new Date().toISOString() }),
-    [],
-  )
+  useEffect(() => {
+    if (!status) return
+    const timer = setTimeout(() => setStatus(null), 4000)
+    return () => clearTimeout(timer)
+  }, [status])
+
+  const dispatch = useCallback((action: PuzzleAction) => dispatchApp({ type: 'edit', action, now: now() }), [])
+
+  const copyText = () => serializePuzzle(entry.puzzle, entry.name)
+
+  function pasteText(text: string) {
+    const result = parsePuzzle(text.trim())
+    if (!result.ok) {
+      setStatus({ kind: 'error', text: "The clipboard doesn't contain a copied puzzle." })
+      return
+    }
+    dispatchApp({ type: 'replace', puzzle: result.puzzle, now: now() })
+    setStatus({ kind: 'ok', text: `Puzzle pasted. ${SHORTCUT_LABELS.undo} undoes it.` })
+  }
+
+  const copied = () => setStatus({ kind: 'ok', text: 'Puzzle copied to the clipboard.' })
+
+  const commands: EditCommands = {
+    canUndo: canUndo(state),
+    canRedo: canRedo(state),
+    undo: () => dispatchApp({ type: 'undo', now: now() }),
+    redo: () => dispatchApp({ type: 'redo', now: now() }),
+    copy: async () => {
+      try {
+        await navigator.clipboard.writeText(copyText())
+        copied()
+      } catch {
+        setStatus({ kind: 'error', text: `The browser blocked the clipboard. Try ${SHORTCUT_LABELS.copy}.` })
+      }
+    },
+    paste: async () => {
+      let text: string
+      try {
+        text = await navigator.clipboard.readText()
+      } catch {
+        setStatus({ kind: 'error', text: `The browser blocked the clipboard. Try ${SHORTCUT_LABELS.paste}.` })
+        return
+      }
+      pasteText(text)
+    },
+  }
+
+  useShortcuts({ onUndo: commands.undo, onRedo: commands.redo, copyText, onCopied: copied, onPaste: pasteText })
 
   return (
     <Editor
@@ -45,13 +95,11 @@ export function AppShell() {
             aria-label="Puzzle name"
             placeholder="Untitled puzzle"
             value={entry.name}
-            onChange={(e) =>
-              dispatchLibrary({ type: 'rename', id: entry.id, name: e.target.value })
-            }
+            onChange={(e) => dispatchApp({ type: 'rename', id: entry.id, name: e.target.value })}
           />
         </label>
       }
-      menu={<PuzzleMenu library={library} dispatch={dispatchLibrary} />}
+      menu={<PuzzleMenu library={library} dispatch={dispatchApp} commands={commands} status={status} />}
       saveFailed={!saved}
     />
   )

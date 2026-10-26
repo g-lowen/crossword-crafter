@@ -111,28 +111,55 @@ There is no backend. Everything is saved in the browser Sammy uses, and nowhere 
 
 - Sammy can keep several puzzles. Each has a name and a last-changed time. The open puzzle
   autosaves to `localStorage` on every change, and the last one opened comes back when the page
-  opens. If the browser won't store anything, a warning says so and points to Copy state.
+  opens. If the browser won't store anything, a warning says so and points to Copy puzzle.
 - The name of the open puzzle is a clearly visible "Name" field at the start of the header. The
   page has no app title; the browser tab is still called "Crossword Crafter".
-- "My puzzles" lists them all, most recently changed first, with their answer counts and last-edited time (labelled "Last edited" on hover). The open one
-  has a highlighted background. Each can be opened, renamed in place with the pen next to its
-  name (Enter or clicking away saves, Esc cancels), duplicated, or deleted after a confirm. Deleting the last one leaves one
-  empty puzzle. Renaming doesn't count as a change, so the list doesn't reorder.
-- The My puzzles and Paste state panels close on Esc or a click outside them.
-- "New puzzle" and "Load sample" add a puzzle to the list and open it. Nothing is replaced.
-- A new puzzle (from New puzzle, Load sample, Paste state or Duplicate) whose name is taken gets
-  the lowest free number: "Untitled puzzle (1)", "Quiz 18 (2)". Renaming doesn't add numbers.
-- "Copy state" puts the open puzzle and its name on the clipboard as JSON. "Paste state" adds a
-  pasted puzzle to the list as a new puzzle. A broken or incomplete paste shows what's wrong and
-  changes nothing. This is how a puzzle moves to another computer or gets kept somewhere safe.
-- Saved shapes, in `src/model/persistence.ts`:
-  - The list: `{ version, library: { currentId, entries: [{ id, name, updatedAt, puzzle }] } }`.
-  - Copy state: `{ version, name, puzzle }`.
-  - Before the list existed, a single puzzle was saved under `crossword-crafter/puzzle`. It is
-    carried over as the first entry the first time the list is loaded.
-  - Everything is validated field by field, with defaults for missing optional parts. Old versions
-    must stay readable when a shape changes.
-- There is no undo.
+- "My puzzles" lists them all, most recently changed first, with their answer counts and
+  last-edited time ("Last edited" on hover). The open one has a highlighted background. Each can
+  be opened, renamed in place with the pen next to its name (Enter or clicking away saves, Esc
+  cancels), or deleted after a confirm. Deleting the last one leaves one empty puzzle. Renaming
+  doesn't count as a change, so the list doesn't reorder.
+- "New puzzle" and "Load sample" add a puzzle to the list and open it. A new puzzle whose name is
+  taken gets the lowest free number: "Untitled puzzle (1)", "Quiz 18 (2)". Renaming doesn't add
+  numbers.
+- The header panels (My puzzles, Edit, Export images) close on Esc or a click outside them.
+
+## Edit menu: undo, redo, copy and paste
+
+"Edit ▾" in the header holds four commands, each with its keyboard shortcut shown next to it (⌘
+on a Mac), so Sammy can learn the shortcuts once:
+
+| Command      | Shortcut                 |
+| ------------ | ------------------------ |
+| Undo         | Ctrl+Z                   |
+| Redo         | Ctrl+Y or Ctrl+Shift+Z   |
+| Copy puzzle  | Ctrl+C                   |
+| Paste puzzle | Ctrl+V                   |
+
+- Undo and redo cover changes to the open puzzle's content, including a paste. Opening, renaming,
+  adding and deleting puzzles aren't undone. Each puzzle has its own history of up to 100 steps,
+  kept until the page is reloaded (`src/model/history.ts`). A burst of color changes or typing an
+  anagram number counts as one step.
+- Copy puzzle puts the open puzzle and its name on the clipboard as JSON. This is how a puzzle
+  moves to another computer or gets kept somewhere safe.
+- Paste puzzle reads the clipboard and, if it holds a copied puzzle, replaces the open puzzle's
+  content with it. The open puzzle keeps its name. Undo brings the old content back. Anything else
+  on the clipboard shows "The clipboard doesn't contain a copied puzzle." and changes nothing.
+- The shortcuts work everywhere except in text fields, which keep their own undo, copy and paste.
+  Ctrl+C also leaves selected page text alone. The keyboard uses the browser's copy and paste
+  events, so it never asks for clipboard permission; the menu items use the clipboard API, which
+  some browsers ask about the first time.
+
+## Saved shapes
+
+In `src/model/persistence.ts`:
+
+- The list: `{ version, library: { currentId, entries: [{ id, name, updatedAt, puzzle }] } }`.
+- Copy puzzle: `{ version, name, puzzle }`.
+- Before the list existed, a single puzzle was saved under `crossword-crafter/puzzle`. It is
+  carried over as the first entry the first time the list is loaded.
+- Everything is validated field by field, with defaults for missing optional parts. Old versions
+  must stay readable when a shape changes.
 
 ## Data model
 
@@ -185,7 +212,7 @@ component draws the editor (page background, guide lines, conflict warnings) and
 3. Grid UI at fixed cell size, A4 landscape.
 4. Answer import and drag and drop onto the grid.
 5. Editing: turns, wide spaces, separators, anagram cells and numbering.
-6. Save and load: autosave, My puzzles, Copy state, Paste state.
+6. Save and load: autosave, My puzzles, Edit menu with undo, redo, copy and paste.
 7. PNG exports as a zip: skeleton, quiz and correction images.
 
 ## Open decisions

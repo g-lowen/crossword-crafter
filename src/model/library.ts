@@ -24,7 +24,8 @@ export type LibraryAction =
   | { type: 'open'; id: string }
   /** Doesn't count as a change, so the list doesn't reorder while Sammy types. */
   | { type: 'rename'; id: string; name: string }
-  | { type: 'duplicate'; id: string; newId: string; now: string }
+  /** Replaces the open puzzle's content, for example with a pasted puzzle. Keeps its name. */
+  | { type: 'replace'; puzzle: Puzzle; now: string }
   /** `newId` is used when the last puzzle is deleted and an empty one takes its place. */
   | { type: 'delete'; id: string; newId: string; now: string }
 
@@ -43,7 +44,7 @@ export function entriesByRecent(library: Library): LibraryEntry[] {
 
 /**
  * `name`, or `name (1)`, `name (2)`… when it's taken. A name that already ends in a number starts
- * counting from its base, so copying "Quiz (1)" gives "Quiz (2)".
+ * counting from its base, so "Quiz (1)" gives "Quiz (2)" when taken.
  */
 export function uniqueName(name: string, taken: string[]): string {
   const used = new Set(taken.map((n) => n.trim()))
@@ -86,17 +87,12 @@ export function libraryReducer(library: Library, action: LibraryAction): Library
     case 'rename':
       return updateEntry(library, action.id, (entry) => ({ ...entry, name: action.name }))
 
-    case 'duplicate': {
-      const source = library.entries.find((entry) => entry.id === action.id)
-      if (!source) return library
-      return libraryReducer(library, {
-        type: 'add',
-        id: action.newId,
-        name: source.name,
-        puzzle: source.puzzle,
-        now: action.now,
-      })
-    }
+    case 'replace':
+      return updateEntry(library, library.currentId, (entry) => ({
+        ...entry,
+        puzzle: action.puzzle,
+        updatedAt: action.now,
+      }))
 
     case 'delete': {
       const entries = library.entries.filter((entry) => entry.id !== action.id)

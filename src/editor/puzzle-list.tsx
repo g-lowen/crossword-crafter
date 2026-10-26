@@ -1,5 +1,6 @@
 import { useRef, useState, type Dispatch } from 'react'
 import { UNTITLED, entriesByRecent, type Library, type LibraryAction, type LibraryEntry } from '../model/library'
+import { SHORTCUT_LABELS } from './use-shortcuts'
 
 type PuzzleListProps = {
   library: Library
@@ -25,7 +26,9 @@ export function PuzzleList({ library, dispatch, onClose }: PuzzleListProps) {
           ✕
         </button>
       </div>
-      <p className="hint">Saved in this browser only. Use Copy state to keep a puzzle somewhere else.</p>
+      <p className="hint">
+        Saved in this browser only. Use Copy puzzle ({SHORTCUT_LABELS.copy}) to keep one somewhere else.
+      </p>
       <ul>
         {entriesByRecent(library).map((entry) => {
           const isOpen = entry.id === library.currentId
@@ -73,13 +76,6 @@ export function PuzzleList({ library, dispatch, onClose }: PuzzleListProps) {
                   Open
                 </button>
               )}
-              <button
-                type="button"
-                aria-label={`Duplicate ${name}`}
-                onClick={() => dispatch({ type: 'duplicate', id: entry.id, newId: crypto.randomUUID(), now: now() })}
-              >
-                Duplicate
-              </button>
               <button
                 type="button"
                 aria-label={`Delete ${name}`}

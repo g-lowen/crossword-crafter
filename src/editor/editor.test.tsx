@@ -67,42 +67,117 @@ describe('Editor', () => {
       expect(screen.getByLabelText('Puzzle name')).toHaveValue('Quiz 18')
     })
 
-    it('copies the puzzle and its name to the clipboard', async () => {
+  })
+
+  describe('edit menu and shortcuts', () => {
+    function editMenu() {
+      fireEvent.click(screen.getByRole('button', { name: 'Edit ▾' }))
+      return within(screen.getByRole('menu', { name: 'Edit' }))
+    }
+
+    const status = () => screen.getAllByRole('status').find((el) => el.classList.contains('menu-status'))
+
+    it('shows every command with its shortcut', () => {
+      render(<App />)
+      const items = editMenu()
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent)
+      expect(items).toEqual(['UndoCtrl+Z', 'RedoCtrl+Y', 'Copy puzzleCtrl+C', 'Paste puzzleCtrl+V'])
+    })
+
+    it('copies the puzzle and its name from the menu', async () => {
       const writeText = vi.fn().mockResolvedValue(undefined)
       Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
       render(<App />)
       fireEvent.change(screen.getByLabelText('Puzzle name'), { target: { value: 'Quiz 18' } })
       importAnswers('abba')
+      const item = editMenu().getByRole('menuitem', { name: /Copy puzzle/ })
       await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: 'Copy state' }))
+        fireEvent.click(item)
       })
       const copied = JSON.parse(writeText.mock.calls[0][0])
       expect(copied.name).toBe('Quiz 18')
       expect(copied.puzzle.answers[0].text).toBe('ABBA')
-      expect(screen.getByText(/^Copied\./)).toBeInTheDocument()
+      expect(status()).toHaveTextContent('Puzzle copied to the clipboard.')
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument()
     })
 
-    function paste(text: string) {
-      fireEvent.click(screen.getByRole('button', { name: 'Paste state' }))
-      fireEvent.change(screen.getByLabelText(/^Paste a puzzle copied with Copy state/), { target: { value: text } })
-      fireEvent.click(screen.getByRole('button', { name: 'Add puzzle' }))
-    }
-
-    it('adds a pasted puzzle as a new puzzle and opens it', () => {
+    it('copies with Ctrl+C', () => {
       render(<App />)
       importAnswers('abba')
-      paste(serializePuzzle(samplePuzzle, 'Quiz 7'))
-      expect(listedAnswers()).toContain('PINK FLOYD')
-      expect(screen.getByLabelText('Puzzle name')).toHaveValue('Quiz 7')
-      expect(screen.getByRole('button', { name: 'My puzzles (2)' })).toBeInTheDocument()
-      expect(screen.queryByRole('dialog', { name: 'Paste state' })).not.toBeInTheDocument()
+      const setData = vi.fn()
+      fireEvent.copy(document.body, { clipboardData: { setData } })
+      expect(JSON.parse(setData.mock.calls[0][1]).puzzle.answers[0].text).toBe('ABBA')
     })
 
-    it('explains why a pasted text could not be loaded', () => {
+    it('leaves Ctrl+C in a text field alone', () => {
       render(<App />)
-      paste('hello')
-      expect(screen.getByRole('alert')).toHaveTextContent("That isn't a saved puzzle.")
-      expect(screen.getByRole('dialog', { name: 'Paste state' })).toBeInTheDocument()
+      const setData = vi.fn()
+      fireEvent.copy(screen.getByLabelText('Puzzle name'), { clipboardData: { setData } })
+      expect(setData).not.toHaveBeenCalled()
+    })
+
+    it('pastes with Ctrl+V into the open puzzle, keeping its name, and undoes it', () => {
+      render(<App />)
+      fireEvent.change(screen.getByLabelText('Puzzle name'), { target: { value: 'Quiz 18' } })
+      importAnswers('abba')
+      const text = serializePuzzle(samplePuzzle, 'Quiz 7')
+      fireEvent.paste(document.body, { clipboardData: { getData: () => text } })
+      expect(listedAnswers()).toContain('PINK FLOYD')
+      expect(screen.getByLabelText('Puzzle name')).toHaveValue('Quiz 18')
+      expect(screen.getByRole('button', { name: 'My puzzles (1)' })).toBeInTheDocument()
+
+      fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+      expect(listedAnswers()).toEqual(['ABBA'])
+    })
+
+    it('pastes from the menu', async () => {
+      const readText = vi.fn().mockResolvedValue(serializePuzzle(samplePuzzle))
+      Object.defineProperty(navigator, 'clipboard', { value: { readText }, configurable: true })
+      render(<App />)
+      const item = editMenu().getByRole('menuitem', { name: /Paste puzzle/ })
+      await act(async () => {
+        fireEvent.click(item)
+      })
+      expect(listedAnswers()).toContain('PINK FLOYD')
+    })
+
+    it("says so when the clipboard doesn't hold a puzzle, and changes nothing", () => {
+      render(<App />)
+      importAnswers('abba')
+      fireEvent.paste(document.body, { clipboardData: { getData: () => 'hello' } })
+      expect(status()).toHaveTextContent("The clipboard doesn't contain a copied puzzle.")
+      expect(listedAnswers()).toEqual(['ABBA'])
+    })
+
+    it('undoes and redoes with the keyboard and the menu', () => {
+      render(<App />)
+      importAnswers('abba')
+      importAnswers('queen')
+      fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+      expect(listedAnswers()).toEqual(['ABBA'])
+      fireEvent.keyDown(document.body, { key: 'y', ctrlKey: true })
+      expect(listedAnswers()).toEqual(['ABBA', 'QUEEN'])
+      fireEvent.keyDown(document.body, { key: 'Z', ctrlKey: true, shiftKey: true })
+      expect(listedAnswers()).toEqual(['ABBA', 'QUEEN'])
+
+      fireEvent.click(editMenu().getByRole('menuitem', { name: /Undo/ }))
+      expect(listedAnswers()).toEqual(['ABBA'])
+      expect(editMenu().getByRole('menuitem', { name: /Redo/ })).toBeEnabled()
+    })
+
+    it('disables Undo and Redo when there is nothing to undo or redo', () => {
+      render(<App />)
+      const menu = editMenu()
+      expect(menu.getByRole('menuitem', { name: /Undo/ })).toBeDisabled()
+      expect(menu.getByRole('menuitem', { name: /Redo/ })).toBeDisabled()
+    })
+
+    it('leaves Ctrl+Z in a text field alone', () => {
+      render(<App />)
+      importAnswers('abba')
+      fireEvent.keyDown(screen.getByLabelText('Puzzle name'), { key: 'z', ctrlKey: true })
+      expect(listedAnswers()).toEqual(['ABBA'])
     })
   })
 
@@ -183,15 +258,6 @@ describe('Editor', () => {
       expect(names).toEqual(['Sample puzzle', 'Quiz 18'])
       expect(list.getAllByRole('listitem')[0]).toHaveTextContent(/6 answers · \d{4}-\d{2}-\d{2} \d{2}:\d{2}/)
       expect(list.getAllByTitle('Last edited')).toHaveLength(2)
-    })
-
-    it('duplicates a puzzle', () => {
-      render(<App />)
-      fireEvent.change(screen.getByLabelText('Puzzle name'), { target: { value: 'Quiz 18' } })
-      importAnswers('abba')
-      fireEvent.click(openList().getByRole('button', { name: 'Duplicate Quiz 18' }))
-      expect(screen.getByLabelText('Puzzle name')).toHaveValue('Quiz 18 (1)')
-      expect(listedAnswers()).toEqual(['ABBA'])
     })
 
     it('deletes a puzzle after asking', () => {

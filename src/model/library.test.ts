@@ -55,9 +55,9 @@ describe('libraryReducer', () => {
     expect(library.entries[0]).toMatchObject({ name: 'Christmas', updatedAt: t(0) })
   })
 
-  it('duplicates a puzzle as a new, open copy with a numbered name', () => {
-    const library = libraryReducer(twoPuzzles(), { type: 'duplicate', id: 'b', newId: 'c', now: t(4) })
-    expect(currentEntry(library)).toEqual({ id: 'c', name: 'Quiz 2 (1)', updatedAt: t(4), puzzle: samplePuzzle })
+  it('replaces the open puzzle and keeps its name', () => {
+    const library = libraryReducer(twoPuzzles(), { type: 'replace', puzzle: emptyPuzzle, now: t(4) })
+    expect(currentEntry(library)).toEqual({ id: 'b', name: 'Quiz 2', updatedAt: t(4), puzzle: emptyPuzzle })
   })
 
   it('numbers new puzzles whose name is taken', () => {
