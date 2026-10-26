@@ -309,7 +309,6 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
                 })}
               </select>
             </label>
-            <p className="hint">Smaller cells fit more answers on the A4 page.</p>
           </section>
 
           <section className="side-section" aria-label="Display">
