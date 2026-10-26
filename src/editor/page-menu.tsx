@@ -1,4 +1,7 @@
-import { CELL_SIZES_MM, gridForCellSize } from '../model/page'
+import { useMemo } from 'react'
+import { centerOffset } from '../layout/center'
+import { layoutPuzzle } from '../layout/layout'
+import { CELL_SIZES_MM, gridForCellSize, puzzleGrid } from '../model/page'
 import type { Puzzle } from '../model/puzzle'
 import type { PuzzleAction } from '../model/puzzle-reducer'
 
@@ -9,8 +12,25 @@ type PageMenuProps = {
   onShowLettersChange: (value: boolean) => void
 }
 
-/** How the page looks: the cell size and anagram bar, which go into the exports, and the editor's letters. */
+/**
+ * How the page looks: the cell size and anagram bar, which go into the exports, the editor's
+ * letters, and centring the puzzle on the page.
+ */
 export function PageMenu({ puzzle, dispatch, showLetters, onShowLettersChange }: PageMenuProps) {
+  const layout = useMemo(() => layoutPuzzle(puzzle), [puzzle])
+  const toCenter = centerOffset(layout, puzzleGrid(puzzle), puzzle.anagram.showNumbersAndBar)
+
+  function center() {
+    if (!toCenter) return
+    // Everything moves, so every thick border goes along.
+    dispatch({
+      type: 'move-answers',
+      ids: puzzle.answers.filter((answer) => answer.start).map((answer) => answer.id),
+      by: toCenter,
+      separators: puzzle.separators,
+    })
+  }
+
   return (
     <div className="menu-panel page-menu" role="dialog" aria-label="Page">
       <label className="page-menu-row">
@@ -41,6 +61,14 @@ export function PageMenu({ puzzle, dispatch, showLetters, onShowLettersChange }:
         <input type="checkbox" checked={showLetters} onChange={(e) => onShowLettersChange(e.target.checked)} />
         Show letters in the editor
       </label>
+      <button
+        type="button"
+        disabled={!toCenter}
+        title="Move all answers so the puzzle sits in the middle of the page"
+        onClick={center}
+      >
+        Center on page
+      </button>
     </div>
   )
 }

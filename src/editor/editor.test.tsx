@@ -457,6 +457,25 @@ describe('Editor', () => {
       expect(container.querySelectorAll('[data-letter]')).toHaveLength(0)
     })
 
+    it('centers the puzzle on the page', () => {
+      const { container } = render(<App />)
+      // One answer in the top-left corner, pasted in like a copied puzzle.
+      const corner = {
+        ...samplePuzzle,
+        answers: [{ id: 'x', text: 'ABC', start: { row: 0, col: 0 }, dir: 'right' as const, turns: [], wideSpaces: [] }],
+        anagram: { showNumbersAndBar: false, cells: [] },
+        separators: [],
+      }
+      fireEvent.paste(document.body, { clipboardData: { getData: () => serializePuzzle(corner) } })
+      const page = openPage()
+      fireEvent.click(page.getByRole('button', { name: 'Center on page' }))
+      const cells = [...container.querySelectorAll('[data-answer-handle="x"] [data-cell]')].map((el) =>
+        el.getAttribute('data-cell'),
+      )
+      expect(cells.sort()).toEqual(['10,13', '10,14', '10,15'])
+      expect(page.getByRole('button', { name: 'Center on page' })).toBeDisabled()
+    })
+
     it('shows the anagram numbers and bar', () => {
       render(<App />)
       const page = openPage()

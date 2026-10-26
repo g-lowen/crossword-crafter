@@ -121,6 +121,10 @@ top-left, and so on. It is black, or white when the turn is at a space (a black 
 - Thick borders move along when they touch the moving answers and don't touch an answer that
   stays.
 - Each move is one step for undo.
+- "Center on page" in the Page menu moves every placed answer, and every thick border, so the
+  puzzle sits in the middle of the page. When the anagram bar is shown, its row and the row with
+  its numbers are kept free. It is greyed out when the puzzle is already centered, empty, or too big
+  to fit. Handy after switching to smaller cells, since the puzzle stays in the top-left.
 
 ## Groups (several mini puzzles in one grid)
 
