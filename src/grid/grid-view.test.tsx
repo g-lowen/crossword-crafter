@@ -13,6 +13,7 @@ function puzzle(overrides: Partial<Puzzle>): Puzzle {
     answers: [],
     anagram: { showNumbersAndBar: false, cells: [] },
     separators: [],
+    groups: [],
     highlightColor: '#1e88e5',
     includeStartArrow: false,
     ...overrides,
@@ -118,5 +119,37 @@ describe('GridView', () => {
 
     const hidden = renderGrid(puzzle({ answers, anagram: { showNumbersAndBar: false, cells } }))
     expect(hidden.all('[data-anagram-bar]')).toHaveLength(0)
+  })
+
+  it("fills letter cells with their group's color, leaving spaces black", () => {
+    const { all } = renderGrid(
+      puzzle({
+        answers: [
+          answer({ id: 'a', text: 'AB C' }),
+          answer({ id: 'b', text: 'XY', start: { row: 3, col: 0 } }),
+        ],
+        groups: [{ start: 0, name: '', color: '#fbdbe6' }],
+      }),
+    )
+    const fills = [...all('[data-cell-kind]')].map((el) => `${el.getAttribute('data-cell-kind')}:${el.getAttribute('fill')}`)
+    expect(fills.filter((f) => f === 'letter:#fbdbe6')).toHaveLength(5)
+    expect(fills).toContain('space:black')
+  })
+
+  it('colors a crossing by the answer earliest in the list', () => {
+    const { all } = renderGrid(
+      puzzle({
+        answers: [
+          answer({ id: 'a', text: 'CAT', start: { row: 1, col: 0 } }),
+          answer({ id: 'b', text: 'BAD', start: { row: 0, col: 1 }, dir: 'down' }),
+        ],
+        groups: [
+          { start: 0, name: '', color: '#111111' },
+          { start: 1, name: '', color: '#222222' },
+        ],
+      }),
+    )
+    const crossing = [...all('[data-cell-kind="letter"]')].find((el) => el.getAttribute('x') === '10' && el.getAttribute('y') === '10')
+    expect(crossing?.getAttribute('fill')).toBe('#111111')
   })
 })

@@ -14,6 +14,7 @@ function puzzle(cells: Puzzle['anagram']['cells']): Puzzle {
     answers: [answer('a', 'ABC', 5, 10), answer('b', 'XYZ', 2, 3, 'down')],
     anagram: { showNumbersAndBar: true, cells },
     separators: [],
+    groups: [],
     highlightColor: '#1e88e5',
     includeStartArrow: false,
   }

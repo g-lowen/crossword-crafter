@@ -91,6 +91,25 @@ top-left, and so on.
 - Cell: "Wide space" for a space, or "Anagram letter" with its number for a letter.
 - Thick border: top, right, bottom, left of the selected cell.
 
+## Groups (several mini puzzles in one grid)
+
+Gustav sometimes builds one grid out of several mini puzzles, each with its own background color.
+The answers of one mini puzzle are always next to each other in the list, so groups are made with
+dividers in the list:
+
+- Hovering an answer shows "+ New group" on its top edge. Clicking it starts a new group from that
+  answer; the group runs until the next divider. Answers before the first divider have no group.
+- Each group has a header in the list with a color swatch, a name field (empty shows "Group N"),
+  its answer count, and ✕ to remove the divider (its answers join the group above).
+- A divider belongs to its position in the list, not to an answer: dragging an answer across it
+  moves the answer into the other group. Removing an answer moves the dividers below it up.
+- The letter cells of a grouped answer get the group's color, in the editor, the exported images
+  and the PowerPoint deck. Spaces stay black and anagram borders stay red. Where answers from
+  different groups cross, the one earliest in the list decides the color. Answers without a group
+  stay white, so puzzles without groups look exactly as before.
+- New groups get the next unused color from a pale palette, so black letters stay readable.
+- Stored as `groups: { start, name, color }[]` on the puzzle (`src/model/groups.ts`).
+
 ## Crossings
 
 - Answers may share cells. Mismatching letters are allowed; it's up to Sammy to fix them.
@@ -228,6 +247,7 @@ type Puzzle = {
     cells: { answerId: string; letterIndex: number; number?: number }[];
   };
   separators: { a: CellRef; b: CellRef }[];
+  groups: { start: number; name: string; color: string }[]; // start = list index of first answer
   highlightColor: string;
   includeStartArrow: boolean;
 };

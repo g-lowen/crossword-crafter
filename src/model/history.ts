@@ -6,10 +6,10 @@ import type { PuzzleAction } from './puzzle-reducer'
 const LIMIT = 100
 
 /**
- * Changes that arrive in quick bursts, such as dragging the color picker or typing an anagram
- * number. Several in a row become one undo step.
+ * Changes that arrive in quick bursts, such as dragging a color picker or typing an anagram number
+ * or group name. Several in a row become one undo step.
  */
-const MERGED: PuzzleAction['type'][] = ['set-highlight-color', 'set-anagram-number']
+const MERGED: PuzzleAction['type'][] = ['set-highlight-color', 'set-anagram-number', 'set-group-color', 'set-group-name']
 
 type PuzzleHistory = {
   past: Puzzle[]

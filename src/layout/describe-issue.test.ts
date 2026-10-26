@@ -9,6 +9,7 @@ const puzzle: Puzzle = {
   ],
   anagram: { showNumbersAndBar: false, cells: [] },
   separators: [],
+    groups: [],
   highlightColor: '#1e88e5',
   includeStartArrow: false,
 }

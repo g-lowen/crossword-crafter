@@ -11,6 +11,7 @@ const puzzle: Puzzle = {
   answers: [answer('cat', 'CAT', 1, 0, 'right'), answer('bad', 'BAD', 0, 1, 'down')],
   anagram: { showNumbersAndBar: false, cells: [] },
   separators: [],
+    groups: [],
   highlightColor: '#1e88e5',
   includeStartArrow: false,
 }

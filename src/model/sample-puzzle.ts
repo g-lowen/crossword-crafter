@@ -26,6 +26,7 @@ export const samplePuzzle: Puzzle = {
     ],
   },
   separators: [{ a: { row: 6, col: 12 }, b: { row: 6, col: 13 } }],
+  groups: [],
   highlightColor: '#1e88e5',
   includeStartArrow: false,
 }

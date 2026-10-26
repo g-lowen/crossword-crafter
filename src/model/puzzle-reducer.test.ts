@@ -137,3 +137,35 @@ describe('puzzleReducer editing', () => {
     expect(puzzleReducer(added, { type: 'toggle-separator', separator: { a: b, b: a } }).separators).toEqual([])
   })
 })
+
+describe('puzzleReducer groups', () => {
+  const ids = ['a', 'b', 'c', 'd', 'e']
+  const base = puzzleReducer(emptyPuzzle, { type: 'import', answers: ids.map((id) => ({ id, text: id.toUpperCase() })) })
+
+  it('adds groups in list order and ignores a second one at the same answer', () => {
+    let p = puzzleReducer(base, { type: 'add-group', start: 3, color: '#222222' })
+    p = puzzleReducer(p, { type: 'add-group', start: 0, color: '#111111' })
+    expect(p.groups.map((g) => g.start)).toEqual([0, 3])
+    expect(puzzleReducer(p, { type: 'add-group', start: 3, color: '#333333' })).toBe(p)
+  })
+
+  it('renames, recolors and removes a group', () => {
+    let p = puzzleReducer(base, { type: 'add-group', start: 2, color: '#222222' })
+    p = puzzleReducer(p, { type: 'set-group-name', start: 2, name: 'Mini 2' })
+    p = puzzleReducer(p, { type: 'set-group-color', start: 2, color: '#abcdef' })
+    expect(p.groups).toEqual([{ start: 2, name: 'Mini 2', color: '#abcdef' }])
+    expect(puzzleReducer(p, { type: 'remove-group', start: 2 }).groups).toEqual([])
+  })
+
+  it('keeps groups in place when answers above them are removed', () => {
+    const p = puzzleReducer(base, { type: 'add-group', start: 3, color: '#222222' })
+    expect(puzzleReducer(p, { type: 'remove', id: 'a' }).groups[0].start).toBe(2)
+  })
+
+  it('leaves dividers where they are when answers are reordered', () => {
+    const p = puzzleReducer(base, { type: 'add-group', start: 3, color: '#222222' })
+    const moved = puzzleReducer(p, { type: 'reorder', fromId: 'e', toId: 'a' })
+    expect(moved.groups[0].start).toBe(3)
+    expect(moved.answers.map((a) => a.id)).toEqual(['e', 'a', 'b', 'c', 'd'])
+  })
+})

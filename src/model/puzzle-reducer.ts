@@ -1,10 +1,12 @@
 import { arrayMove } from '@dnd-kit/sortable'
-import type { AnagramCell, Answer, CellRef, Dir, Puzzle, Separator } from './puzzle'
+import { groupsAfterRemoving, normalizeGroups } from './groups'
+import type { AnagramCell, AnswerGroup, Answer, CellRef, Dir, Puzzle, Separator } from './puzzle'
 
 export const emptyPuzzle: Puzzle = {
   answers: [],
   anagram: { showNumbersAndBar: false, cells: [] },
   separators: [],
+  groups: [],
   highlightColor: '#1e88e5',
   includeStartArrow: false,
 }
@@ -29,6 +31,11 @@ export type PuzzleAction =
   | { type: 'toggle-separator'; separator: Separator }
   | { type: 'set-highlight-color'; color: string }
   | { type: 'set-include-start-arrow'; value: boolean }
+  /** Starts a new group at the answer with this list index. */
+  | { type: 'add-group'; start: number; color: string }
+  | { type: 'remove-group'; start: number }
+  | { type: 'set-group-color'; start: number; color: string }
+  | { type: 'set-group-name'; start: number; name: string }
 
 const sameAnagramCell = (a: AnagramCell, b: { answerId: string; letterIndex: number }) =>
   a.answerId === b.answerId && a.letterIndex === b.letterIndex
@@ -44,6 +51,10 @@ function toggle(values: number[], value: number): number[] {
 
 function updateAnagramCells(puzzle: Puzzle, update: (cells: AnagramCell[]) => AnagramCell[]): Puzzle {
   return { ...puzzle, anagram: { ...puzzle.anagram, cells: update(puzzle.anagram.cells) } }
+}
+
+function updateGroup(puzzle: Puzzle, start: number, update: (group: AnswerGroup) => AnswerGroup): Puzzle {
+  return { ...puzzle, groups: puzzle.groups.map((group) => (group.start === start ? update(group) : group)) }
 }
 
 function updateAnswer(puzzle: Puzzle, id: string, update: (answer: Answer) => Answer): Puzzle {
@@ -77,15 +88,20 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
     case 'unplace':
       return updateAnswer(puzzle, action.id, (answer) => ({ ...answer, start: null }))
 
-    case 'remove':
+    case 'remove': {
+      const index = puzzle.answers.findIndex((answer) => answer.id === action.id)
+      if (index < 0) return puzzle
+      const answers = puzzle.answers.filter((answer) => answer.id !== action.id)
       return {
         ...puzzle,
-        answers: puzzle.answers.filter((answer) => answer.id !== action.id),
+        answers,
+        groups: groupsAfterRemoving(puzzle.groups, index, answers.length),
         anagram: {
           ...puzzle.anagram,
           cells: puzzle.anagram.cells.filter((cell) => cell.answerId !== action.id),
         },
       }
+    }
 
     case 'reorder': {
       const from = puzzle.answers.findIndex((answer) => answer.id === action.fromId)
@@ -154,5 +170,24 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
 
     case 'set-include-start-arrow':
       return { ...puzzle, includeStartArrow: action.value }
+
+    case 'add-group':
+      if (puzzle.groups.some((group) => group.start === action.start)) return puzzle
+      return {
+        ...puzzle,
+        groups: normalizeGroups(
+          [...puzzle.groups, { start: action.start, name: '', color: action.color }],
+          puzzle.answers.length,
+        ),
+      }
+
+    case 'remove-group':
+      return { ...puzzle, groups: puzzle.groups.filter((group) => group.start !== action.start) }
+
+    case 'set-group-color':
+      return updateGroup(puzzle, action.start, (group) => ({ ...group, color: action.color }))
+
+    case 'set-group-name':
+      return updateGroup(puzzle, action.start, (group) => ({ ...group, name: action.name }))
   }
 }

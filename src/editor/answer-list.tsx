@@ -2,20 +2,38 @@ import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useState } from 'react'
-import type { Answer } from '../model/puzzle'
+import { groupAt, groupLabel } from '../model/groups'
+import type { Answer, AnswerGroup } from '../model/puzzle'
 import { ANSWER_LIST_ID, listItemId, type DragData } from './drag-ids'
 import { parseAnswerList } from './parse-answer-list'
 import { embedLink, parseSpotifyPaste, parseSpotifyText, type SpotifyTrack } from './spotify'
 import { SpotifyImport } from './spotify-import'
 
+/** Dividing the list into groups, such as the mini puzzles in a grid with several. */
+export type GroupActions = {
+  add: (start: number) => void
+  remove: (start: number) => void
+  setColor: (start: number, color: string) => void
+  setName: (start: number, name: string) => void
+}
+
 type AnswerListProps = {
   answers: Answer[]
+  groups: AnswerGroup[]
+  groupActions: GroupActions
   onImport: (texts: string[]) => void
   onToggleDirection: (id: string) => void
   onRemove: (id: string) => void
 }
 
-export function AnswerList({ answers, onImport, onToggleDirection, onRemove }: AnswerListProps) {
+export function AnswerList({
+  answers,
+  groups,
+  groupActions,
+  onImport,
+  onToggleDirection,
+  onRemove,
+}: AnswerListProps) {
   const [text, setText] = useState('')
   // The paste box takes room from the list, so it's folded away once there are answers.
   const [importOpen, setImportOpen] = useState(answers.length === 0)
@@ -107,15 +125,30 @@ export function AnswerList({ answers, onImport, onToggleDirection, onRemove }: A
             <p className="hint">Drag onto the grid. Drag back here to take off.</p>
             <SortableContext items={answers.map((a) => listItemId(a.id))} strategy={verticalListSortingStrategy}>
               <ol>
-                {answers.map((answer, index) => (
-                  <AnswerItem
-                    key={answer.id}
-                    answer={answer}
-                    number={index + 1}
-                    onToggleDirection={onToggleDirection}
-                    onRemove={onRemove}
-                  />
-                ))}
+                {answers.map((answer, index) => {
+                  const startsHere = groups.find((group) => group.start === index)
+                  const nextStart = groups.find((group) => group.start > index)?.start ?? answers.length
+                  return [
+                    startsHere && (
+                      <GroupHeader
+                        key={`group-${index}`}
+                        group={startsHere}
+                        label={groupLabel(groups, startsHere)}
+                        count={nextStart - index}
+                        actions={groupActions}
+                      />
+                    ),
+                    <AnswerItem
+                      key={answer.id}
+                      answer={answer}
+                      number={index + 1}
+                      groupColor={groupAt(groups, index)?.color}
+                      onStartGroup={startsHere ? undefined : () => groupActions.add(index)}
+                      onToggleDirection={onToggleDirection}
+                      onRemove={onRemove}
+                    />,
+                  ]
+                })}
               </ol>
             </SortableContext>
           </>
@@ -125,14 +158,60 @@ export function AnswerList({ answers, onImport, onToggleDirection, onRemove }: A
   )
 }
 
+/** The start of a group in the list: its color, name and size, and a way to remove the divider. */
+function GroupHeader({
+  group,
+  label,
+  count,
+  actions,
+}: {
+  group: AnswerGroup
+  label: string
+  count: number
+  actions: GroupActions
+}) {
+  return (
+    <li className="group-header" style={{ borderColor: group.color }} aria-label={label}>
+      <input
+        type="color"
+        className="group-color"
+        value={group.color}
+        aria-label={`Color of ${label}`}
+        title="Background color of this group's cells"
+        onChange={(e) => actions.setColor(group.start, e.target.value)}
+      />
+      <input
+        className="group-name"
+        value={group.name}
+        placeholder={label}
+        aria-label={`Name of ${label}`}
+        onChange={(e) => actions.setName(group.start, e.target.value)}
+      />
+      <span className="group-count">{count}</span>
+      <button
+        type="button"
+        className="icon-button"
+        aria-label={`Remove ${label}`}
+        title="Remove this divider. Its answers join the group above."
+        onClick={() => actions.remove(group.start)}
+      >
+        ✕
+      </button>
+    </li>
+  )
+}
+
 type AnswerItemProps = {
   answer: Answer
   number: number
+  groupColor: string | undefined
+  /** Starts a new group with this answer; undefined when one already starts here. */
+  onStartGroup: (() => void) | undefined
   onToggleDirection: (id: string) => void
   onRemove: (id: string) => void
 }
 
-function AnswerItem({ answer, number, onToggleDirection, onRemove }: AnswerItemProps) {
+function AnswerItem({ answer, number, groupColor, onStartGroup, onToggleDirection, onRemove }: AnswerItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: listItemId(answer.id),
     data: { answerId: answer.id, source: 'list' } satisfies DragData,
@@ -142,9 +221,26 @@ function AnswerItem({ answer, number, onToggleDirection, onRemove }: AnswerItemP
   return (
     <li
       ref={setNodeRef}
-      style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={`answer${placed ? ' answer--placed' : ''}${isDragging ? ' answer--dragging' : ''}`}
+      style={{
+        transform: CSS.Translate.toString(transform),
+        transition,
+        borderLeftColor: groupColor,
+      }}
+      className={`answer${placed ? ' answer--placed' : ''}${isDragging ? ' answer--dragging' : ''}${
+        groupColor ? ' answer--grouped' : ''
+      }`}
     >
+      {onStartGroup && (
+        <button
+          type="button"
+          className="new-group-button"
+          aria-label={`New group from ${answer.text}`}
+          title="Start a new group from this answer"
+          onClick={onStartGroup}
+        >
+          + New group
+        </button>
+      )}
       <span className="answer-handle" {...attributes} {...listeners} aria-label={`Drag ${answer.text}`}>
         <span className="answer-number">{number}.</span>
         <span className="answer-text" title={answer.text}>

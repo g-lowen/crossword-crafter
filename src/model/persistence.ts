@@ -1,5 +1,6 @@
 import { UNTITLED, createLibrary, type Library, type LibraryEntry } from './library'
-import type { AnagramCell, Answer, CellRef, Dir, Puzzle, Separator, Turn } from './puzzle'
+import { normalizeGroups } from './groups'
+import type { AnagramCell, Answer, AnswerGroup, CellRef, Dir, Puzzle, Separator, Turn } from './puzzle'
 import { emptyPuzzle } from './puzzle-reducer'
 
 /** Where the single autosaved puzzle lived before there was a puzzle list. Read once, to carry it over. */
@@ -84,6 +85,11 @@ function readSeparator(value: unknown, i: number): Separator {
   return { a: readCell(value.a, `Thick border ${i + 1}`), b: readCell(value.b, `Thick border ${i + 1}`) }
 }
 
+function readGroup(value: unknown, i: number): AnswerGroup {
+  if (!isObject(value) || !isInteger(value.start) || typeof value.color !== 'string') fail(`Group ${i + 1} is broken.`)
+  return { start: value.start, name: typeof value.name === 'string' ? value.name : '', color: value.color }
+}
+
 function readPuzzle(value: unknown): Puzzle {
   if (!isObject(value)) fail('There is no puzzle in it.')
   const answers = readArray(value.answers, 'The answers').map(readAnswer)
@@ -98,6 +104,7 @@ function readPuzzle(value: unknown): Puzzle {
       cells: readArray(anagram.cells ?? [], 'The anagram letters').map(readAnagramCell),
     },
     separators: readArray(value.separators ?? [], 'The thick borders').map(readSeparator),
+    groups: normalizeGroups(readArray(value.groups ?? [], 'The groups').map(readGroup), answers.length),
     highlightColor: typeof value.highlightColor === 'string' ? value.highlightColor : emptyPuzzle.highlightColor,
     includeStartArrow: value.includeStartArrow === true,
   }

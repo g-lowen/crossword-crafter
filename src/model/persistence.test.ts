@@ -38,10 +38,24 @@ describe('serializePuzzle and parsePuzzle', () => {
         answers: [{ id: 'a', text: 'ABBA', start: null, dir: 'right', turns: [], wideSpaces: [] }],
         anagram: { showNumbersAndBar: false, cells: [] },
         separators: [],
+        groups: [],
         highlightColor: '#1e88e5',
         includeStartArrow: false,
       } satisfies Puzzle,
     })
+  })
+
+  it('reads groups and drops ones outside the list', () => {
+    const result = parsePuzzle(
+      saved({
+        answers: [{ id: 'a', text: 'ABBA' }, { id: 'b', text: 'QUEEN' }],
+        groups: [
+          { start: 1, name: 'Mini 2', color: '#fff1bf' },
+          { start: 7, color: '#d4ebfb' },
+        ],
+      }),
+    )
+    expect(result.ok && result.puzzle.groups).toEqual([{ start: 1, name: 'Mini 2', color: '#fff1bf' }])
   })
 
   it('drops unknown fields', () => {

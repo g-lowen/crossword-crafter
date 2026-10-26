@@ -26,6 +26,19 @@ export type AnagramCell = {
 /** A thick border between two adjacent cells. */
 export type Separator = { a: CellRef; b: CellRef }
 
+/**
+ * A run of consecutive answers in the list, such as one mini puzzle in a grid with several. It
+ * starts at the answer with list index `start` and runs until the next group's start. The divider
+ * belongs to the position, not to an answer, so dragging an answer across it changes its group.
+ */
+export type AnswerGroup = {
+  start: number
+  /** Empty means the default "Group N". */
+  name: string
+  /** Background color of the group's letter cells. */
+  color: string
+}
+
 export type Puzzle = {
   /** Array order is the reveal order. */
   answers: Answer[]
@@ -34,6 +47,8 @@ export type Puzzle = {
     cells: AnagramCell[]
   }
   separators: Separator[]
+  /** Sorted by start. Answers before the first group have none and stay white. */
+  groups: AnswerGroup[]
   highlightColor: string
   /** Adds the pointer arrow to the quiz images. Sammy usually draws it in PowerPoint instead. */
   includeStartArrow: boolean

@@ -11,6 +11,7 @@ function puzzle(answers: Answer[], anagramCells: Puzzle['anagram']['cells'] = []
     answers,
     anagram: { showNumbersAndBar: false, cells: anagramCells },
     separators: [],
+    groups: [],
     highlightColor: '#e53935',
     includeStartArrow: false,
   }

@@ -20,6 +20,7 @@ import { GridView } from '../grid/grid-view'
 import { leftToRightOrder } from '../layout/anagram'
 import { describeIssue } from '../layout/describe-issue'
 import { cellKey, layoutAnswer, layoutPuzzle, type Piece } from '../layout/layout'
+import { nextGroupColor } from '../model/groups'
 import { A4_LANDSCAPE_GRID } from '../model/page'
 import type { CellRef, Puzzle } from '../model/puzzle'
 import type { PuzzleAction } from '../model/puzzle-reducer'
@@ -168,6 +169,13 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
 
         <AnswerList
           answers={puzzle.answers}
+          groups={puzzle.groups}
+          groupActions={{
+            add: (start) => dispatch({ type: 'add-group', start, color: nextGroupColor(puzzle.groups) }),
+            remove: (start) => dispatch({ type: 'remove-group', start }),
+            setColor: (start, color) => dispatch({ type: 'set-group-color', start, color }),
+            setName: (start, name) => dispatch({ type: 'set-group-name', start, name }),
+          }}
           onImport={(texts) =>
             dispatch({ type: 'import', answers: texts.map((text) => ({ id: crypto.randomUUID(), text })) })
           }

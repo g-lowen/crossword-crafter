@@ -79,6 +79,38 @@ describe('Editor', () => {
     })
   })
 
+  describe('groups', () => {
+    const headers = () =>
+      within(screen.getByRole('region', { name: 'Answers' }))
+        .queryAllByRole('listitem')
+        .filter((item) => item.classList.contains('group-header'))
+        .map((item) => item.textContent)
+
+    it('starts groups from answers and shows their sizes', () => {
+      render(<App />)
+      importAnswers('a\nb\nc\nd\ne')
+      fireEvent.click(screen.getByRole('button', { name: 'New group from A' }))
+      fireEvent.click(screen.getByRole('button', { name: 'New group from D' }))
+      expect(headers()).toEqual(['3✕', '2✕'])
+      expect(screen.getByLabelText('Name of Group 1')).toHaveAttribute('placeholder', 'Group 1')
+      expect(screen.queryByRole('button', { name: 'New group from A' })).not.toBeInTheDocument()
+    })
+
+    it('names, recolors and removes a group, and undoes it', () => {
+      render(<App />)
+      importAnswers('a\nb')
+      fireEvent.click(screen.getByRole('button', { name: 'New group from A' }))
+      fireEvent.change(screen.getByLabelText('Name of Group 1'), { target: { value: 'Mini 1' } })
+      fireEvent.change(screen.getByLabelText('Color of Mini 1'), { target: { value: '#123456' } })
+      expect(screen.getByLabelText('Color of Mini 1')).toHaveValue('#123456')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Remove Mini 1' }))
+      expect(headers()).toEqual([])
+      fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+      expect(screen.getByLabelText('Name of Mini 1')).toHaveValue('Mini 1')
+    })
+  })
+
   describe('adding answers from Spotify', () => {
     const spotifyHtml = `
       <li data-testid="tracklist-row-0"><h3>Rötter</h3><h4>Lasse Tennander</h4><div>04:00</div></li>

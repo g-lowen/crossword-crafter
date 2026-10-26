@@ -959,3 +959,91 @@ button {
   opacity: 0.45;
   text-decoration: line-through;
 }
+
+/* Groups in the answer list: a header row per group, and a colored stripe on its answers. */
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 8px 0 3px;
+  padding: 2px 2px 2px 4px;
+  font-size: 0.85rem;
+  border-bottom: 3px solid;
+}
+
+.group-header:first-child {
+  margin-top: 0;
+}
+
+.group-color {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+}
+
+.group-color::-webkit-color-swatch-wrapper {
+  padding: 1px;
+}
+
+.group-color::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
+.group-name {
+  flex: 1;
+  min-width: 0;
+  padding: 1px 4px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+}
+
+.group-name:hover,
+.group-name:focus {
+  background: var(--surface);
+  border-color: var(--border-strong);
+}
+
+.group-count {
+  color: var(--text-muted);
+}
+
+.answer {
+  position: relative;
+}
+
+.answer--grouped {
+  border-left-width: 5px;
+}
+
+/* Shown on the top edge of an answer while hovering it. */
+.new-group-button {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  z-index: 2;
+  display: none;
+  padding: 0 8px;
+  font-size: 0.75rem;
+  line-height: 16px;
+  white-space: nowrap;
+  color: var(--on-accent);
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  transform: translateX(-50%);
+}
+
+.answer:hover .new-group-button,
+.new-group-button:focus-visible {
+  display: block;
+}

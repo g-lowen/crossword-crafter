@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { anagramBarCells } from '../layout/anagram'
 import type { Layout, Piece } from '../layout/layout'
 import { cellKey } from '../layout/layout'
+import { groupColors } from '../model/groups'
 import { A4_LANDSCAPE_GRID, type GridSize } from '../model/page'
 import type { Puzzle } from '../model/puzzle'
 import { CELL, cellOrigin, outlineSegments, pointerArrow, separatorLine, turnArrow, wideSpaceShape } from './geometry'
@@ -48,6 +49,10 @@ export function GridView({
     layout.issues.flatMap((issue) => (issue.type === 'conflict' ? [cellKey(issue.cell)] : [])),
   )
   const cells = [...layout.cells.values()]
+  const colors = groupColors(puzzle)
+  // Where answers from different groups cross, the one earliest in the list decides the color.
+  const cellFill = (pieces: Piece[]) =>
+    pieces.map((piece) => colors.get(piece.answerId)).find((color) => color !== undefined) ?? 'white'
   const barCells = puzzle.anagram.showNumbersAndBar ? anagramBarCells(layout, grid) : []
 
   return (
@@ -75,7 +80,7 @@ export function GridView({
             y={y}
             width={CELL}
             height={CELL}
-            fill={isSpace ? 'black' : 'white'}
+            fill={isSpace ? 'black' : cellFill(pieces)}
             stroke="black"
             strokeWidth={LINE}
           />
