@@ -14,18 +14,23 @@ button {
   cursor: pointer;
 }
 
+/* The whole editor fits the window, so the grid can be seen in one go on a laptop. */
 .app {
-  padding: 16px 24px;
+  box-sizing: border-box;
+  height: 100vh;
+  padding: 8px 12px;
 }
 
 .editor {
+  --header-height: 40px;
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: 220px minmax(0, 1fr) 250px;
+  grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
-    'header header'
-    'answers workspace';
-  gap: 16px 24px;
-  align-items: start;
+    'header header header'
+    'answers workspace side';
+  gap: 8px 12px;
+  height: 100%;
 }
 
 .app-header {
@@ -33,7 +38,8 @@ button {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 24px;
+  gap: 8px 16px;
+  min-height: var(--header-height);
 }
 
 .puzzle-menu {
@@ -288,7 +294,36 @@ button {
   grid-area: answers;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+  min-height: 0;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.panel-heading h2,
+.side-section h2 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #607d8b;
+}
+
+.link-button {
+  padding: 0;
+  font-size: 0.85rem;
+  color: #1565c0;
+  background: none;
+  border: none;
+}
+
+.link-button:hover {
+  text-decoration: underline;
 }
 
 .import {
@@ -298,15 +333,22 @@ button {
   font-size: 0.9rem;
 }
 
+.import label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .import textarea {
   font: inherit;
   resize: vertical;
 }
 
 .answer-list {
-  margin-top: 8px;
-  padding: 8px;
-  min-height: 80px;
+  flex: 1;
+  min-height: 0;
+  padding: 4px;
+  overflow-y: auto;
   border: 2px dashed transparent;
   border-radius: 6px;
 }
@@ -331,9 +373,10 @@ button {
 .answer {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-bottom: 4px;
-  padding: 2px 4px 2px 8px;
+  gap: 2px;
+  margin-bottom: 3px;
+  padding: 0 2px 0 6px;
+  font-size: 0.9rem;
   background: white;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -351,7 +394,8 @@ button {
 .answer-handle {
   flex: 1;
   display: flex;
-  gap: 6px;
+  gap: 4px;
+  min-width: 0;
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -364,8 +408,17 @@ button {
 }
 
 .answer-text {
+  overflow: hidden;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.answer .icon-button {
+  flex: none;
+  width: 24px;
+  height: 24px;
 }
 
 .icon-button {
@@ -395,11 +448,16 @@ button {
 
 .workspace {
   grid-area: workspace;
+  display: flex;
+  justify-content: center;
+  min-height: 0;
 }
 
 /* The page keeps its A4 proportions and scales to the window. */
+/* The page keeps its A4 proportions and is as big as the space allows, in both directions. */
 .page {
-  max-width: 1160px;
+  align-self: start;
+  width: min(100%, calc((100vh - var(--header-height) - 36px) * 29 / 21));
 }
 
 .grid-view {
@@ -414,43 +472,58 @@ button {
   outline: none;
 }
 
+.side-panel {
+  grid-area: side;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.side-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+}
+
+.side-section .hint {
+  margin: 0;
+}
+
 .issues {
-  max-width: 1160px;
-  margin-top: 16px;
-  padding: 8px 16px;
   border-left: 4px solid #ff9800;
   background: #fff8e1;
 }
 
 .issues h2 {
-  margin: 0;
-  font-size: 1rem;
+  color: #e65100;
 }
 
 .issues ul {
-  margin: 4px 0;
-  padding-left: 20px;
-}
-
-.inspector-slot {
-  max-width: 1160px;
-  height: 116px;
-  margin-bottom: 8px;
+  margin: 0;
+  padding-left: 18px;
 }
 
 .inspector {
-  box-sizing: border-box;
-  height: 100%;
-  padding: 8px 12px;
+  padding: 8px 10px;
+  font-size: 0.9rem;
   background: white;
-  border: 1px solid #cfd8dc;
+  border: 1px solid #90caf9;
   border-radius: 6px;
 }
 
 .inspector-title {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: 0 4px;
 }
 
 .inspector-title span {
@@ -460,17 +533,18 @@ button {
 
 .inspector-groups {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 4px;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
 }
 
 .inspector fieldset {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
-  padding: 4px 10px 8px;
+  padding: 2px 8px 8px;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
 }

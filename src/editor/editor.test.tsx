@@ -5,8 +5,17 @@ import { samplePuzzle } from '../model/sample-puzzle'
 import App from '../app'
 
 function importAnswers(text: string) {
+  // The paste box folds away once there are answers.
+  if (!screen.queryByLabelText('Paste answers, one per line')) {
+    fireEvent.click(screen.getByRole('button', { name: '+ Add answers' }))
+  }
   fireEvent.change(screen.getByLabelText('Paste answers, one per line'), { target: { value: text } })
   fireEvent.click(screen.getByRole('button', { name: 'Add answers' }))
+}
+
+function loadSample() {
+  fireEvent.click(screen.getByRole('button', { name: /^My puzzles/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Add sample puzzle' }))
 }
 
 function listedAnswers() {
@@ -22,10 +31,12 @@ describe('Editor', () => {
     expect(screen.getByRole('button', { name: 'Add answers' })).toBeDisabled()
   })
 
-  it('imports pasted answers in order and clears the text box', () => {
+  it('imports pasted answers in order and folds the paste box away', () => {
     render(<App />)
     importAnswers('abba\n\nqueen\n')
     expect(listedAnswers()).toEqual(['ABBA', 'QUEEN'])
+    expect(screen.queryByLabelText('Paste answers, one per line')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '+ Add answers' }))
     expect(screen.getByLabelText('Paste answers, one per line')).toHaveValue('')
   })
 
@@ -45,7 +56,7 @@ describe('Editor', () => {
 
   it('loads the sample puzzle onto the grid', () => {
     const { container } = render(<App />)
-    fireEvent.click(screen.getByRole('button', { name: 'Load sample' }))
+    loadSample()
     expect(listedAnswers()).toContain('PINK FLOYD')
     expect(container.querySelectorAll('[data-answer-handle]')).toHaveLength(6)
   })
@@ -197,7 +208,7 @@ describe('Editor', () => {
 
     it('renames a puzzle from the list, and Esc cancels', () => {
       render(<App />)
-      fireEvent.click(screen.getByRole('button', { name: 'Load sample' }))
+      loadSample()
       const list = openList()
       fireEvent.click(list.getByRole('button', { name: 'Rename Untitled puzzle' }))
       const field = list.getByLabelText('New name for Untitled puzzle')
@@ -252,7 +263,7 @@ describe('Editor', () => {
     it('lists puzzles with their answer counts, most recent first', () => {
       render(<App />)
       fireEvent.change(screen.getByLabelText('Puzzle name'), { target: { value: 'Quiz 18' } })
-      fireEvent.click(screen.getByRole('button', { name: 'Load sample' }))
+      loadSample()
       const list = openList()
       const names = list.getAllByRole('listitem').map((item) => item.querySelector('.puzzle-entry-name')?.textContent)
       expect(names).toEqual(['Sample puzzle', 'Quiz 18'])
@@ -262,7 +273,7 @@ describe('Editor', () => {
 
     it('deletes a puzzle after asking', () => {
       render(<App />)
-      fireEvent.click(screen.getByRole('button', { name: 'Load sample' }))
+      loadSample()
       const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
       fireEvent.click(openList().getByRole('button', { name: 'Delete Sample puzzle' }))
       expect(confirm).toHaveBeenCalledWith('Delete "Sample puzzle"? This can\'t be undone.')
@@ -280,7 +291,7 @@ describe('Editor', () => {
   describe('inspector', () => {
     function loadSampleAndClick(cell: string) {
       const view = render(<App />)
-      fireEvent.click(screen.getByRole('button', { name: 'Load sample' }))
+      loadSample()
       fireEvent.click(view.container.querySelector(`[data-cell="${cell}"]`)!)
       return view
     }

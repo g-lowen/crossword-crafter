@@ -18,6 +18,20 @@ automate layout but to make manual layout fast.
 - A4 landscape, 1 cm square cells. The grid is 29 × 21 cells.
 - All cells have the same size in every puzzle and every export.
 
+## Screen layout
+
+Sammy works on a laptop, so the whole editor fits the window and the grid is always fully visible
+without scrolling:
+
+- A one-line header: the puzzle name on the left; New puzzle, My puzzles, Edit ▾ and Export
+  images on the right.
+- Left column: the answer list. The paste box is open while there are no answers, and folds away
+  behind "+ Add answers" once there are.
+- Middle: the grid, as large as the window allows while keeping its A4 proportions.
+- Right column: the selected cell's settings, then Display (show letters), Anagram (numbers and
+  bar, number left to right) and any issues.
+- "Add sample puzzle" lives at the bottom of My puzzles.
+
 ## Answers
 
 - Imported as a list (pasted text, one answer per line). List order is the reveal order.

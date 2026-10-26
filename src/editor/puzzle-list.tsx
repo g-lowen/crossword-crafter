@@ -5,6 +5,7 @@ import { SHORTCUT_LABELS } from './use-shortcuts'
 type PuzzleListProps = {
   library: Library
   dispatch: Dispatch<LibraryAction>
+  onAddSample: () => void
   onClose: () => void
 }
 
@@ -15,7 +16,7 @@ const displayName = (name: string) => (name.trim() === '' ? UNTITLED : name)
 const now = () => new Date().toISOString()
 
 /** Every puzzle saved in this browser, most recently changed first. */
-export function PuzzleList({ library, dispatch, onClose }: PuzzleListProps) {
+export function PuzzleList({ library, dispatch, onAddSample, onClose }: PuzzleListProps) {
   const [renamingId, setRenamingId] = useState<string | null>(null)
 
   return (
@@ -91,6 +92,11 @@ export function PuzzleList({ library, dispatch, onClose }: PuzzleListProps) {
           )
         })}
       </ul>
+      <div className="panel-actions">
+        <button type="button" className="link-button" onClick={onAddSample}>
+          Add sample puzzle
+        </button>
+      </div>
     </div>
   )
 }

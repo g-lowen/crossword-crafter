@@ -76,9 +76,6 @@ export function PuzzleMenu({ library, dispatch, commands, status }: PuzzleMenuPr
       <button type="button" onClick={() => toggle('edit')} aria-expanded={panel === 'edit'} aria-haspopup="menu">
         Edit ▾
       </button>
-      <button type="button" onClick={() => add('Sample puzzle', samplePuzzle)}>
-        Load sample
-      </button>
       <button
         type="button"
         className="primary-button"
@@ -112,7 +109,14 @@ export function PuzzleMenu({ library, dispatch, commands, status }: PuzzleMenuPr
           <p className="menu-note">Paste replaces the open puzzle.</p>
         </div>
       )}
-      {panel === 'list' && <PuzzleList library={library} dispatch={dispatch} onClose={() => setPanel(null)} />}
+      {panel === 'list' && (
+        <PuzzleList
+          library={library}
+          dispatch={dispatch}
+          onAddSample={run(() => add('Sample puzzle', samplePuzzle))}
+          onClose={() => setPanel(null)}
+        />
+      )}
       {panel === 'export' && (
         <ExportPanel
           puzzle={current.puzzle}

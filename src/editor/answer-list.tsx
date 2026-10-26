@@ -15,31 +15,48 @@ type AnswerListProps = {
 
 export function AnswerList({ answers, onImport, onToggleDirection, onRemove }: AnswerListProps) {
   const [text, setText] = useState('')
+  // The paste box takes room from the list, so it's folded away once there are answers.
+  const [importOpen, setImportOpen] = useState(answers.length === 0)
   const { setNodeRef, isOver } = useDroppable({ id: ANSWER_LIST_ID })
+  const showImport = importOpen || answers.length === 0
 
   const importAnswers = () => {
     const texts = parseAnswerList(text)
     if (texts.length === 0) return
     onImport(texts)
     setText('')
+    setImportOpen(false)
   }
 
   return (
     <aside className="answer-panel">
-      <label className="import">
-        <span>Paste answers, one per line</span>
-        <textarea value={text} onChange={(e) => setText(e.target.value)} rows={5} />
-      </label>
-      <button type="button" onClick={importAnswers} disabled={parseAnswerList(text).length === 0}>
-        Add answers
-      </button>
+      <div className="panel-heading">
+        <h2>Answers {answers.length > 0 && `(${answers.length})`}</h2>
+        {answers.length > 0 && (
+          <button type="button" className="link-button" onClick={() => setImportOpen(!importOpen)}>
+            {importOpen ? 'Cancel' : '+ Add answers'}
+          </button>
+        )}
+      </div>
+
+      {showImport && (
+        <div className="import">
+          <label>
+            <span>Paste answers, one per line</span>
+            <textarea value={text} onChange={(e) => setText(e.target.value)} rows={5} autoFocus={answers.length > 0} />
+          </label>
+          <button type="button" onClick={importAnswers} disabled={parseAnswerList(text).length === 0}>
+            Add answers
+          </button>
+        </div>
+      )}
 
       <section ref={setNodeRef} className={`answer-list${isOver ? ' answer-list--over' : ''}`} aria-label="Answers">
         {answers.length === 0 ? (
           <p className="hint">No answers yet.</p>
         ) : (
           <>
-            <p className="hint">Drag an answer onto the grid. Drag it back here to take it off.</p>
+            <p className="hint">Drag onto the grid. Drag back here to take off.</p>
             <SortableContext items={answers.map((a) => listItemId(a.id))} strategy={verticalListSortingStrategy}>
               <ol>
                 {answers.map((answer, index) => (
@@ -82,7 +99,9 @@ function AnswerItem({ answer, number, onToggleDirection, onRemove }: AnswerItemP
     >
       <span className="answer-handle" {...attributes} {...listeners} aria-label={`Drag ${answer.text}`}>
         <span className="answer-number">{number}.</span>
-        <span className="answer-text">{answer.text}</span>
+        <span className="answer-text" title={answer.text}>
+          {answer.text}
+        </span>
       </span>
       <button
         type="button"

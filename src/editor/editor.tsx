@@ -157,26 +157,6 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
       <div className="editor">
         <header className="app-header">
           {nameField}
-          <label>
-            <input type="checkbox" checked={showLetters} onChange={(e) => setShowLetters(e.target.checked)} /> Show
-            letters
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={puzzle.anagram.showNumbersAndBar}
-              onChange={(e) => dispatch({ type: 'set-show-anagram-numbers', value: e.target.checked })}
-            />{' '}
-            Show anagram numbers and bar
-          </label>
-          <button
-            type="button"
-            disabled={layout.anagramCells.length === 0}
-            onClick={() => dispatch({ type: 'renumber-anagram', order: leftToRightOrder(layout) })}
-            title="Number the anagram letters column by column from the left"
-          >
-            Number anagram left to right
-          </button>
           {menu}
           {saveFailed && (
             <p className="save-warning" role="alert">
@@ -196,21 +176,6 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
         />
 
         <div className="workspace">
-          {/* Fixed height, so the grid doesn't jump when a cell is selected. */}
-          <div className="inspector-slot">
-            {selection ? (
-              <Inspector
-                puzzle={puzzle}
-                layout={layout}
-                selection={selection}
-                dispatch={dispatch}
-                onClose={() => setSelection(null)}
-              />
-            ) : (
-              <p className="hint">Click a cell to add turns, wide spaces, anagram letters and thick borders.</p>
-            )}
-          </div>
-
           <GridDropArea pageRef={pageRef} onBackgroundClick={() => setSelection(null)}>
             <GridView
               puzzle={puzzle}
@@ -238,10 +203,57 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
               ))}
             </GridView>
           </GridDropArea>
+        </div>
+
+        {/* Everything about the selected cell and the puzzle's display, beside the grid so the grid
+            can use the full height of a laptop screen. */}
+        <aside className="side-panel">
+          {selection ? (
+            <Inspector
+              puzzle={puzzle}
+              layout={layout}
+              selection={selection}
+              dispatch={dispatch}
+              onClose={() => setSelection(null)}
+            />
+          ) : (
+            <section className="side-section">
+              <h2>Cell</h2>
+              <p className="hint">Click a cell to add turns, wide spaces, anagram letters and thick borders.</p>
+            </section>
+          )}
+
+          <section className="side-section" aria-label="Display">
+            <h2>Display</h2>
+            <label>
+              <input type="checkbox" checked={showLetters} onChange={(e) => setShowLetters(e.target.checked)} />{' '}
+              Show letters
+            </label>
+          </section>
+
+          <section className="side-section" aria-label="Anagram">
+            <h2>Anagram</h2>
+            <label>
+              <input
+                type="checkbox"
+                checked={puzzle.anagram.showNumbersAndBar}
+                onChange={(e) => dispatch({ type: 'set-show-anagram-numbers', value: e.target.checked })}
+              />{' '}
+              Show anagram numbers and bar
+            </label>
+            <button
+              type="button"
+              disabled={layout.anagramCells.length === 0}
+              onClick={() => dispatch({ type: 'renumber-anagram', order: leftToRightOrder(layout) })}
+              title="Number the anagram letters column by column from the left"
+            >
+              Number anagram left to right
+            </button>
+          </section>
 
           {layout.issues.length > 0 && (
-            <section className="issues" aria-label="Issues">
-              <h2>Issues</h2>
+            <section className="side-section issues" aria-label="Issues">
+              <h2>Issues ({layout.issues.length})</h2>
               <ul>
                 {layout.issues.map((issue, i) => (
                   <li key={i}>{describeIssue(issue, puzzle)}</li>
@@ -249,7 +261,7 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
               </ul>
             </section>
           )}
-        </div>
+        </aside>
       </div>
 
       <DragOverlay dropAnimation={null}>
