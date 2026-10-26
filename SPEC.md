@@ -31,11 +31,14 @@ without scrolling:
 - Right column: the selected cell's settings, then Display (show letters), Anagram (numbers and
   bar, number left to right) and any issues.
 - "Add sample puzzle" lives at the bottom of My puzzles.
-- A small Light / Dark switch sits at the right end of the header. Until Sammy picks one, the app
-  follows the computer's setting and the switch shows which theme that is. A picked theme is
-  remembered in the browser. In dark mode everything around
+- A small Light / Dark / GG switch sits at the right end of the header. Until Sammy picks one, the
+  app follows the computer's light or dark setting and the switch shows which theme that is. A
+  picked theme is remembered in the browser.
+- GG uses the colors of Sammy's company logo (GG Bar): brown `#5f4625` for the background and
+  panels, off-white `#f1f1f2` text, orange-red `#ef4b25` for the main buttons and selected states,
+  and blue `#63ccf0` for links, outlines and placed answers. In dark mode everything around
   the grid goes dark, but the A4 page stays white with black cells, like paper and like the
-  exported images. Colors are CSS variables at the top of `src/index.css`.
+  exported images, in every theme. Colors are CSS variables at the top of `src/index.css`.
 
 ## Answers
 

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { applyTheme, readTheme, type Theme } from './theme'
 
-const THEMES: { value: Exclude<Theme, 'auto'>; label: string }[] = [
+const THEMES: { value: Exclude<Theme, 'auto'>; label: string; title?: string }[] = [
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
+  { value: 'gg', label: 'GG', title: 'GG Bar colors' },
 ]
 
 function computerPrefersDark(): boolean {
@@ -11,7 +12,7 @@ function computerPrefersDark(): boolean {
 }
 
 /**
- * A Light / Dark switch for the header. Until Sammy picks one, the app follows the computer's
+ * A Light / Dark / GG switch for the header. Until Sammy picks one, the app follows the computer's
  * setting and the switch shows which theme that is.
  */
 export function ThemeSwitch() {
@@ -36,6 +37,7 @@ export function ThemeSwitch() {
           key={option.value}
           type="button"
           aria-pressed={active === option.value}
+          title={option.title}
           onClick={() => {
             applyTheme(option.value)
             setTheme(option.value)

@@ -19,9 +19,17 @@ function computerSetTo(scheme: 'light' | 'dark') {
 const pressed = () => screen.getAllByRole('button').find((b) => b.getAttribute('aria-pressed') === 'true')?.textContent
 
 describe('ThemeSwitch', () => {
-  it('has only Light and Dark', () => {
+  it('has Light, Dark and GG', () => {
     render(<ThemeSwitch />)
-    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['Light', 'Dark'])
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(['Light', 'Dark', 'GG'])
+  })
+
+  it('applies and remembers the GG theme', () => {
+    render(<ThemeSwitch />)
+    fireEvent.click(screen.getByRole('button', { name: 'GG' }))
+    expect(document.documentElement.dataset.theme).toBe('gg')
+    expect(localStorage.getItem(THEME_KEY)).toBe('gg')
+    expect(pressed()).toBe('GG')
   })
 
   it("follows the computer's setting until a theme is picked", () => {

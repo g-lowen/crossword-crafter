@@ -1,4 +1,5 @@
-export type Theme = 'auto' | 'light' | 'dark'
+/** Auto follows the computer until Sammy picks one of the others. */
+export type Theme = 'auto' | 'light' | 'dark' | 'gg'
 
 /** Also read by the script in index.html, so the right theme shows before React starts. */
 export const THEME_KEY = 'crossword-crafter/theme'
@@ -6,7 +7,7 @@ export const THEME_KEY = 'crossword-crafter/theme'
 export function readTheme(): Theme {
   try {
     const theme = localStorage.getItem(THEME_KEY)
-    return theme === 'light' || theme === 'dark' ? theme : 'auto'
+    return theme === 'light' || theme === 'dark' || theme === 'gg' ? theme : 'auto'
   } catch {
     return 'auto'
   }

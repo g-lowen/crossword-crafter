@@ -8,7 +8,7 @@
       // Apply a chosen light or dark theme before the page draws, so it doesn't flash.
       try {
         var theme = localStorage.getItem('crossword-crafter/theme')
-        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme
+        if (theme === 'light' || theme === 'dark' || theme === 'gg') document.documentElement.dataset.theme = theme
       } catch (e) {}
     </script>
   </head>

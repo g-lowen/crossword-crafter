@@ -1,6 +1,7 @@
 /*
  * Colors. Light is the default; dark follows the computer's setting unless Sammy picks a theme in
- * the header, which sets data-theme on <html>. The A4 page itself stays white in both, like paper.
+ * the header, which sets data-theme on <html>. The A4 page itself stays white in every theme, like
+ * paper.
  */
 :root {
   color-scheme: light;
@@ -107,6 +108,64 @@
   --warn-strong: #ff9800;
   --placed-bg: #1d3022;
   --placed-border: #3d6b46;
+}
+
+/*
+ * GG: the colors of Sammy's company logo (GG Bar). Brown #5f4625 from the outline, blue #63ccf0
+ * and orange-red #ef4b25 from the two Gs, and off-white #f1f1f2 from "BAR".
+ */
+:root[data-theme='gg'] {
+  color-scheme: dark;
+  --bg: #4a361c;
+  --surface: #5f4625;
+  --text: #f1f1f2;
+  --text-muted: #d6c8ae;
+  --text-disabled: #94805f;
+  --border-soft: #6f5533;
+  --border: #7e6341;
+  --border-strong: #9c7f57;
+  --border-hover: #c9ad82;
+  --hover: #6f5533;
+  --accent: #ef4b25;
+  --accent-hover: #ff6440;
+  --accent-soft: #3f5b63;
+  --accent-border: #63ccf0;
+  --on-accent: #ffffff;
+  --link: #63ccf0;
+  --focus-ring: rgb(99 204 240 / 0.45);
+  --shadow: rgb(0 0 0 / 0.45);
+  --ok-bg: #2f4a2a;
+  --ok-text: #c3e8b2;
+  --ok-border: #4f7a45;
+  --ok-strong: #7fc46a;
+  --error-bg: #5c2516;
+  --error-text: #ffc6b5;
+  --error-border: #a5432b;
+  --error-strong: #ef4b25;
+  --warn-bg: #5a4416;
+  --warn-text: #ffd47e;
+  --warn-strong: #f0b030;
+  --placed-bg: #3f5b63;
+  --placed-border: #63ccf0;
+}
+
+/* Plain buttons in GG are warm brown instead of the browser's grey. :where() keeps this weaker than
+   the button classes, so icon, link, menu, segmented and primary buttons keep their own looks. */
+:where(:root[data-theme='gg']) button {
+  color: var(--text);
+  background-color: #7a5b35;
+  border: 1px solid #a3855b;
+  border-radius: 4px;
+}
+
+:where(:root[data-theme='gg']) button:hover:not(:disabled) {
+  background-color: #8a6a41;
+}
+
+:where(:root[data-theme='gg']) button:disabled {
+  color: var(--text-disabled);
+  background-color: #6a4f2d;
+  border-color: #7e6341;
 }
 
 body {
