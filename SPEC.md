@@ -16,7 +16,7 @@ automate layout but to make manual layout fast.
 ## The page
 
 - A4 landscape (297 × 210 mm) with square cells. The grid is as many whole cells as fit on the page.
-- "Cell size" under Page in the right column picks the size per puzzle: 1 cm (29 × 21, the
+- "Cell size" in the Page menu picks the size per puzzle: 1 cm (29 × 21, the
   default), 9 mm (33 × 23), 8 mm (37 × 26) or 7 mm (42 × 30). Smaller cells fit more answers.
 - Answers keep their cells counted from the top left when the size changes, so after a switch to
   bigger cells the ones near the right or bottom edge can end up outside the page; they show up
@@ -28,14 +28,18 @@ automate layout but to make manual layout fast.
 Sammy works on a laptop, so the whole editor fits the window and the grid is always fully visible
 without scrolling:
 
-- A one-line header: the puzzle name on the left; New puzzle, My puzzles, Edit ▾ and Export
-  images on the right.
+- A one-line header: the puzzle name on the left; Puzzles ▾, Edit ▾, Page ▾ and Export images on
+  the right.
+- Puzzles ▾ opens the puzzle list, with "New puzzle" at the top and "Add sample puzzle" at the
+  bottom.
+- Page ▾ holds the page settings: Cell size, "Show anagram numbers and bar", and "Show letters in
+  the editor". The first two belong to the puzzle and go into the exports. Show letters only
+  changes the editor (the exports decide for themselves) and stays the same when switching
+  puzzles.
 - Left column: the answer list. The paste box is open while there are no answers, and folds away
   behind "+ Add answers" once there are.
 - Middle: the grid, as large as the window allows while keeping its A4 proportions.
-- Right column: the selected cell's settings, then Page (cell size), Display (show letters), Anagram (numbers and
-  bar, number left to right) and any issues.
-- "Add sample puzzle" lives at the bottom of My puzzles.
+- Right column: the selected cell's settings, then Anagram (number left to right) and any issues.
 - A small Light / Dark / GG switch sits at the right end of the header. Until Sammy picks one, the
   app follows the computer's light or dark setting and the switch shows which theme that is. A
   picked theme is remembered in the browser.
@@ -137,7 +141,7 @@ dividers in the list:
 ## Anagram
 
 - Any letter cell can be marked as an anagram cell. Anagram cells always have a red, thick border.
-- Checkbox "Show anagram numbers and bar":
+- Checkbox "Show anagram numbers and bar" in the Page menu:
   - Checked: anagram cells show a small number, and a bar of empty cells (one per anagram letter)
     is drawn on the page, numbered 1, 2, 3… above each cell.
   - Unchecked: only the red borders are drawn.
@@ -178,7 +182,7 @@ Both are named after the puzzle. The rendering (`src/export/render-image.tsx`, `
 and the deck builder (`src/export/export-pptx.ts`, `pptxgenjs`) are loaded only when Sammy
 downloads, to keep the editor small.
 
-## Saving and My puzzles
+## Saving and the puzzle list
 
 There is no backend. Everything is saved in the browser Sammy uses, and nowhere else.
 
@@ -187,15 +191,15 @@ There is no backend. Everything is saved in the browser Sammy uses, and nowhere 
   opens. If the browser won't store anything, a warning says so and points to Copy puzzle.
 - The name of the open puzzle is a clearly visible "Name" field at the start of the header. The
   page has no app title; the browser tab is still called "Crossword Crafter".
-- "My puzzles" lists them all, most recently changed first, with their answer counts and
+- The list under Puzzles ▾ shows them all, most recently changed first, with their answer counts and
   last-edited time ("Last edited" on hover). The open one has a highlighted background. Each can
   be opened, renamed in place with the pen next to its name (Enter or clicking away saves, Esc
   cancels), or deleted after a confirm. Deleting the last one leaves one empty puzzle. Renaming
   doesn't count as a change, so the list doesn't reorder.
-- "New puzzle" and "Load sample" add a puzzle to the list and open it. A new puzzle whose name is
+- "New puzzle" and "Add sample puzzle" add a puzzle to the list and open it. A new puzzle whose name is
   taken gets the lowest free number: "Untitled puzzle (1)", "Quiz 18 (2)". Renaming doesn't add
   numbers.
-- The header panels (My puzzles, Edit, Export images) close on Esc or a click outside them.
+- The header panels (Puzzles, Edit, Page, Export images) close on Esc or a click outside them.
 
 ## Edit menu: undo, redo, copy and paste
 
@@ -289,7 +293,7 @@ component draws the editor (page background, guide lines, conflict warnings) and
 3. Grid UI at fixed cell size, A4 landscape.
 4. Answer import and drag and drop onto the grid.
 5. Editing: turns, wide spaces, separators, anagram cells and numbering.
-6. Save and load: autosave, My puzzles, Edit menu with undo, redo, copy and paste.
+6. Save and load: autosave, the puzzle list, Edit menu with undo, redo, copy and paste.
 7. PNG exports as a zip: skeleton, quiz and correction images.
 
 ## Open decisions

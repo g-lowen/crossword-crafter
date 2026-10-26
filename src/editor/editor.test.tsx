@@ -18,7 +18,7 @@ function editList() {
 }
 
 function loadSample() {
-  fireEvent.click(screen.getByRole('button', { name: /^My puzzles/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Puzzles ▾' }))
   fireEvent.click(screen.getByRole('button', { name: 'Add sample puzzle' }))
 }
 
@@ -279,7 +279,9 @@ describe('Editor', () => {
       fireEvent.paste(document.body, { clipboardData: { getData: () => text } })
       expect(listedAnswers()).toContain('PINK FLOYD')
       expect(screen.getByLabelText('Puzzle name')).toHaveValue('Quiz 18')
-      expect(screen.getByRole('button', { name: 'My puzzles (1)' })).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Puzzles ▾' }))
+      expect(within(screen.getByRole('dialog', { name: 'Puzzles' })).getAllByRole('listitem')).toHaveLength(1)
+      fireEvent.keyDown(document, { key: 'Escape' })
 
       fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
       expect(listedAnswers()).toEqual(['ABBA'])
@@ -335,17 +337,18 @@ describe('Editor', () => {
     })
   })
 
-  describe('my puzzles', () => {
+  describe('puzzles menu', () => {
     function openList() {
-      fireEvent.click(screen.getByRole('button', { name: /^My puzzles/ }))
-      return within(screen.getByRole('dialog', { name: 'My puzzles' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Puzzles ▾' }))
+      return within(screen.getByRole('dialog', { name: 'Puzzles' }))
     }
 
-    const listIsOpen = () => screen.queryByRole('dialog', { name: 'My puzzles' }) !== null
+    const listIsOpen = () => screen.queryByRole('dialog', { name: 'Puzzles' }) !== null
+    const entryCount = () => within(screen.getByRole('dialog', { name: 'Puzzles' })).getAllByRole('listitem').length
 
     it('numbers a new puzzle whose name is taken', () => {
       render(<App />)
-      fireEvent.click(screen.getByRole('button', { name: 'New puzzle' }))
+      fireEvent.click(openList().getByRole('button', { name: 'New puzzle' }))
       expect(screen.getByLabelText('Puzzle name')).toHaveValue('Untitled puzzle (1)')
     })
 
@@ -387,7 +390,7 @@ describe('Editor', () => {
     it('stays open when clicking inside it', () => {
       render(<App />)
       const list = openList()
-      fireEvent.pointerDown(list.getByText('My puzzles'))
+      fireEvent.pointerDown(list.getByText('Puzzles'))
       expect(listIsOpen()).toBe(true)
     })
 
@@ -395,7 +398,7 @@ describe('Editor', () => {
       render(<App />)
       fireEvent.change(screen.getByLabelText('Puzzle name'), { target: { value: 'Quiz 18' } })
       importAnswers('abba')
-      fireEvent.click(screen.getByRole('button', { name: 'New puzzle' }))
+      fireEvent.click(openList().getByRole('button', { name: 'New puzzle' }))
       expect(screen.getByText('No answers yet.')).toBeInTheDocument()
       expect(screen.getByLabelText('Puzzle name')).toHaveValue('Untitled puzzle')
 
@@ -420,14 +423,45 @@ describe('Editor', () => {
       const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
       fireEvent.click(openList().getByRole('button', { name: 'Delete Sample puzzle' }))
       expect(confirm).toHaveBeenCalledWith('Delete "Sample puzzle"? This can\'t be undone.')
-      expect(screen.getByRole('button', { name: 'My puzzles (2)' })).toBeInTheDocument()
+      expect(entryCount()).toBe(2)
 
       confirm.mockReturnValue(true)
       fireEvent.click(
-        within(screen.getByRole('dialog', { name: 'My puzzles' })).getByRole('button', { name: 'Delete Sample puzzle' }),
+        within(screen.getByRole('dialog', { name: 'Puzzles' })).getByRole('button', { name: 'Delete Sample puzzle' }),
       )
-      expect(screen.getByRole('button', { name: 'My puzzles (1)' })).toBeInTheDocument()
+      // Deleting the open puzzle opens another one, which closes the list.
+      openList()
+      expect(entryCount()).toBe(1)
       expect(screen.getByText('No answers yet.')).toBeInTheDocument()
+    })
+  })
+
+  describe('page menu', () => {
+    function openPage() {
+      fireEvent.click(screen.getByRole('button', { name: 'Page ▾' }))
+      return within(screen.getByRole('dialog', { name: 'Page' }))
+    }
+
+    it('changes the cell size of the puzzle', () => {
+      const { container } = render(<App />)
+      fireEvent.change(openPage().getByLabelText('Cell size'), { target: { value: '7' } })
+      // 41 lines between 42 columns, 29 between 30 rows.
+      expect(container.querySelectorAll('[data-editor-background] line')).toHaveLength(70)
+    })
+
+    it('hides the letters in the editor', () => {
+      const { container } = render(<App />)
+      loadSample()
+      expect(container.querySelectorAll('[data-letter]').length).toBeGreaterThan(0)
+      fireEvent.click(openPage().getByLabelText('Show letters in the editor'))
+      expect(container.querySelectorAll('[data-letter]')).toHaveLength(0)
+    })
+
+    it('shows the anagram numbers and bar', () => {
+      render(<App />)
+      const page = openPage()
+      fireEvent.click(page.getByLabelText('Show anagram numbers and bar'))
+      expect(page.getByLabelText('Show anagram numbers and bar')).toBeChecked()
     })
   })
 

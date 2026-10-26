@@ -6,6 +6,7 @@ import { SHORTCUT_LABELS } from './use-shortcuts'
 type PuzzleListProps = {
   library: Library
   dispatch: Dispatch<LibraryAction>
+  onNew: () => void
   onAddSample: () => void
   onClose: () => void
 }
@@ -17,16 +18,21 @@ const displayName = (name: string) => (name.trim() === '' ? UNTITLED : name)
 const now = () => new Date().toISOString()
 
 /** Every puzzle saved in this browser, most recently changed first. */
-export function PuzzleList({ library, dispatch, onAddSample, onClose }: PuzzleListProps) {
+export function PuzzleList({ library, dispatch, onNew, onAddSample, onClose }: PuzzleListProps) {
   const [renamingId, setRenamingId] = useState<string | null>(null)
 
   return (
-    <div className="menu-panel puzzle-list" role="dialog" aria-label="My puzzles">
+    <div className="menu-panel puzzle-list" role="dialog" aria-label="Puzzles">
       <div className="panel-title">
-        <strong>My puzzles</strong>
-        <button type="button" className="icon-button" onClick={onClose} aria-label="Close">
-          ✕
-        </button>
+        <strong>Puzzles</strong>
+        <span className="panel-title-actions">
+          <button type="button" className="primary-button" onClick={onNew}>
+            New puzzle
+          </button>
+          <button type="button" className="icon-button" onClick={onClose} aria-label="Close">
+            ✕
+          </button>
+        </span>
       </div>
       <p className="hint">
         Saved in this browser only. Use Copy puzzle ({SHORTCUT_LABELS.copy}) to keep one somewhere else.

@@ -387,6 +387,26 @@ button {
   width: 480px;
 }
 
+.panel-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: auto;
+  white-space: nowrap;
+}
+
+.menu-panel .page-menu-row {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
 .panel-title {
   display: flex;
   align-items: center;

@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, type Dispatch } from 'react'
 import { ExportPanel } from '../export/export-panel'
 import { UNTITLED, currentEntry, type Library, type LibraryAction } from '../model/library'
 import type { Puzzle } from '../model/puzzle'
-import { emptyPuzzle } from '../model/puzzle-reducer'
+import { emptyPuzzle, type PuzzleAction } from '../model/puzzle-reducer'
 import { samplePuzzle } from '../model/sample-puzzle'
+import { PageMenu } from './page-menu'
 import { PuzzleList } from './puzzle-list'
 import { SHORTCUT_LABELS } from './use-shortcuts'
 
@@ -24,14 +25,16 @@ type PuzzleMenuProps = {
   dispatch: Dispatch<LibraryAction>
   commands: EditCommands
   status: Status | null
+  showLetters: boolean
+  onShowLettersChange: (value: boolean) => void
 }
 
-type Panel = 'edit' | 'list' | 'export' | null
+type Panel = 'list' | 'edit' | 'page' | 'export' | null
 
 const now = () => new Date().toISOString()
 
-/** Starting and switching puzzles, the Edit menu, and exporting images. */
-export function PuzzleMenu({ library, dispatch, commands, status }: PuzzleMenuProps) {
+/** Starting and switching puzzles, the Edit and Page menus, and exporting images. */
+export function PuzzleMenu({ library, dispatch, commands, status, showLetters, onShowLettersChange }: PuzzleMenuProps) {
   const [panel, setPanel] = useState<Panel>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const current = currentEntry(library)
@@ -53,6 +56,8 @@ export function PuzzleMenu({ library, dispatch, commands, status }: PuzzleMenuPr
     }
   }, [panel])
 
+  const editPuzzle = (action: PuzzleAction) => dispatch({ type: 'edit', action, now: now() })
+
   function add(name: string, puzzle: Puzzle) {
     dispatch({ type: 'add', id: crypto.randomUUID(), name, puzzle, now: now() })
   }
@@ -67,14 +72,14 @@ export function PuzzleMenu({ library, dispatch, commands, status }: PuzzleMenuPr
 
   return (
     <div className="puzzle-menu" ref={menuRef}>
-      <button type="button" onClick={() => add(UNTITLED, emptyPuzzle)}>
-        New puzzle
-      </button>
       <button type="button" onClick={() => toggle('list')} aria-expanded={panel === 'list'}>
-        My puzzles ({library.entries.length})
+        Puzzles ▾
       </button>
       <button type="button" onClick={() => toggle('edit')} aria-expanded={panel === 'edit'} aria-haspopup="menu">
         Edit ▾
+      </button>
+      <button type="button" onClick={() => toggle('page')} aria-expanded={panel === 'page'}>
+        Page ▾
       </button>
       <button
         type="button"
@@ -113,17 +118,20 @@ export function PuzzleMenu({ library, dispatch, commands, status }: PuzzleMenuPr
         <PuzzleList
           library={library}
           dispatch={dispatch}
+          onNew={run(() => add(UNTITLED, emptyPuzzle))}
           onAddSample={run(() => add('Sample puzzle', samplePuzzle))}
           onClose={() => setPanel(null)}
         />
       )}
-      {panel === 'export' && (
-        <ExportPanel
+      {panel === 'page' && (
+        <PageMenu
           puzzle={current.puzzle}
-          name={current.name}
-          dispatch={(action) => dispatch({ type: 'edit', action, now: now() })}
+          dispatch={editPuzzle}
+          showLetters={showLetters}
+          onShowLettersChange={onShowLettersChange}
         />
       )}
+      {panel === 'export' && <ExportPanel puzzle={current.puzzle} name={current.name} dispatch={editPuzzle} />}
     </div>
   )
 }

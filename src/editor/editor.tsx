@@ -30,7 +30,7 @@ import { leftToRightOrder } from '../layout/anagram'
 import { describeIssue } from '../layout/describe-issue'
 import { cellKey, layoutAnswer, layoutPuzzle, type Piece } from '../layout/layout'
 import { nextGroupColor } from '../model/groups'
-import { CELL_SIZES_MM, gridForCellSize, puzzleGrid, type GridSize } from '../model/page'
+import { puzzleGrid, type GridSize } from '../model/page'
 import type { CellRef, Puzzle } from '../model/puzzle'
 import type { PuzzleAction } from '../model/puzzle-reducer'
 import { AnswerList } from './answer-list'
@@ -62,13 +62,14 @@ type EditorProps = {
   dispatch: (action: PuzzleAction) => void
   /** Shown next to the title. */
   nameField: ReactNode
-  /** Puzzle-level actions such as New puzzle, the Edit menu and Export images. */
+  /** Puzzle-level menus such as Puzzles, Edit, Page and Export images. */
   menu: ReactNode
+  /** Set in the Page menu. Only affects the editor. */
+  showLetters: boolean
   saveFailed: boolean
 }
 
-export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: EditorProps) {
-  const [showLetters, setShowLetters] = useState(true)
+export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFailed }: EditorProps) {
   const [dragging, setDragging] = useState<DragData | null>(null)
   const [previewStart, setPreviewStart] = useState<CellRef | null>(null)
   const [rawSelection, setSelection] = useState<Selection | null>(null)
@@ -291,44 +292,8 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
             </section>
           )}
 
-          <section className="side-section" aria-label="Page">
-            <h2>Page</h2>
-            <label>
-              Cell size{' '}
-              <select
-                value={puzzle.cellSizeMm}
-                onChange={(e) => dispatch({ type: 'set-cell-size', cellSizeMm: Number(e.target.value) })}
-              >
-                {CELL_SIZES_MM.map((size) => {
-                  const { columns, rows } = gridForCellSize(size)
-                  return (
-                    <option key={size} value={size}>
-                      {size === 10 ? '1 cm' : `${size} mm`} ({columns} × {rows})
-                    </option>
-                  )
-                })}
-              </select>
-            </label>
-          </section>
-
-          <section className="side-section" aria-label="Display">
-            <h2>Display</h2>
-            <label>
-              <input type="checkbox" checked={showLetters} onChange={(e) => setShowLetters(e.target.checked)} />{' '}
-              Show letters
-            </label>
-          </section>
-
           <section className="side-section" aria-label="Anagram">
             <h2>Anagram</h2>
-            <label>
-              <input
-                type="checkbox"
-                checked={puzzle.anagram.showNumbersAndBar}
-                onChange={(e) => dispatch({ type: 'set-show-anagram-numbers', value: e.target.checked })}
-              />{' '}
-              Show anagram numbers and bar
-            </label>
             <button
               type="button"
               disabled={layout.anagramCells.length === 0}

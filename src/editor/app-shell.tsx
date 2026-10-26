@@ -27,6 +27,8 @@ export function AppShell() {
   const { library } = state
   const [saved, setSaved] = useState(true)
   const [status, setStatus] = useState<Status | null>(null)
+  // A view setting, not part of the puzzle, so it stays the same when switching puzzles.
+  const [showLetters, setShowLetters] = useState(true)
   const entry = currentEntry(library)
 
   useEffect(() => {
@@ -102,10 +104,18 @@ export function AppShell() {
       }
       menu={
         <>
-          <PuzzleMenu library={library} dispatch={dispatchApp} commands={commands} status={status} />
+          <PuzzleMenu
+            library={library}
+            dispatch={dispatchApp}
+            commands={commands}
+            status={status}
+            showLetters={showLetters}
+            onShowLettersChange={setShowLetters}
+          />
           <ThemeSwitch />
         </>
       }
+      showLetters={showLetters}
       saveFailed={!saved}
     />
   )
