@@ -69,8 +69,12 @@ without scrolling:
 - Answers are placed by dragging them from the list onto the grid. The first letter lands under
   the pointer, and a preview shows where the answer will go. A placed answer can be dragged by any
   of its cells to move it, or dragged back to the list to take it off the grid.
-- Each answer in the list has a button to switch it between across and down.
-- The list order is changed by dragging answers within the list.
+- Each answer in the list has a pen button to edit its text. Enter or leaving the field saves, Esc
+  cancels. Turns, wide spaces and anagram letters that no longer fit the new text are dropped.
+- Direction is set on the grid (click a cell, then Whole answer: direction). New answers go across.
+- The list order is locked by default, so an answer dragged back from the grid can't land in a new
+  place. "Reorder" above the list unlocks it; then answers are reordered by dragging them within
+  the list, and "Done" locks it again. The lock isn't saved; it is locked each time the app opens.
 - An answer reads right or down, and can turn 90° at any letter. Usually at most once, but more
   turns must be possible.
 - Arrows in cells only ever mean one of two things: a small corner arrow where an answer turns,

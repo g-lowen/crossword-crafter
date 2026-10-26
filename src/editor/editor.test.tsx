@@ -40,11 +40,40 @@ describe('Editor', () => {
     expect(screen.getByLabelText('Paste answers, one per line')).toHaveValue('')
   })
 
-  it('switches the direction of an answer', () => {
+  it('edits an answer with Enter and cancels with Escape', () => {
+    render(<App />)
+    importAnswers('abba\nqueen')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit ABBA' }))
+    const field = screen.getByLabelText('New text for ABBA')
+    fireEvent.change(field, { target: { value: ' the  abba ' } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    expect(listedAnswers()).toEqual(['THE ABBA', 'QUEEN'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit QUEEN' }))
+    const other = screen.getByLabelText('New text for QUEEN')
+    fireEvent.change(other, { target: { value: 'kiss' } })
+    fireEvent.keyDown(other, { key: 'Escape' })
+    expect(listedAnswers()).toEqual(['THE ABBA', 'QUEEN'])
+  })
+
+  it('keeps the old text when an edit is left empty', () => {
     render(<App />)
     importAnswers('abba')
-    fireEvent.click(screen.getByRole('button', { name: 'Direction of ABBA: right' }))
-    expect(screen.getByRole('button', { name: 'Direction of ABBA: down' })).toHaveTextContent('↓')
+    fireEvent.click(screen.getByRole('button', { name: 'Edit ABBA' }))
+    const field = screen.getByLabelText('New text for ABBA')
+    fireEvent.change(field, { target: { value: '  ' } })
+    fireEvent.blur(field)
+    expect(listedAnswers()).toEqual(['ABBA'])
+  })
+
+  it('locks the list order until Reorder is pressed', () => {
+    render(<App />)
+    importAnswers('abba')
+    const reorder = screen.getByRole('button', { name: 'Reorder' })
+    expect(reorder).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.click(reorder)
+    expect(screen.getByRole('button', { name: 'Done' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByText(/Drag up or down to reorder/)).toBeInTheDocument()
   })
 
   it('removes an answer', () => {

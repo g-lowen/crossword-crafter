@@ -25,6 +25,42 @@ describe('puzzleReducer', () => {
     expect(texts(puzzle)).toEqual(['ABBA', 'STING'])
   })
 
+  it('changes the text of an answer and drops what no longer fits', () => {
+    const base = withAnswers('PINK FLOYD')
+    const puzzle: Puzzle = {
+      ...base,
+      answers: [
+        {
+          ...base.answers[0],
+          turns: [
+            { atIndex: 2, dir: 'down' },
+            { atIndex: 6, dir: 'right' },
+          ],
+          wideSpaces: [4],
+        },
+      ],
+      anagram: {
+        showNumbersAndBar: false,
+        cells: [
+          { answerId: 'pink floyd', letterIndex: 1, number: 1 },
+          { answerId: 'pink floyd', letterIndex: 5, number: 2 },
+          { answerId: 'pink floyd', letterIndex: 8, number: 3 },
+        ],
+      },
+    }
+
+    const edited = puzzleReducer(puzzle, { type: 'set-text', id: 'pink floyd', text: 'PINKFLOY' })
+    expect(edited.answers[0].text).toBe('PINKFLOY')
+    expect(edited.answers[0].turns).toHaveLength(2)
+    expect(edited.answers[0].wideSpaces).toEqual([])
+    expect(edited.anagram.cells.map((cell) => cell.letterIndex)).toEqual([1, 5])
+
+    const shorter = puzzleReducer(puzzle, { type: 'set-text', id: 'pink floyd', text: 'PINK FL' })
+    expect(shorter.answers[0].turns).toEqual([{ atIndex: 2, dir: 'down' }])
+    expect(shorter.answers[0].wideSpaces).toEqual([4])
+    expect(shorter.anagram.cells.map((cell) => cell.letterIndex)).toEqual([1, 5])
+  })
+
   it('places and unplaces an answer', () => {
     const placed = puzzleReducer(withAnswers('ABBA'), { type: 'place', id: 'abba', start: { row: 3, col: 4 } })
     expect(placed.answers[0].start).toEqual({ row: 3, col: 4 })

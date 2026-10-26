@@ -1,11 +1,12 @@
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { groupAt, groupLabel } from '../model/groups'
 import type { Answer, AnswerGroup } from '../model/puzzle'
 import { ANSWER_LIST_ID, listItemId, type DragData } from './drag-ids'
-import { parseAnswerList } from './parse-answer-list'
+import { normalizeAnswer, parseAnswerList } from './parse-answer-list'
+import { PenIcon } from './pen-icon'
 import { embedLink, parseSpotifyPaste, parseSpotifyText, type SpotifyTrack } from './spotify'
 import { SpotifyImport } from './spotify-import'
 
@@ -22,7 +23,7 @@ type AnswerListProps = {
   groups: AnswerGroup[]
   groupActions: GroupActions
   onImport: (texts: string[]) => void
-  onToggleDirection: (id: string) => void
+  onEdit: (id: string, text: string) => void
   onRemove: (id: string) => void
 }
 
@@ -31,7 +32,7 @@ export function AnswerList({
   groups,
   groupActions,
   onImport,
-  onToggleDirection,
+  onEdit,
   onRemove,
 }: AnswerListProps) {
   const [text, setText] = useState('')
@@ -41,6 +42,8 @@ export function AnswerList({
   const showImport = importOpen || answers.length === 0
   const [spotifyTracks, setSpotifyTracks] = useState<SpotifyTrack[] | null>(null)
   const spotifyLink = embedLink(text)
+  // Locked by default, so an answer dragged back from the grid can't land somewhere else in the list.
+  const [orderLocked, setOrderLocked] = useState(true)
 
   const finish = (texts: string[]) => {
     onImport(texts)
@@ -122,7 +125,21 @@ export function AnswerList({
           <p className="hint">No answers yet.</p>
         ) : (
           <>
-            <p className="hint">Drag onto the grid. Drag back here to take off.</p>
+            <div className="answer-list-hint">
+              <p className="hint">
+                Drag onto the grid. Drag back here to take off.
+                {!orderLocked && ' Drag up or down to reorder.'}
+              </p>
+              <button
+                type="button"
+                className="link-button"
+                aria-pressed={!orderLocked}
+                title={orderLocked ? 'Allow changing the order by dragging' : 'Stop the order from changing'}
+                onClick={() => setOrderLocked(!orderLocked)}
+              >
+                {orderLocked ? 'Reorder' : 'Done'}
+              </button>
+            </div>
             <SortableContext items={answers.map((a) => listItemId(a.id))} strategy={verticalListSortingStrategy}>
               <ol>
                 {answers.map((answer, index) => {
@@ -143,8 +160,9 @@ export function AnswerList({
                       answer={answer}
                       number={index + 1}
                       groupColor={groupAt(groups, index)?.color}
+                      orderLocked={orderLocked}
                       onStartGroup={startsHere ? undefined : () => groupActions.add(index)}
-                      onToggleDirection={onToggleDirection}
+                      onEdit={onEdit}
                       onRemove={onRemove}
                     />,
                   ]
@@ -205,18 +223,23 @@ type AnswerItemProps = {
   answer: Answer
   number: number
   groupColor: string | undefined
+  /** When locked, other answers don't make room for a dragged answer and dropping it doesn't reorder. */
+  orderLocked: boolean
   /** Starts a new group with this answer; undefined when one already starts here. */
   onStartGroup: (() => void) | undefined
-  onToggleDirection: (id: string) => void
+  onEdit: (id: string, text: string) => void
   onRemove: (id: string) => void
 }
 
-function AnswerItem({ answer, number, groupColor, onStartGroup, onToggleDirection, onRemove }: AnswerItemProps) {
+function AnswerItem({ answer, number, groupColor, orderLocked, onStartGroup, onEdit, onRemove }: AnswerItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: listItemId(answer.id),
     data: { answerId: answer.id, source: 'list' } satisfies DragData,
+    // An answer that isn't a drop target is never "over", so the list doesn't shuffle.
+    disabled: { draggable: false, droppable: orderLocked },
   })
   const placed = answer.start !== null
+  const [editing, setEditing] = useState(false)
 
   return (
     <li
@@ -230,7 +253,7 @@ function AnswerItem({ answer, number, groupColor, onStartGroup, onToggleDirectio
         groupColor ? ' answer--grouped' : ''
       }`}
     >
-      {onStartGroup && (
+      {onStartGroup && !editing && (
         <button
           type="button"
           className="new-group-button"
@@ -241,20 +264,33 @@ function AnswerItem({ answer, number, groupColor, onStartGroup, onToggleDirectio
           + New group
         </button>
       )}
-      <span className="answer-handle" {...attributes} {...listeners} aria-label={`Drag ${answer.text}`}>
-        <span className="answer-number">{number}.</span>
-        <span className="answer-text" title={answer.text}>
-          {answer.text}
+      {editing ? (
+        <span className="answer-handle">
+          <span className="answer-number">{number}.</span>
+          <EditField
+            answer={answer}
+            onDone={(text) => {
+              if (text !== null && text !== answer.text) onEdit(answer.id, text)
+              setEditing(false)
+            }}
+          />
         </span>
-      </span>
+      ) : (
+        <span className="answer-handle" {...attributes} {...listeners} aria-label={`Drag ${answer.text}`}>
+          <span className="answer-number">{number}.</span>
+          <span className="answer-text" title={answer.text}>
+            {answer.text}
+          </span>
+        </span>
+      )}
       <button
         type="button"
-        className="icon-button"
-        onClick={() => onToggleDirection(answer.id)}
-        aria-label={`Direction of ${answer.text}: ${answer.dir}`}
-        title="Switch between across and down"
+        className="icon-button pen-button"
+        onClick={() => setEditing(true)}
+        aria-label={`Edit ${answer.text}`}
+        title="Edit"
       >
-        {answer.dir === 'down' ? '↓' : '→'}
+        <PenIcon />
       </button>
       <button
         type="button"
@@ -266,5 +302,36 @@ function AnswerItem({ answer, number, groupColor, onStartGroup, onToggleDirectio
         ✕
       </button>
     </li>
+  )
+}
+
+/** Enter or leaving the field saves; Esc cancels. An empty answer is not saved. */
+function EditField({ answer, onDone }: { answer: Answer; onDone: (text: string | null) => void }) {
+  const [value, setValue] = useState(answer.text)
+  // Enter or Esc removes the field, which can also fire blur. Only the first one counts.
+  const done = useRef(false)
+  const finish = (text: string | null) => {
+    if (done.current) return
+    done.current = true
+    onDone(text === null || normalizeAnswer(text) === '' ? null : normalizeAnswer(text))
+  }
+  return (
+    <input
+      className="answer-edit"
+      aria-label={`New text for ${answer.text}`}
+      value={value}
+      autoFocus
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={() => finish(value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') finish(value)
+        if (e.key === 'Escape') {
+          // Esc also closes the cell panel; here it only cancels the edit.
+          e.stopPropagation()
+          finish(null)
+        }
+      }}
+    />
   )
 }

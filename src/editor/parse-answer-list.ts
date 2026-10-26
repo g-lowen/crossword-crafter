@@ -1,10 +1,15 @@
+/** Trims an answer, collapses runs of whitespace to a single space and makes it uppercase. */
+export function normalizeAnswer(text: string): string {
+  return text.trim().replace(/\s+/g, ' ').toLocaleUpperCase('sv-SE')
+}
+
 /**
- * Turns pasted text into answers: one per line, trimmed, uppercase, with runs of whitespace
- * collapsed to a single space. Empty lines are skipped.
+ * Turns pasted text into answers: one per line, normalized as in `normalizeAnswer`. Empty lines are
+ * skipped.
  */
 export function parseAnswerList(text: string): string[] {
   return text
     .split(/\r?\n/)
-    .map((line) => line.trim().replace(/\s+/g, ' ').toLocaleUpperCase('sv-SE'))
+    .map(normalizeAnswer)
     .filter((line) => line.length > 0)
 }

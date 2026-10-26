@@ -231,7 +231,7 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
           onImport={(texts) =>
             dispatch({ type: 'import', answers: texts.map((text) => ({ id: crypto.randomUUID(), text })) })
           }
-          onToggleDirection={(id) => dispatch({ type: 'toggle-direction', id })}
+          onEdit={(id, text) => dispatch({ type: 'set-text', id, text })}
           onRemove={(id) => dispatch({ type: 'remove', id })}
         />
 

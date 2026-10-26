@@ -591,6 +591,28 @@ button {
   white-space: nowrap;
 }
 
+.answer-list-hint {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.answer-list-hint .link-button {
+  flex: none;
+}
+
+.answer-edit {
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px;
+  font: inherit;
+  font-weight: 600;
+  text-transform: uppercase;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+}
+
 .answer .icon-button {
   flex: none;
   width: 24px;

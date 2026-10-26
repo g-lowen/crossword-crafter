@@ -20,6 +20,8 @@ export type PuzzleAction =
   | { type: 'remove'; id: string }
   | { type: 'reorder'; fromId: string; toId: string }
   | { type: 'toggle-direction'; id: string }
+  /** Changes an answer's text. Turns, wide spaces and anagram letters that no longer fit are dropped. */
+  | { type: 'set-text'; id: string; text: string }
   /** A null `dir` removes the turn at that letter. */
   | { type: 'set-turn'; id: string; atIndex: number; dir: Dir | null }
   | { type: 'toggle-wide-space'; id: string; index: number }
@@ -115,6 +117,19 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
         ...answer,
         dir: answer.dir === 'right' ? 'down' : 'right',
       }))
+
+    case 'set-text': {
+      const isLetter = (index: number) => index < action.text.length && action.text[index] !== ' '
+      const edited = updateAnswer(puzzle, action.id, (answer) => ({
+        ...answer,
+        text: action.text,
+        turns: answer.turns.filter((turn) => turn.atIndex < action.text.length - 1),
+        wideSpaces: answer.wideSpaces.filter((index) => action.text[index] === ' '),
+      }))
+      return updateAnagramCells(edited, (cells) =>
+        cells.filter((cell) => cell.answerId !== action.id || isLetter(cell.letterIndex)),
+      )
+    }
 
     case 'set-turn':
       return updateAnswer(puzzle, action.id, (answer) => {
