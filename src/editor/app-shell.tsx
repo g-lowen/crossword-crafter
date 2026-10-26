@@ -34,7 +34,7 @@ export function AppShell() {
 
   useEffect(() => {
     if (!status) return
-    const timer = setTimeout(() => setStatus(null), 4000)
+    const timer = setTimeout(() => setStatus(null), 5000)
     return () => clearTimeout(timer)
   }, [status])
 

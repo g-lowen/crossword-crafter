@@ -150,6 +150,9 @@ on a Mac), so Sammy can learn the shortcuts once:
   events, so it never asks for clipboard permission; the menu items use the clipboard API, which
   some browsers ask about the first time.
 
+Messages such as "Puzzle copied to the clipboard." pop up in the bottom-right corner of the window
+for 5 seconds: green for success, red when something didn't work.
+
 ## Saved shapes
 
 In `src/model/persistence.ts`:

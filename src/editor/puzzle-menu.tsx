@@ -87,7 +87,7 @@ export function PuzzleMenu({ library, dispatch, commands, status }: PuzzleMenuPr
       >
         Export images
       </button>
-      {status && !panel && (
+      {status && (
         <span className={`menu-status menu-status--${status.kind}`} role="status">
           {status.text}
         </span>
