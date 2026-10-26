@@ -31,6 +31,10 @@ without scrolling:
 - Right column: the selected cell's settings, then Display (show letters), Anagram (numbers and
   bar, number left to right) and any issues.
 - "Add sample puzzle" lives at the bottom of My puzzles.
+- A small Auto / Light / Dark switch sits at the right end of the header. Auto follows the
+  computer's setting; Light and Dark are remembered in the browser. In dark mode everything around
+  the grid goes dark, but the A4 page stays white with black cells, like paper and like the
+  exported images. Colors are CSS variables at the top of `src/index.css`.
 
 ## Answers
 

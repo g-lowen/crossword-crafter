@@ -5,6 +5,7 @@ import { loadLibrary, parsePuzzle, saveLibrary, serializePuzzle } from '../model
 import type { PuzzleAction } from '../model/puzzle-reducer'
 import { Editor } from './editor'
 import { PuzzleMenu, type EditCommands, type Status } from './puzzle-menu'
+import { ThemeSwitch } from './theme-switch'
 import { SHORTCUT_LABELS, useShortcuts } from './use-shortcuts'
 
 /** localStorage, or undefined where the browser blocks it. */
@@ -99,7 +100,12 @@ export function AppShell() {
           />
         </label>
       }
-      menu={<PuzzleMenu library={library} dispatch={dispatchApp} commands={commands} status={status} />}
+      menu={
+        <>
+          <PuzzleMenu library={library} dispatch={dispatchApp} commands={commands} status={status} />
+          <ThemeSwitch />
+        </>
+      }
       saveFailed={!saved}
     />
   )

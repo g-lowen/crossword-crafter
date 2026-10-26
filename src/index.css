@@ -1,12 +1,129 @@
+/*
+ * Colors. Light is the default; dark follows the computer's setting unless Sammy picks a theme in
+ * the header, which sets data-theme on <html>. The A4 page itself stays white in both, like paper.
+ */
 :root {
+  color-scheme: light;
+  --bg: #f4f4f2;
+  --surface: #ffffff;
+  --text: #1a1a1a;
+  --text-muted: #66707a;
+  --text-disabled: #aab0b5;
+  --border-soft: #e3e6e8;
+  --border: #cfd8dc;
+  --border-strong: #90a4ae;
+  --border-hover: #546e7a;
+  --hover: #eeeeee;
+  --accent: #1e88e5;
+  --accent-hover: #1565c0;
+  --accent-soft: #e3f2fd;
+  --accent-border: #90caf9;
+  --on-accent: #ffffff;
+  --link: #1565c0;
+  --focus-ring: rgb(30 136 229 / 0.25);
+  --shadow: rgb(0 0 0 / 0.18);
+  --ok-bg: #e8f5e9;
+  --ok-text: #1b5e20;
+  --ok-border: #a5d6a7;
+  --ok-strong: #2e7d32;
+  --error-bg: #ffebee;
+  --error-text: #b71c1c;
+  --error-border: #ef9a9a;
+  --error-strong: #c62828;
+  --warn-bg: #fff8e1;
+  --warn-text: #e65100;
+  --warn-strong: #ff9800;
+  --placed-bg: #eef6ee;
+  --placed-border: #9ccc9c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #15171a;
+    --surface: #212529;
+    --text: #e4e7ea;
+    --text-muted: #9aa3ab;
+    --text-disabled: #59616a;
+    --border-soft: #30353b;
+    --border: #3b4249;
+    --border-strong: #58626c;
+    --border-hover: #8a949e;
+    --hover: #2c3137;
+    --accent: #2b7bd6;
+    --accent-hover: #3d8de6;
+    --accent-soft: #1c3550;
+    --accent-border: #2f5f90;
+    --on-accent: #ffffff;
+    --link: #7dbbff;
+    --focus-ring: rgb(77 160 247 / 0.35);
+    --shadow: rgb(0 0 0 / 0.55);
+    --ok-bg: #1b3020;
+    --ok-text: #a5d6a7;
+    --ok-border: #2e5e35;
+    --ok-strong: #4caf50;
+    --error-bg: #3a1d1f;
+    --error-text: #ffb4ab;
+    --error-border: #7a2e2e;
+    --error-strong: #e57373;
+    --warn-bg: #352a12;
+    --warn-text: #ffb74d;
+    --warn-strong: #ff9800;
+    --placed-bg: #1d3022;
+    --placed-border: #3d6b46;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #15171a;
+  --surface: #212529;
+  --text: #e4e7ea;
+  --text-muted: #9aa3ab;
+  --text-disabled: #59616a;
+  --border-soft: #30353b;
+  --border: #3b4249;
+  --border-strong: #58626c;
+  --border-hover: #8a949e;
+  --hover: #2c3137;
+  --accent: #2b7bd6;
+  --accent-hover: #3d8de6;
+  --accent-soft: #1c3550;
+  --accent-border: #2f5f90;
+  --on-accent: #ffffff;
+  --link: #7dbbff;
+  --focus-ring: rgb(77 160 247 / 0.35);
+  --shadow: rgb(0 0 0 / 0.55);
+  --ok-bg: #1b3020;
+  --ok-text: #a5d6a7;
+  --ok-border: #2e5e35;
+  --ok-strong: #4caf50;
+  --error-bg: #3a1d1f;
+  --error-text: #ffb4ab;
+  --error-border: #7a2e2e;
+  --error-strong: #e57373;
+  --warn-bg: #352a12;
+  --warn-text: #ffb74d;
+  --warn-strong: #ff9800;
+  --placed-bg: #1d3022;
+  --placed-border: #3d6b46;
+}
+
+body {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
-  color: #1a1a1a;
-  background: #f4f4f2;
+  color: var(--text);
+  background: var(--bg);
 }
 
 body {
   margin: 0;
+}
+
+input,
+textarea,
+select {
+  color: inherit;
 }
 
 button {
@@ -60,20 +177,20 @@ button {
   padding: 14px 20px;
   font-size: 1.05rem;
   font-weight: 500;
-  color: #1b5e20;
-  background: #e8f5e9;
-  border: 1px solid #a5d6a7;
-  border-left: 6px solid #2e7d32;
+  color: var(--ok-text);
+  background: var(--ok-bg);
+  border: 1px solid var(--ok-border);
+  border-left: 6px solid var(--ok-strong);
   border-radius: 8px;
-  box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+  box-shadow: 0 6px 24px var(--shadow);
   animation: toast-in 0.2s ease-out;
 }
 
 .menu-status--error {
-  color: #b71c1c;
-  background: #ffebee;
-  border-color: #ef9a9a;
-  border-left-color: #c62828;
+  color: var(--error-text);
+  background: var(--error-bg);
+  border-color: var(--error-border);
+  border-left-color: var(--error-strong);
 }
 
 @keyframes toast-in {
@@ -90,10 +207,10 @@ button {
   z-index: 10;
   min-width: 240px;
   padding: 4px 0;
-  background: white;
-  border: 1px solid #cfd8dc;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  box-shadow: 0 4px 16px rgb(0 0 0 / 0.15);
+  box-shadow: 0 4px 16px var(--shadow);
 }
 
 .menu-item {
@@ -108,29 +225,29 @@ button {
 }
 
 .menu-item:hover:not(:disabled) {
-  background: #e3f2fd;
+  background: var(--accent-soft);
 }
 
 .menu-item:disabled {
-  color: #aaa;
+  color: var(--text-disabled);
   cursor: default;
 }
 
 .menu-item kbd {
   font: inherit;
   font-size: 0.85rem;
-  color: #78909c;
+  color: var(--text-muted);
 }
 
 .menu-separator {
   margin: 4px 0;
-  border-top: 1px solid #eceff1;
+  border-top: 1px solid var(--border-soft);
 }
 
 .menu-note {
   margin: 4px 14px 6px;
   font-size: 0.8rem;
-  color: #78909c;
+  color: var(--text-muted);
 }
 
 .menu-panel {
@@ -140,10 +257,10 @@ button {
   z-index: 10;
   width: 420px;
   padding: 12px;
-  background: white;
-  border: 1px solid #cfd8dc;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  box-shadow: 0 4px 16px rgb(0 0 0 / 0.15);
+  box-shadow: 0 4px 16px var(--shadow);
 }
 
 .menu-panel label {
@@ -160,7 +277,7 @@ button {
 
 .paste-error {
   margin: 8px 0 0;
-  color: #c62828;
+  color: var(--error-strong);
   font-size: 0.9rem;
 }
 
@@ -175,7 +292,7 @@ button {
   align-items: center;
   gap: 6px;
   font-size: 0.85rem;
-  color: #555;
+  color: var(--text-muted);
 }
 
 .puzzle-name {
@@ -184,26 +301,26 @@ button {
   font: inherit;
   font-size: 1rem;
   font-weight: 600;
-  color: #1a1a1a;
-  background: white;
-  border: 1px solid #90a4ae;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
   border-radius: 4px;
 }
 
 .puzzle-name:hover {
-  border-color: #546e7a;
+  border-color: var(--border-hover);
 }
 
 .puzzle-name:focus {
-  border-color: #1e88e5;
-  outline: 2px solid rgb(30 136 229 / 0.25);
+  border-color: var(--accent);
+  outline: 2px solid var(--focus-ring);
 }
 
 .puzzle-entry-rename {
   padding: 1px 4px;
   font: inherit;
   font-weight: 600;
-  border: 1px solid #1e88e5;
+  border: 1px solid var(--accent);
   border-radius: 3px;
 }
 
@@ -234,11 +351,11 @@ button {
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
-  border-top: 1px solid #eceff1;
+  border-top: 1px solid var(--border-soft);
 }
 
 .puzzle-entry--open {
-  background: #e3f2fd;
+  background: var(--accent-soft);
 }
 
 .puzzle-entry-info {
@@ -262,11 +379,11 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #607d8b;
+  color: var(--text-muted);
 }
 
 .pen-button:hover {
-  color: #1565c0;
+  color: var(--link);
 }
 
 .puzzle-entry-name {
@@ -278,15 +395,15 @@ button {
 
 .puzzle-entry-meta {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .save-warning {
   flex-basis: 100%;
   margin: 0;
   padding: 4px 12px;
-  color: #b71c1c;
-  background: #ffebee;
+  color: var(--error-text);
+  background: var(--error-bg);
   border-radius: 4px;
 }
 
@@ -311,13 +428,13 @@ button {
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #607d8b;
+  color: var(--text-muted);
 }
 
 .link-button {
   padding: 0;
   font-size: 0.85rem;
-  color: #1565c0;
+  color: var(--link);
   background: none;
   border: none;
 }
@@ -354,8 +471,8 @@ button {
 }
 
 .answer-list--over {
-  border-color: #1e88e5;
-  background: #e3f2fd;
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .answer-list ol {
@@ -367,7 +484,7 @@ button {
 .hint {
   margin: 0 0 8px;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .answer {
@@ -377,14 +494,14 @@ button {
   margin-bottom: 3px;
   padding: 0 2px 0 6px;
   font-size: 0.9rem;
-  background: white;
-  border: 1px solid #ccc;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 4px;
 }
 
 .answer--placed {
-  background: #eef6ee;
-  border-color: #9ccc9c;
+  background: var(--placed-bg);
+  border-color: var(--placed-border);
 }
 
 .answer--dragging {
@@ -402,7 +519,7 @@ button {
 }
 
 .answer-number {
-  color: #888;
+  color: var(--text-muted);
   min-width: 1.6em;
   text-align: right;
 }
@@ -431,7 +548,7 @@ button {
 }
 
 .icon-button:hover {
-  background: #eee;
+  background: var(--hover);
 }
 
 .drag-chip {
@@ -439,10 +556,10 @@ button {
   padding: 2px 8px;
   font-weight: 600;
   letter-spacing: 0.04em;
-  background: white;
-  border: 1px solid #1e88e5;
+  background: var(--surface);
+  border: 1px solid var(--accent);
   border-radius: 4px;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.2);
+  box-shadow: 0 2px 6px var(--shadow);
   white-space: nowrap;
 }
 
@@ -464,7 +581,7 @@ button {
   display: block;
   width: 100%;
   height: auto;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.2);
+  box-shadow: 0 1px 4px var(--shadow);
 }
 
 .answer-hit-area {
@@ -488,8 +605,8 @@ button {
   gap: 6px;
   padding: 8px 10px;
   font-size: 0.9rem;
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
   border-radius: 6px;
 }
 
@@ -498,12 +615,12 @@ button {
 }
 
 .issues {
-  border-left: 4px solid #ff9800;
-  background: #fff8e1;
+  border-left: 4px solid var(--warn-strong);
+  background: var(--warn-bg);
 }
 
 .issues h2 {
-  color: #e65100;
+  color: var(--warn-text);
 }
 
 .issues ul {
@@ -514,8 +631,8 @@ button {
 .inspector {
   padding: 8px 10px;
   font-size: 0.9rem;
-  background: white;
-  border: 1px solid #90caf9;
+  background: var(--surface);
+  border: 1px solid var(--accent-border);
   border-radius: 6px;
 }
 
@@ -528,7 +645,7 @@ button {
 
 .inspector-title span {
   flex: 1;
-  color: #555;
+  color: var(--text-muted);
 }
 
 .inspector-groups {
@@ -545,14 +662,14 @@ button {
   gap: 6px;
   margin: 0;
   padding: 2px 8px 8px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--border-soft);
   border-radius: 4px;
 }
 
 .inspector legend {
   padding: 0 4px;
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .segmented {
@@ -562,8 +679,8 @@ button {
 .segmented button {
   min-width: 36px;
   padding: 2px 8px;
-  border: 1px solid #b0bec5;
-  background: white;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
 }
 
 .segmented button + button {
@@ -579,13 +696,13 @@ button {
 }
 
 .segmented button[aria-pressed='true'] {
-  background: #1e88e5;
-  border-color: #1e88e5;
-  color: white;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
 }
 
 .segmented button:disabled {
-  color: #bbb;
+  color: var(--text-disabled);
   cursor: default;
 }
 
@@ -595,14 +712,14 @@ button {
 }
 
 .primary-button {
-  color: white;
-  background: #1e88e5;
-  border: 1px solid #1565c0;
+  color: var(--on-accent);
+  background: var(--accent);
+  border: 1px solid var(--accent-hover);
   border-radius: 3px;
 }
 
 .primary-button:hover:not(:disabled) {
-  background: #1565c0;
+  background: var(--accent-hover);
 }
 
 .primary-button:disabled {
@@ -645,7 +762,7 @@ button {
 
 .export-preview figcaption {
   font-size: 0.8rem;
-  color: #666;
+  color: var(--text-muted);
 }
 
 .export-summary {
@@ -655,7 +772,7 @@ button {
 .export-warning {
   margin: 0 0 4px;
   font-size: 0.9rem;
-  color: #e65100;
+  color: var(--warn-text);
 }
 
 .export-format {
@@ -666,4 +783,11 @@ button {
 
 .export-settings .hint {
   margin: 0;
+}
+
+.theme-switch button {
+  min-width: 0;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
