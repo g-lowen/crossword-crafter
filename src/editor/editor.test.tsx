@@ -13,6 +13,10 @@ function importAnswers(text: string) {
   fireEvent.click(screen.getByRole('button', { name: 'Add answers' }))
 }
 
+function editList() {
+  fireEvent.click(screen.getByRole('button', { name: 'Edit list' }))
+}
+
 function loadSample() {
   fireEvent.click(screen.getByRole('button', { name: /^My puzzles/ }))
   fireEvent.click(screen.getByRole('button', { name: 'Add sample puzzle' }))
@@ -43,6 +47,7 @@ describe('Editor', () => {
   it('edits an answer with Enter and cancels with Escape', () => {
     render(<App />)
     importAnswers('abba\nqueen')
+    editList()
     fireEvent.click(screen.getByRole('button', { name: 'Edit ABBA' }))
     const field = screen.getByLabelText('New text for ABBA')
     fireEvent.change(field, { target: { value: ' the  abba ' } })
@@ -59,6 +64,7 @@ describe('Editor', () => {
   it('keeps the old text when an edit is left empty', () => {
     render(<App />)
     importAnswers('abba')
+    editList()
     fireEvent.click(screen.getByRole('button', { name: 'Edit ABBA' }))
     const field = screen.getByLabelText('New text for ABBA')
     fireEvent.change(field, { target: { value: '  ' } })
@@ -66,19 +72,32 @@ describe('Editor', () => {
     expect(listedAnswers()).toEqual(['ABBA'])
   })
 
-  it('locks the list order until Reorder is pressed', () => {
+  it('shows the buttons for changing the list only in edit mode', () => {
     render(<App />)
-    importAnswers('abba')
-    const reorder = screen.getByRole('button', { name: 'Reorder' })
-    expect(reorder).toHaveAttribute('aria-pressed', 'false')
-    fireEvent.click(reorder)
-    expect(screen.getByRole('button', { name: 'Done' })).toHaveAttribute('aria-pressed', 'true')
+    importAnswers('abba\nqueen')
+    const editButton = screen.getByRole('button', { name: 'Edit list' })
+    expect(editButton).toHaveAttribute('aria-pressed', 'false')
+    for (const name of ['Edit ABBA', 'Remove ABBA', 'New group from QUEEN']) {
+      expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
+    }
+
+    fireEvent.click(editButton)
     expect(screen.getByText(/Drag up or down to reorder/)).toBeInTheDocument()
+    for (const name of ['Edit ABBA', 'Remove ABBA', 'New group from QUEEN']) {
+      expect(screen.getByRole('button', { name })).toBeInTheDocument()
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'New group from QUEEN' }))
+    expect(screen.getByLabelText('Name of Group 1')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }))
+    expect(screen.queryByLabelText('Name of Group 1')).not.toBeInTheDocument()
+    expect(screen.getByRole('listitem', { name: 'Group 1' })).toHaveTextContent('Group 11')
   })
 
   it('removes an answer', () => {
     render(<App />)
     importAnswers('abba\nqueen')
+    editList()
     fireEvent.click(screen.getByRole('button', { name: 'Remove ABBA' }))
     expect(listedAnswers()).toEqual(['QUEEN'])
   })
@@ -118,6 +137,7 @@ describe('Editor', () => {
     it('starts groups from answers and shows their sizes', () => {
       render(<App />)
       importAnswers('a\nb\nc\nd\ne')
+      editList()
       fireEvent.click(screen.getByRole('button', { name: 'New group from A' }))
       fireEvent.click(screen.getByRole('button', { name: 'New group from D' }))
       expect(headers()).toEqual(['3✕', '2✕'])
@@ -128,6 +148,7 @@ describe('Editor', () => {
     it('names, recolors and removes a group, and undoes it', () => {
       render(<App />)
       importAnswers('a\nb')
+      editList()
       fireEvent.click(screen.getByRole('button', { name: 'New group from A' }))
       fireEvent.change(screen.getByLabelText('Name of Group 1'), { target: { value: 'Mini 1' } })
       fireEvent.change(screen.getByLabelText('Color of Mini 1'), { target: { value: '#123456' } })

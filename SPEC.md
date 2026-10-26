@@ -69,12 +69,15 @@ without scrolling:
 - Answers are placed by dragging them from the list onto the grid. The first letter lands under
   the pointer, and a preview shows where the answer will go. A placed answer can be dragged by any
   of its cells to move it, or dragged back to the list to take it off the grid.
-- Each answer in the list has a pen button to edit its text. Enter or leaving the field saves, Esc
-  cancels. Turns, wide spaces and anagram letters that no longer fit the new text are dropped.
+- The list has two modes. Normally answers can only be dragged to and from the grid, and the list
+  order can't change, so an answer dragged back from the grid can't land in a new place. "Edit
+  list" above the list switches to edit mode, where each answer has a pen to edit its text and ✕
+  to remove it, answers are reordered by dragging them within the list, and groups are added,
+  named, recolored and removed. "Done" switches back. The mode isn't saved; the list opens in the
+  normal mode.
+- Editing an answer: Enter or leaving the field saves, Esc cancels. Turns, wide spaces and anagram
+  letters that no longer fit the new text are dropped.
 - Direction is set on the grid (click a cell, then Whole answer: direction). New answers go across.
-- The list order is locked by default, so an answer dragged back from the grid can't land in a new
-  place. "Reorder" above the list unlocks it; then answers are reordered by dragging them within
-  the list, and "Done" locks it again. The lock isn't saved; it is locked each time the app opens.
 - An answer reads right or down, and can turn 90° at any letter. Usually at most once, but more
   turns must be possible.
 - Arrows in cells only ever mean one of two things: a small corner arrow where an answer turns,
@@ -101,10 +104,12 @@ Gustav sometimes builds one grid out of several mini puzzles, each with its own 
 The answers of one mini puzzle are always next to each other in the list, so groups are made with
 dividers in the list:
 
-- Hovering an answer shows "+ New group" on its top edge. Clicking it starts a new group from that
-  answer; the group runs until the next divider. Answers before the first divider have no group.
-- Each group has a header in the list with a color swatch, a name field (empty shows "Group N"),
-  its answer count, and ✕ to remove the divider (its answers join the group above).
+- In edit mode, hovering an answer shows "+ New group" on its top edge. Clicking it starts a new
+  group from that answer; the group runs until the next divider. Answers before the first divider
+  have no group.
+- Each group has a header in the list with a color swatch, its name (empty shows "Group N") and
+  its answer count. In edit mode the swatch and name can be changed, and ✕ removes the divider (its
+  answers join the group above).
 - A divider belongs to its position in the list, not to an answer: dragging an answer across it
   moves the answer into the other group. Removing an answer moves the dividers below it up.
 - The letter cells of a grouped answer get the group's color, in the editor, the exported images

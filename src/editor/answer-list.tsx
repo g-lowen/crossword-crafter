@@ -42,8 +42,9 @@ export function AnswerList({
   const showImport = importOpen || answers.length === 0
   const [spotifyTracks, setSpotifyTracks] = useState<SpotifyTrack[] | null>(null)
   const spotifyLink = embedLink(text)
-  // Locked by default, so an answer dragged back from the grid can't land somewhere else in the list.
-  const [orderLocked, setOrderLocked] = useState(true)
+  // Off by default, so an answer dragged back from the grid can't land somewhere else in the list,
+  // and the list only shows what's needed for placing answers.
+  const [editable, setEditable] = useState(false)
 
   const finish = (texts: string[]) => {
     onImport(texts)
@@ -127,17 +128,18 @@ export function AnswerList({
           <>
             <div className="answer-list-hint">
               <p className="hint">
-                Drag onto the grid. Drag back here to take off.
-                {!orderLocked && ' Drag up or down to reorder.'}
+                {editable
+                  ? 'Drag up or down to reorder. Hover an answer to start a group.'
+                  : 'Drag onto the grid. Drag back here to take off.'}
               </p>
               <button
                 type="button"
                 className="link-button"
-                aria-pressed={!orderLocked}
-                title={orderLocked ? 'Allow changing the order by dragging' : 'Stop the order from changing'}
-                onClick={() => setOrderLocked(!orderLocked)}
+                aria-pressed={editable}
+                title={editable ? 'Stop changing the list' : 'Edit, remove, reorder and group the answers'}
+                onClick={() => setEditable(!editable)}
               >
-                {orderLocked ? 'Reorder' : 'Done'}
+                {editable ? 'Done' : 'Edit list'}
               </button>
             </div>
             <SortableContext items={answers.map((a) => listItemId(a.id))} strategy={verticalListSortingStrategy}>
@@ -152,6 +154,7 @@ export function AnswerList({
                         group={startsHere}
                         label={groupLabel(groups, startsHere)}
                         count={nextStart - index}
+                        editable={editable}
                         actions={groupActions}
                       />
                     ),
@@ -160,7 +163,7 @@ export function AnswerList({
                       answer={answer}
                       number={index + 1}
                       groupColor={groupAt(groups, index)?.color}
-                      orderLocked={orderLocked}
+                      editable={editable}
                       onStartGroup={startsHere ? undefined : () => groupActions.add(index)}
                       onEdit={onEdit}
                       onRemove={onRemove}
@@ -176,18 +179,32 @@ export function AnswerList({
   )
 }
 
-/** The start of a group in the list: its color, name and size, and a way to remove the divider. */
+/**
+ * The start of a group in the list: its color, name and size. In edit mode the color and name can
+ * be changed and the divider removed.
+ */
 function GroupHeader({
   group,
   label,
   count,
+  editable,
   actions,
 }: {
   group: AnswerGroup
   label: string
   count: number
+  editable: boolean
   actions: GroupActions
 }) {
+  if (!editable) {
+    return (
+      <li className="group-header" style={{ borderColor: group.color }} aria-label={label}>
+        <span className="group-swatch" style={{ background: group.color }} />
+        <span className="group-label">{label}</span>
+        <span className="group-count">{count}</span>
+      </li>
+    )
+  }
   return (
     <li className="group-header" style={{ borderColor: group.color }} aria-label={label}>
       <input
@@ -223,23 +240,27 @@ type AnswerItemProps = {
   answer: Answer
   number: number
   groupColor: string | undefined
-  /** When locked, other answers don't make room for a dragged answer and dropping it doesn't reorder. */
-  orderLocked: boolean
+  /**
+   * Shows the buttons for changing the list and lets answers be reordered. Otherwise other answers
+   * don't make room for a dragged answer and dropping it doesn't reorder.
+   */
+  editable: boolean
   /** Starts a new group with this answer; undefined when one already starts here. */
   onStartGroup: (() => void) | undefined
   onEdit: (id: string, text: string) => void
   onRemove: (id: string) => void
 }
 
-function AnswerItem({ answer, number, groupColor, orderLocked, onStartGroup, onEdit, onRemove }: AnswerItemProps) {
+function AnswerItem({ answer, number, groupColor, editable, onStartGroup, onEdit, onRemove }: AnswerItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: listItemId(answer.id),
     data: { answerId: answer.id, source: 'list' } satisfies DragData,
     // An answer that isn't a drop target is never "over", so the list doesn't shuffle.
-    disabled: { draggable: false, droppable: orderLocked },
+    disabled: { draggable: false, droppable: !editable },
   })
   const placed = answer.start !== null
-  const [editing, setEditing] = useState(false)
+  const [editingText, setEditingText] = useState(false)
+  const editing = editable && editingText
 
   return (
     <li
@@ -253,7 +274,7 @@ function AnswerItem({ answer, number, groupColor, orderLocked, onStartGroup, onE
         groupColor ? ' answer--grouped' : ''
       }`}
     >
-      {onStartGroup && !editing && (
+      {editable && onStartGroup && !editing && (
         <button
           type="button"
           className="new-group-button"
@@ -271,7 +292,7 @@ function AnswerItem({ answer, number, groupColor, orderLocked, onStartGroup, onE
             answer={answer}
             onDone={(text) => {
               if (text !== null && text !== answer.text) onEdit(answer.id, text)
-              setEditing(false)
+              setEditingText(false)
             }}
           />
         </span>
@@ -283,24 +304,28 @@ function AnswerItem({ answer, number, groupColor, orderLocked, onStartGroup, onE
           </span>
         </span>
       )}
-      <button
-        type="button"
-        className="icon-button pen-button"
-        onClick={() => setEditing(true)}
-        aria-label={`Edit ${answer.text}`}
-        title="Edit"
-      >
-        <PenIcon />
-      </button>
-      <button
-        type="button"
-        className="icon-button"
-        onClick={() => onRemove(answer.id)}
-        aria-label={`Remove ${answer.text}`}
-        title="Remove"
-      >
-        ✕
-      </button>
+      {editable && (
+        <>
+          <button
+            type="button"
+            className="icon-button pen-button"
+            onClick={() => setEditingText(true)}
+            aria-label={`Edit ${answer.text}`}
+            title="Edit"
+          >
+            <PenIcon />
+          </button>
+          <button
+            type="button"
+            className="icon-button"
+            onClick={() => onRemove(answer.id)}
+            aria-label={`Remove ${answer.text}`}
+            title="Remove"
+          >
+            ✕
+          </button>
+        </>
+      )}
     </li>
   )
 }
