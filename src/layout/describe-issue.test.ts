@@ -12,6 +12,7 @@ const puzzle: Puzzle = {
     groups: [],
   highlightColor: '#1e88e5',
   includeStartArrow: false,
+  cellSizeMm: 10,
 }
 
 describe('describeIssue', () => {

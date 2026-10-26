@@ -3,7 +3,7 @@ import { anagramBarCells } from '../layout/anagram'
 import type { Layout, Piece } from '../layout/layout'
 import { cellKey } from '../layout/layout'
 import { groupColors } from '../model/groups'
-import { A4_LANDSCAPE_GRID, type GridSize } from '../model/page'
+import { puzzleGrid, type GridSize } from '../model/page'
 import type { Puzzle } from '../model/puzzle'
 import { CELL, cellOrigin, outlineSegments, pointerArrow, separatorLine, turnArrow, wideSpaceShape } from './geometry'
 
@@ -39,7 +39,7 @@ export function GridView({
   revealedAnswers,
   highlight,
   size,
-  grid = A4_LANDSCAPE_GRID,
+  grid = puzzleGrid(puzzle),
   preview,
   children,
 }: GridViewProps) {

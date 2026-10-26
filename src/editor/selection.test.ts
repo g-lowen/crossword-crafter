@@ -14,6 +14,7 @@ const puzzle: Puzzle = {
     groups: [],
   highlightColor: '#1e88e5',
   includeStartArrow: false,
+  cellSizeMm: 10,
 }
 const layout = layoutPuzzle(puzzle)
 const crossing = { row: 1, col: 1 }

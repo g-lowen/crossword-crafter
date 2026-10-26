@@ -1,8 +1,10 @@
-import { CELL_SIZE_MM } from '../model/page'
 import type { CellRef, Dir, Separator } from '../model/puzzle'
 
-/** SVG units are millimetres, so one cell is CELL_SIZE_MM units wide. */
-export const CELL = CELL_SIZE_MM
+/**
+ * One cell is 10 SVG units wide, whatever its size on paper. Lines and letters are drawn in these
+ * units, so they shrink along with smaller cells.
+ */
+export const CELL = 10
 
 type Point = { x: number; y: number }
 

@@ -16,6 +16,7 @@ function puzzle(overrides: Partial<Puzzle>): Puzzle {
     groups: [],
     highlightColor: '#1e88e5',
     includeStartArrow: false,
+    cellSizeMm: 10,
     ...overrides,
   }
 }

@@ -14,14 +14,23 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
-import { useEffect, useMemo, useRef, useState, type ReactNode, type Ref, type RefObject } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+  type Ref,
+  type RefObject,
+} from 'react'
 import { CELL, cellOrigin } from '../grid/geometry'
 import { GridView } from '../grid/grid-view'
 import { leftToRightOrder } from '../layout/anagram'
 import { describeIssue } from '../layout/describe-issue'
 import { cellKey, layoutAnswer, layoutPuzzle, type Piece } from '../layout/layout'
 import { nextGroupColor } from '../model/groups'
-import { A4_LANDSCAPE_GRID } from '../model/page'
+import { CELL_SIZES_MM, gridForCellSize, puzzleGrid, type GridSize } from '../model/page'
 import type { CellRef, Puzzle } from '../model/puzzle'
 import type { PuzzleAction } from '../model/puzzle-reducer'
 import { AnswerList } from './answer-list'
@@ -36,8 +45,6 @@ import {
 import { cellAtPoint, moveByPixels } from './grid-coordinates'
 import { Inspector } from './inspector'
 import { selectAt, validSelection, type Selection } from './selection'
-
-const grid = A4_LANDSCAPE_GRID
 
 type Point = { x: number; y: number }
 
@@ -66,6 +73,7 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
   const [previewStart, setPreviewStart] = useState<CellRef | null>(null)
   const [rawSelection, setSelection] = useState<Selection | null>(null)
   const pageRef = useRef<HTMLDivElement | null>(null)
+  const grid = puzzleGrid(puzzle)
 
   // The real pointer position during a mouse drag. dnd-kit's own position is off by the answer
   // list's scroll when an answer is dragged out of a scrolled list, so drops and hit tests use this
@@ -99,7 +107,7 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
     return preferListItems(hits)
   }
 
-  const layout = useMemo(() => layoutPuzzle(puzzle, grid), [puzzle])
+  const layout = useMemo(() => layoutPuzzle(puzzle), [puzzle])
   const piecesByAnswer = useMemo(() => {
     const map = new Map<string, Piece[]>()
     for (const pieces of layout.cells.values()) {
@@ -236,7 +244,7 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
         />
 
         <div className="workspace">
-          <GridDropArea pageRef={pageRef} onBackgroundClick={() => setSelection(null)}>
+          <GridDropArea pageRef={pageRef} grid={grid} onBackgroundClick={() => setSelection(null)}>
             <GridView
               puzzle={puzzle}
               layout={layout}
@@ -282,6 +290,27 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
               <p className="hint">Click a cell to add turns, wide spaces, anagram letters and thick borders.</p>
             </section>
           )}
+
+          <section className="side-section" aria-label="Page">
+            <h2>Page</h2>
+            <label>
+              Cell size{' '}
+              <select
+                value={puzzle.cellSizeMm}
+                onChange={(e) => dispatch({ type: 'set-cell-size', cellSizeMm: Number(e.target.value) })}
+              >
+                {CELL_SIZES_MM.map((size) => {
+                  const { columns, rows } = gridForCellSize(size)
+                  return (
+                    <option key={size} value={size}>
+                      {size === 10 ? '1 cm' : `${size} mm`} ({columns} × {rows})
+                    </option>
+                  )
+                })}
+              </select>
+            </label>
+            <p className="hint">Smaller cells fit more answers on the A4 page.</p>
+          </section>
 
           <section className="side-section" aria-label="Display">
             <h2>Display</h2>
@@ -336,10 +365,12 @@ export function Editor({ puzzle, dispatch, nameField, menu, saveFailed }: Editor
 /** The page the grid sits on. It has to be a child of DndContext to register as a drop target. */
 function GridDropArea({
   pageRef,
+  grid,
   onBackgroundClick,
   children,
 }: {
   pageRef: RefObject<HTMLDivElement | null>
+  grid: GridSize
   onBackgroundClick: () => void
   children: ReactNode
 }) {
@@ -347,6 +378,7 @@ function GridDropArea({
   return (
     <div
       className="page"
+      style={{ '--grid-aspect': grid.columns / grid.rows } as CSSProperties}
       ref={(element) => {
         pageRef.current = element
         setNodeRef(element)

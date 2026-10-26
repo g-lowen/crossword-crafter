@@ -1,4 +1,4 @@
-import { A4_LANDSCAPE_GRID, type GridSize } from '../model/page'
+import { puzzleGrid, type GridSize } from '../model/page'
 import type { Answer, CellRef, Dir, Puzzle } from '../model/puzzle'
 
 const STEP: Record<Dir, CellRef> = {
@@ -146,7 +146,7 @@ export type Layout = {
 }
 
 /** Computes every cell of the puzzle from its answers. Unplaced answers are skipped. */
-export function layoutPuzzle(puzzle: Puzzle, grid: GridSize = A4_LANDSCAPE_GRID): Layout {
+export function layoutPuzzle(puzzle: Puzzle, grid: GridSize = puzzleGrid(puzzle)): Layout {
   const cells = new Map<string, Piece[]>()
   const startMarkers: StartMarker[] = []
   const turnMarkers: TurnMarker[] = []

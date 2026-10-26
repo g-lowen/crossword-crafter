@@ -14,6 +14,7 @@ function puzzle(answers: Answer[], anagramCells: Puzzle['anagram']['cells'] = []
     groups: [],
     highlightColor: '#e53935',
     includeStartArrow: false,
+    cellSizeMm: 10,
   }
 }
 
@@ -213,6 +214,12 @@ describe('layoutPuzzle', () => {
     expect(inside.issues).toEqual([])
     const outside = layoutPuzzle(puzzle([answer({ id: 'a', text: 'AB', start: { row: 21, col: 0 } })]))
     expect(outside.issues.map((issue) => issue.type)).toEqual(['out-of-bounds', 'out-of-bounds'])
+  })
+
+  it('fits more cells on the page when they are smaller', () => {
+    const corner = puzzle([answer({ id: 'a', text: 'AB', start: { row: 29, col: 40 } })])
+    expect(layoutPuzzle(corner).issues).toHaveLength(2)
+    expect(layoutPuzzle({ ...corner, cellSizeMm: 7 }).issues).toEqual([])
   })
 
   it('collects markers and wide space blocks from all answers', () => {

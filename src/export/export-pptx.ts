@@ -1,6 +1,6 @@
 import PptxGenJS from 'pptxgenjs'
 import type { ExportImage } from './export-plan'
-import { IMAGE_SIZE, type RenderedImage } from './render-image'
+import type { ImageSize, RenderedImage } from './render-image'
 
 /** PowerPoint's default widescreen slide, in inches. */
 const SLIDE = { width: 13.333, height: 7.5 }
@@ -12,9 +12,9 @@ const SECTIONS: Record<ExportImage['part'], string> = {
 }
 
 /** Where the A4 image sits on a 16:9 slide: full height, centred. Every slide uses the same spot. */
-export function imagePlacement(): { x: number; y: number; w: number; h: number } {
+export function imagePlacement(size: ImageSize): { x: number; y: number; w: number; h: number } {
   const h = SLIDE.height
-  const w = h * (IMAGE_SIZE.width / IMAGE_SIZE.height)
+  const w = h * (size.width / size.height)
   return { x: (SLIDE.width - w) / 2, y: 0, w, h }
 }
 
@@ -30,11 +30,11 @@ function toBase64(bytes: Uint8Array): string {
  * One slide per image, in order: the empty grid, the quiz, then the correction. Each part is its
  * own section, and each slide's notes say which question or answer it is.
  */
-export async function buildPptx(images: RenderedImage[], title: string): Promise<Blob> {
+export async function buildPptx(images: RenderedImage[], size: ImageSize, title: string): Promise<Blob> {
   const pptx = new PptxGenJS()
   pptx.layout = 'LAYOUT_WIDE'
   pptx.title = title
-  const placement = imagePlacement()
+  const placement = imagePlacement(size)
 
   let section: string | null = null
   for (const image of images) {

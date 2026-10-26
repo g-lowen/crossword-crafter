@@ -1,6 +1,7 @@
 import { UNTITLED, createLibrary, type Library, type LibraryEntry } from './library'
 import { normalizeGroups } from './groups'
 import type { AnagramCell, Answer, AnswerGroup, CellRef, Dir, Puzzle, Separator, Turn } from './puzzle'
+import { CELL_SIZES_MM, DEFAULT_CELL_SIZE_MM } from './page'
 import { emptyPuzzle } from './puzzle-reducer'
 
 /** Where the single autosaved puzzle lived before there was a puzzle list. Read once, to carry it over. */
@@ -107,6 +108,8 @@ function readPuzzle(value: unknown): Puzzle {
     groups: normalizeGroups(readArray(value.groups ?? [], 'The groups').map(readGroup), answers.length),
     highlightColor: typeof value.highlightColor === 'string' ? value.highlightColor : emptyPuzzle.highlightColor,
     includeStartArrow: value.includeStartArrow === true,
+    // Puzzles from before cells could be smaller have 1 cm cells.
+    cellSizeMm: CELL_SIZES_MM.includes(value.cellSizeMm as number) ? (value.cellSizeMm as number) : DEFAULT_CELL_SIZE_MM,
   }
 }
 

@@ -1,5 +1,6 @@
 import { arrayMove } from '@dnd-kit/sortable'
 import { groupsAfterRemoving, normalizeGroups } from './groups'
+import { DEFAULT_CELL_SIZE_MM } from './page'
 import type { AnagramCell, AnswerGroup, Answer, CellRef, Dir, Puzzle, Separator } from './puzzle'
 
 export const emptyPuzzle: Puzzle = {
@@ -9,6 +10,7 @@ export const emptyPuzzle: Puzzle = {
   groups: [],
   highlightColor: '#1e88e5',
   includeStartArrow: false,
+  cellSizeMm: DEFAULT_CELL_SIZE_MM,
 }
 
 export type PuzzleAction =
@@ -33,6 +35,8 @@ export type PuzzleAction =
   | { type: 'toggle-separator'; separator: Separator }
   | { type: 'set-highlight-color'; color: string }
   | { type: 'set-include-start-arrow'; value: boolean }
+  /** Answers keep their cells, counted from the top left, so ones near the edge can end up outside. */
+  | { type: 'set-cell-size'; cellSizeMm: number }
   /** Starts a new group at the answer with this list index. */
   | { type: 'add-group'; start: number; color: string }
   | { type: 'remove-group'; start: number }
@@ -185,6 +189,9 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
 
     case 'set-include-start-arrow':
       return { ...puzzle, includeStartArrow: action.value }
+
+    case 'set-cell-size':
+      return { ...puzzle, cellSizeMm: action.cellSizeMm }
 
     case 'add-group':
       if (puzzle.groups.some((group) => group.start === action.start)) return puzzle

@@ -41,8 +41,19 @@ describe('serializePuzzle and parsePuzzle', () => {
         groups: [],
         highlightColor: '#1e88e5',
         includeStartArrow: false,
+        cellSizeMm: 10,
       } satisfies Puzzle,
     })
+  })
+
+  it('keeps a smaller cell size and ignores sizes it does not offer', () => {
+    const read = (cellSizeMm: unknown) => {
+      const result = parsePuzzle(saved({ answers: [], cellSizeMm }))
+      return result.ok && result.puzzle.cellSizeMm
+    }
+    expect(read(7)).toBe(7)
+    expect(read(3)).toBe(10)
+    expect(read('7')).toBe(10)
   })
 
   it('reads groups and drops ones outside the list', () => {

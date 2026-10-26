@@ -29,4 +29,5 @@ export const samplePuzzle: Puzzle = {
   groups: [],
   highlightColor: '#1e88e5',
   includeStartArrow: false,
+  cellSizeMm: 10,
 }

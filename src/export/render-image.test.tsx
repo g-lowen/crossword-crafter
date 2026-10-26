@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { layoutPuzzle } from '../layout/layout'
 import type { Puzzle } from '../model/puzzle'
 import { emptyPuzzle } from '../model/puzzle-reducer'
-import { IMAGE_SIZE, renderImageSvg } from './render-image'
+import { imageSize, renderImageSvg } from './render-image'
 
 const puzzle: Puzzle = {
   ...emptyPuzzle,
@@ -25,13 +25,15 @@ describe('renderImageSvg', () => {
     const doc = parse(renderImageSvg(puzzle, layout, { path: 'skeleton.png', part: 'skeleton', label: '', revealed: [] }))
     const svg = doc.documentElement
     expect(svg.getAttribute('xmlns')).toBe('http://www.w3.org/2000/svg')
-    expect(svg.getAttribute('width')).toBe(String(IMAGE_SIZE.width))
-    expect(svg.getAttribute('height')).toBe(String(IMAGE_SIZE.height))
+    expect(svg.getAttribute('width')).toBe(String(imageSize(10).width))
+    expect(svg.getAttribute('height')).toBe(String(imageSize(10).height))
     expect(doc.querySelector('[data-editor-background]')).toBeNull()
   })
 
-  it('is 2283 by 1654 pixels, A4 landscape at 200 dpi', () => {
-    expect(IMAGE_SIZE).toEqual({ width: 2283, height: 1654 })
+  it('is the grid on A4 landscape at 200 dpi', () => {
+    expect(imageSize(10)).toEqual({ width: 2283, height: 1654 })
+    // 42 × 30 cells of 7 mm: 294 × 210 mm.
+    expect(imageSize(7)).toEqual({ width: 2315, height: 1654 })
   })
 
   it('shows no letters on the skeleton', () => {

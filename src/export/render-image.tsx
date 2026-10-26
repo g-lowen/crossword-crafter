@@ -2,16 +2,22 @@ import { zipSync } from 'fflate'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { GridView } from '../grid/grid-view'
 import type { Layout } from '../layout/layout'
-import { A4_LANDSCAPE_GRID, CELL_SIZE_MM } from '../model/page'
+import { gridForCellSize } from '../model/page'
 import type { Puzzle } from '../model/puzzle'
 import { exportPlan, type ExportImage } from './export-plan'
 
 /** 200 dots per inch: sharp on a projector, and still small files. */
 const DPI = 200
 
-export const IMAGE_SIZE = {
-  width: Math.round(((A4_LANDSCAPE_GRID.columns * CELL_SIZE_MM) / 25.4) * DPI),
-  height: Math.round(((A4_LANDSCAPE_GRID.rows * CELL_SIZE_MM) / 25.4) * DPI),
+export type ImageSize = { width: number; height: number }
+
+/** The grid's size on paper at 200 dpi. Every image of a puzzle has the same size. */
+export function imageSize(cellSizeMm: number): ImageSize {
+  const grid = gridForCellSize(cellSizeMm)
+  return {
+    width: Math.round(((grid.columns * cellSizeMm) / 25.4) * DPI),
+    height: Math.round(((grid.rows * cellSizeMm) / 25.4) * DPI),
+  }
 }
 
 /** The SVG for one exported image. Transparent wherever there are no cells. */
@@ -28,22 +34,22 @@ export function renderImageSvg(puzzle: Puzzle, layout: Layout, image: ExportImag
           ? { answerId: image.highlightId, color: puzzle.highlightColor, startArrow: puzzle.includeStartArrow }
           : undefined
       }
-      size={IMAGE_SIZE}
+      size={imageSize(puzzle.cellSizeMm)}
     />,
   )
 }
 
 /** Draws an SVG onto a canvas of the export size and returns it as PNG bytes. Browser only. */
-async function svgToPng(svg: string): Promise<Uint8Array> {
+async function svgToPng(svg: string, size: ImageSize): Promise<Uint8Array> {
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }))
   try {
-    const image = new Image(IMAGE_SIZE.width, IMAGE_SIZE.height)
+    const image = new Image(size.width, size.height)
     image.src = url
     await image.decode()
     const canvas = document.createElement('canvas')
-    canvas.width = IMAGE_SIZE.width
-    canvas.height = IMAGE_SIZE.height
-    canvas.getContext('2d')!.drawImage(image, 0, 0, IMAGE_SIZE.width, IMAGE_SIZE.height)
+    canvas.width = size.width
+    canvas.height = size.height
+    canvas.getContext('2d')!.drawImage(image, 0, 0, size.width, size.height)
     const png = await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('The browser could not create a PNG.'))), 'image/png'),
     )
@@ -64,7 +70,7 @@ export async function renderAllImages(
   const { images } = exportPlan(puzzle)
   const rendered: RenderedImage[] = []
   for (const [i, image] of images.entries()) {
-    rendered.push({ ...image, png: await svgToPng(renderImageSvg(puzzle, layout, image)) })
+    rendered.push({ ...image, png: await svgToPng(renderImageSvg(puzzle, layout, image), imageSize(puzzle.cellSizeMm)) })
     onProgress(i + 1, images.length)
   }
   return rendered

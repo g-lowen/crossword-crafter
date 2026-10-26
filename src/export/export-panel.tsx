@@ -49,13 +49,13 @@ export function ExportPanel({ puzzle, name, dispatch }: ExportPanelProps) {
     try {
       // Loaded on demand: rendering pulls in react-dom/server, and the deck pptxgenjs, which the
       // editor doesn't need.
-      const { buildZip, downloadBlob, renderAllImages } = await import('./render-image')
+      const { buildZip, downloadBlob, imageSize, renderAllImages } = await import('./render-image')
       const rendered = await renderAllImages(puzzle, layout, (done, total) => setProgress({ done, total }))
       if (format === 'zip') {
         downloadBlob(buildZip(rendered), exportFileName(name, 'zip'))
       } else {
         const { buildPptx } = await import('./export-pptx')
-        downloadBlob(await buildPptx(rendered, name), exportFileName(name, 'pptx'))
+        downloadBlob(await buildPptx(rendered, imageSize(puzzle.cellSizeMm), name), exportFileName(name, 'pptx'))
       }
     } catch (e) {
       setError(`Couldn't create the export: ${e instanceof Error ? e.message : String(e)}`)

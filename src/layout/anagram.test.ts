@@ -17,6 +17,7 @@ function puzzle(cells: Puzzle['anagram']['cells']): Puzzle {
     groups: [],
     highlightColor: '#1e88e5',
     includeStartArrow: false,
+    cellSizeMm: 10,
   }
 }
 

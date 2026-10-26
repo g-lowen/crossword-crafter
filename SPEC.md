@@ -15,8 +15,13 @@ automate layout but to make manual layout fast.
 
 ## The page
 
-- A4 landscape, 1 cm square cells. The grid is 29 × 21 cells.
-- All cells have the same size in every puzzle and every export.
+- A4 landscape (297 × 210 mm) with square cells. The grid is as many whole cells as fit on the page.
+- "Cell size" under Page in the right column picks the size per puzzle: 1 cm (29 × 21, the
+  default), 9 mm (33 × 23), 8 mm (37 × 26) or 7 mm (42 × 30). Smaller cells fit more answers.
+- Answers keep their cells counted from the top left when the size changes, so after a switch to
+  bigger cells the ones near the right or bottom edge can end up outside the page; they show up
+  under Issues. Lines and letters scale with the cells.
+- All cells in one puzzle have the same size, in the editor and in every export.
 
 ## Screen layout
 
@@ -28,7 +33,7 @@ without scrolling:
 - Left column: the answer list. The paste box is open while there are no answers, and folds away
   behind "+ Add answers" once there are.
 - Middle: the grid, as large as the window allows while keeping its A4 proportions.
-- Right column: the selected cell's settings, then Display (show letters), Anagram (numbers and
+- Right column: the selected cell's settings, then Page (cell size), Display (show letters), Anagram (numbers and
   bar, number left to right) and any issues.
 - "Add sample puzzle" lives at the bottom of My puzzles.
 - A small Light / Dark / GG switch sits at the right end of the header. Until Sammy picks one, the
@@ -145,8 +150,9 @@ dividers in the list:
 
 "Export images" opens a panel with "Export as" (Images (zip) or PowerPoint), the highlight
 settings, a preview of the first quiz image, and one download button. Sammy decides which format
-suits him; both contain the same images. Images are transparent PNGs of the whole A4 page, 2283 × 1654 pixels
-(200 dpi), so they stack exactly on top of each other in PowerPoint. Only answers on the grid get
+suits him; both contain the same images. Images are transparent PNGs of the grid at 200 dpi:
+2283 × 1654 pixels with 1 cm cells, 2315 × 1654 with 7 mm cells. All images of a puzzle have the
+same size, so they stack exactly on top of each other in PowerPoint. Only answers on the grid get
 images; the panel lists the ones left out, and says when the puzzle has issues.
 
 1. **Skeleton** (`skeleton.png`): the empty grid with spaces, turn arrows, separators, red anagram
@@ -290,7 +296,7 @@ component draws the editor (page background, guide lines, conflict warnings) and
 
 - **Export format.** Both a zip and a PowerPoint deck exist; see which one Sammy uses. Possible
   follow-ups: 4:3 slides, or putting everything on one slide with appear animations.
-- **Page margins.** Whether the 29 × 21 grid needs a margin for printing.
+- **Page margins.** Whether the grid needs a margin for printing.
 - **Special characters** in answers. Wait for Sammy's feedback.
 - **Download backup.** A button that downloads all puzzles as one file, and a way to load it back.
   Wanted, but not now.

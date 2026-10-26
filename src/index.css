@@ -655,7 +655,8 @@ button {
 /* The page keeps its A4 proportions and is as big as the space allows, in both directions. */
 .page {
   align-self: start;
-  width: min(100%, calc((100vh - var(--header-height) - 36px) * 29 / 21));
+  /* Columns over rows, set by the editor from the cell size. */
+  width: min(100%, calc((100vh - var(--header-height) - 36px) * var(--grid-aspect, 29 / 21)));
 }
 
 .grid-view {

@@ -52,4 +52,6 @@ export type Puzzle = {
   highlightColor: string
   /** Adds the pointer arrow to the quiz images. Sammy usually draws it in PowerPoint instead. */
   includeStartArrow: boolean
+  /** Width of a cell on paper. Smaller cells fit more of them on the A4 page. */
+  cellSizeMm: number
 }
