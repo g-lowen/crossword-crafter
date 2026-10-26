@@ -107,6 +107,14 @@ top-left, and so on. It is black, or white when the turn is at a space (a black 
 - Cell: "Wide space" for a space, or "Anagram letter" with its number for a letter.
 - Thick border: top, right, bottom, left of the selected cell.
 
+Shortcuts for the selected cell (⌘ instead of Ctrl on a Mac), shown when hovering the buttons:
+
+- Ctrl+arrow does what the arrow buttons do. On the first letter, Ctrl+→ and Ctrl+↓ set the
+  direction. Elsewhere, an arrow across the reading direction adds a turn at that letter, or
+  removes it if it is already that turn. Arrows that would do nothing are ignored.
+- Delete or Backspace takes the answer off the grid, like "Take off grid". With several answers
+  selected, it takes them all off.
+
 ## Moving several answers
 
 - Ctrl+click (⌘+click on a Mac) on a cell adds its answer to a selection, or removes it. If one

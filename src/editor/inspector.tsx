@@ -3,6 +3,7 @@ import { cellKey, type Layout } from '../layout/layout'
 import type { CellRef, Dir, Puzzle } from '../model/puzzle'
 import type { PuzzleAction } from '../model/puzzle-reducer'
 import type { Selection } from './selection'
+import { IS_MAC } from './use-shortcuts'
 
 type InspectorProps = {
   puzzle: Puzzle
@@ -13,6 +14,9 @@ type InspectorProps = {
 }
 
 const ARROW: Record<Dir, string> = { right: '→', down: '↓', left: '←', up: '↑' }
+
+/** How Ctrl+arrow is written on this computer. */
+const shortcut = (dir: Dir) => `${IS_MAC ? '⌘' : 'Ctrl+'}${ARROW[dir]}`
 
 const SIDES: { label: string; offset: CellRef }[] = [
   { label: 'Top', offset: { row: -1, col: 0 } },
@@ -66,10 +70,14 @@ export function Inspector({ puzzle, layout, selection, dispatch, onClose }: Insp
       <div className="inspector-groups">
         <fieldset>
           <legend>Whole answer</legend>
-          <button type="button" onClick={() => dispatch({ type: 'toggle-direction', id })}>
+          <button
+            type="button"
+            title={`Switch between across and down. ${shortcut('right')} or ${shortcut('down')} on the first letter.`}
+            onClick={() => dispatch({ type: 'toggle-direction', id })}
+          >
             Direction {ARROW[answer.dir]}
           </button>
-          <button type="button" onClick={() => dispatch({ type: 'unplace', id })}>
+          <button type="button" title="Delete" onClick={() => dispatch({ type: 'unplace', id })}>
             Take off grid
           </button>
         </fieldset>
@@ -83,7 +91,7 @@ export function Inspector({ puzzle, layout, selection, dispatch, onClose }: Insp
                 type="button"
                 aria-pressed={turn?.dir === dir}
                 aria-label={`Turn ${dir}`}
-                title={turn?.dir === dir ? 'Click again to remove the turn' : undefined}
+                title={turn?.dir === dir ? `Click again, or ${shortcut(dir)}, to remove the turn` : shortcut(dir)}
                 disabled={isLast || isWide}
                 onClick={() =>
                   dispatch({ type: 'set-turn', id, atIndex: index, dir: turn?.dir === dir ? null : dir })

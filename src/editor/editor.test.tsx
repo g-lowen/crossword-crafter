@@ -542,6 +542,45 @@ describe('Editor', () => {
     })
   })
 
+  describe('keyboard shortcuts on the grid', () => {
+    function loadSampleAndClick(cell: string) {
+      const view = render(<App />)
+      loadSample()
+      fireEvent.click(view.container.querySelector(`[data-answer-handle="beatles"] [data-cell="${cell}"]`)!)
+      return view
+    }
+
+    it('sets the direction with Ctrl+arrow on the first letter', () => {
+      loadSampleAndClick('2,2')
+      fireEvent.keyDown(window, { key: 'ArrowDown', ctrlKey: true })
+      expect(screen.getByRole('button', { name: 'Direction ↓' })).toBeInTheDocument()
+    })
+
+    it('turns with Ctrl+arrow, and turns back', () => {
+      const { container } = loadSampleAndClick('2,4')
+      fireEvent.keyDown(window, { key: 'ArrowDown', ctrlKey: true })
+      expect(screen.getByRole('button', { name: 'Turn down' })).toHaveAttribute('aria-pressed', 'true')
+      expect(container.querySelector('[data-answer-handle="beatles"] [data-cell="3,4"]')).not.toBeNull()
+      fireEvent.keyDown(window, { key: 'ArrowDown', ctrlKey: true })
+      expect(screen.getByRole('button', { name: 'Turn down' })).toHaveAttribute('aria-pressed', 'false')
+    })
+
+    it('takes the answer off the grid with Delete', () => {
+      const { container } = loadSampleAndClick('2,4')
+      fireEvent.keyDown(window, { key: 'Delete' })
+      expect(container.querySelector('[data-answer-handle="beatles"]')).toBeNull()
+      expect(screen.queryByRole('region', { name: 'Selected cell' })).not.toBeInTheDocument()
+    })
+
+    it('takes a group off the grid with Backspace', () => {
+      const { container } = render(<App />)
+      loadSample()
+      fireEvent.keyDown(window, { key: 'a', ctrlKey: true })
+      fireEvent.keyDown(window, { key: 'Backspace' })
+      expect(container.querySelectorAll('[data-answer-handle]')).toHaveLength(0)
+    })
+  })
+
   describe('inspector', () => {
     function loadSampleAndClick(cell: string) {
       const view = render(<App />)

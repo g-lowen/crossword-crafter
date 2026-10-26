@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { layoutPuzzle } from '../layout/layout'
 import type { Answer, Puzzle } from '../model/puzzle'
 import { A4_LANDSCAPE_GRID } from '../model/page'
-import { canMoveBy, selectAt, separatorsMovingWith, validSelection } from './selection'
+import { arrowShortcut, canMoveBy, selectAt, separatorsMovingWith, validSelection } from './selection'
 
 function answer(id: string, text: string, row: number, col: number, dir: Answer['dir']): Answer {
   return { id, text, start: { row, col }, dir, turns: [], wideSpaces: [] }
@@ -75,5 +75,35 @@ describe('canMoveBy', () => {
     expect(canMoveBy(layout, ['cat'], { row: 0, col: -1 }, A4_LANDSCAPE_GRID)).toBe(false)
     expect(canMoveBy(layout, ['cat'], { row: -1, col: 0 }, A4_LANDSCAPE_GRID)).toBe(true)
     expect(canMoveBy(layout, ['cat', 'bad'], { row: -1, col: 0 }, A4_LANDSCAPE_GRID)).toBe(false)
+  })
+})
+
+describe('arrowShortcut', () => {
+  // CAT reads right from (1,0), BAD reads down from (0,1).
+  const at = (answerId: string, index: number, row: number, col: number) => ({ answerId, index, cell: { row, col } })
+
+  it('sets the direction on the first letter', () => {
+    expect(arrowShortcut(puzzle, layout, at('cat', 0, 1, 0), 'down')).toEqual({ type: 'toggle-direction', id: 'cat' })
+    expect(arrowShortcut(puzzle, layout, at('cat', 0, 1, 0), 'right')).toBeNull()
+    expect(arrowShortcut(puzzle, layout, at('bad', 0, 0, 1), 'right')).toEqual({ type: 'toggle-direction', id: 'bad' })
+  })
+
+  it('turns across the reading direction, and turns back', () => {
+    expect(arrowShortcut(puzzle, layout, at('cat', 1, 1, 1), 'up')).toEqual({ type: 'set-turn', id: 'cat', atIndex: 1, dir: 'up' })
+    expect(arrowShortcut(puzzle, layout, at('cat', 1, 1, 1), 'left')).toBeNull()
+    const turned: Puzzle = {
+      ...puzzle,
+      answers: puzzle.answers.map((a) => (a.id === 'cat' ? { ...a, turns: [{ atIndex: 1, dir: 'up' as const }] } : a)),
+    }
+    expect(arrowShortcut(turned, layoutPuzzle(turned), at('cat', 1, 1, 1), 'up')).toEqual({
+      type: 'set-turn',
+      id: 'cat',
+      atIndex: 1,
+      dir: null,
+    })
+  })
+
+  it('does not turn at the last letter', () => {
+    expect(arrowShortcut(puzzle, layout, at('cat', 2, 1, 2), 'down')).toBeNull()
   })
 })

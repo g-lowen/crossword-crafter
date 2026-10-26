@@ -31,7 +31,7 @@ import { describeIssue } from '../layout/describe-issue'
 import { cellKey, layoutAnswer, layoutPuzzle, type Piece } from '../layout/layout'
 import { nextGroupColor } from '../model/groups'
 import { puzzleGrid, type GridSize } from '../model/page'
-import type { CellRef, Puzzle } from '../model/puzzle'
+import type { CellRef, Dir, Puzzle } from '../model/puzzle'
 import type { PuzzleAction } from '../model/puzzle-reducer'
 import { AnswerList } from './answer-list'
 import {
@@ -44,10 +44,17 @@ import {
 } from './drag-ids'
 import { cellAtPoint, moveByPixels } from './grid-coordinates'
 import { Inspector } from './inspector'
-import { canMoveBy, selectAt, separatorsMovingWith, validSelection, type Selection } from './selection'
+import { arrowShortcut, canMoveBy, selectAt, separatorsMovingWith, validSelection, type Selection } from './selection'
 import { isEditable } from './use-shortcuts'
 
 type Point = { x: number; y: number }
+
+const ARROW_DIRS: Record<string, Dir> = {
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+}
 
 const ARROW_KEYS: Record<string, CellRef> = {
   ArrowUp: { row: -1, col: 0 },
@@ -166,10 +173,23 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
         setGroup([...piecesByAnswer.keys()])
         return
       }
-      const by = ARROW_KEYS[event.key]
-      if (by && movable.length > 0 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      // Delete and Backspace take the selected answers off the grid.
+      if ((event.key === 'Delete' || event.key === 'Backspace') && movable.length > 0) {
         event.preventDefault()
-        moveBy(by)
+        dispatch({ type: 'unplace-answers', ids: movable })
+        clearSelection()
+        return
+      }
+      const dir = ARROW_DIRS[event.key]
+      if (!dir || event.altKey) return
+      if (event.ctrlKey || event.metaKey) {
+        // Ctrl+arrow does what the arrow buttons in the cell panel do.
+        const action = selection && arrowShortcut(puzzle, layout, selection, dir)
+        if (selection) event.preventDefault()
+        if (action) dispatch(action)
+      } else if (movable.length > 0) {
+        event.preventDefault()
+        moveBy(ARROW_KEYS[event.key])
       }
     }
   })

@@ -1,6 +1,7 @@
 import { cellKey, type Layout } from '../layout/layout'
 import type { GridSize } from '../model/page'
-import type { CellRef, Separator } from '../model/puzzle'
+import type { CellRef, Dir, Puzzle, Separator } from '../model/puzzle'
+import type { PuzzleAction } from '../model/puzzle-reducer'
 
 /** One character of one answer, plus the cell that was clicked (a wide space has two). */
 export type Selection = { answerId: string; index: number; cell: CellRef }
@@ -55,4 +56,30 @@ export function canMoveBy(layout: Layout, ids: string[], by: CellRef, grid: Grid
     }
   }
   return true
+}
+
+const isAcross = (dir: Dir) => dir === 'right' || dir === 'left'
+
+/**
+ * What Ctrl+arrow does on the selected cell, the same as the arrow buttons in the cell panel. On
+ * the first letter, right and down set the answer's direction. Otherwise an arrow across the
+ * reading direction adds a turn there, or removes it if it's already that turn. Null when the
+ * arrow does nothing here.
+ */
+export function arrowShortcut(puzzle: Puzzle, layout: Layout, selection: Selection, dir: Dir): PuzzleAction | null {
+  const answer = puzzle.answers.find((a) => a.id === selection.answerId)
+  const piece = layout.cells
+    .get(cellKey(selection.cell))
+    ?.find((p) => p.answerId === selection.answerId && p.index === selection.index)
+  if (!answer || !piece) return null
+  const { id } = answer
+  const { index } = selection
+
+  if (index === 0 && (dir === 'right' || dir === 'down')) {
+    return dir === answer.dir ? null : { type: 'toggle-direction', id }
+  }
+  const isLast = index === Array.from(answer.text).length - 1
+  if (isAcross(dir) === isAcross(piece.dir) || isLast || answer.wideSpaces.includes(index)) return null
+  const turn = answer.turns.find((t) => t.atIndex === index)
+  return { type: 'set-turn', id, atIndex: index, dir: turn?.dir === dir ? null : dir }
 }
