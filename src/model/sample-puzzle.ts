@@ -1,10 +1,10 @@
 import type { Answer, Puzzle } from './puzzle'
 
-function answer(id: string, text: string, row: number, col: number, dir: Answer['dir'], turns: Answer['turns'] = []): Answer {
-  return { id, text, start: { row, col }, dir, turns, wideSpaces: [], visibleLetters: [] }
+function answer(id: string, text: string, row: number, col: number, dir: Answer['dir'], turns: Answer['turns'] = [], visibleLetters: number[] = []): Answer {
+  return { id, text, start: { row, col }, dir, turns, wideSpaces: [], visibleLetters }
 }
 
-/** A real quiz ("På allas läppar"): five groups of five answers, with turns and thick borders. */
+/** A real quiz ("På allas läppar"): five groups of five answers, with turns, thick borders, always-visible letters and an anagram. */
 export const samplePuzzle: Puzzle = {
   answers: [
     answer('gorillaz', 'GORILLAZ', 3, 6, 'down'),
@@ -23,20 +23,29 @@ export const samplePuzzle: Puzzle = {
     answer('black-eyed-peas', 'BLACK EYED PEAS', 21, 7, 'right'),
     answer('bananarama', 'BANANARAMA', 18, 9, 'down'),
     answer('peaches', 'PEACHES', 16, 13, 'down'),
-    answer('hall-and-oates', 'HALL&OATES', 27, 3, 'right'),
+    answer('hall-and-oates', 'HALL&OATES', 27, 3, 'right', [], [4]),
     answer('the-cranberries', 'THE CRANBERRIES', 24, 4, 'right'),
     answer('timbuktu', 'TIMBUKTU', 11, 25, 'right'),
-    answer('florence-and-the-machine', 'FLORENCE + THE MACHINE', 7, 19, 'right'),
+    answer('florence-and-the-machine', 'FLORENCE + THE MACHINE', 7, 19, 'right', [], [9]),
     answer('berlin', 'BERLIN', 6, 23, 'down'),
     answer('mora-trask', 'MORA TRÄSK', 2, 30, 'down'),
     answer('london-grammar', 'LONDON GRAMMAR', 2, 20, 'right'),
     answer('bee-gees', 'BEE GEES', 11, 11, 'right'),
     answer('nina-simone', 'NINA SIMONE', 1, 13, 'down'),
     answer('janis-joplin', 'JANIS JOPLIN', 7, 18, 'down'),
-    answer('benjamin-and-carola', 'BENJAMIN & CAROLA', 17, 12, 'right'),
+    answer('benjamin-and-carola', 'BENJAMIN & CAROLA', 17, 12, 'right', [], [9]),
     answer('bonnie-tyler', 'BONNIE TYLER', 6, 21, 'down', [{ atIndex: 9, dir: 'right' }]),
   ],
-  anagram: { showNumbersAndBar: false, cells: [] },
+  anagram: {
+    showNumbersAndBar: true,
+    cells: [
+      { answerId: 'gorillaz', letterIndex: 0, number: 2 },
+      { answerId: 'bjorn-afzelius', letterIndex: 0, number: 1 },
+      { answerId: 'florence-and-the-machine', letterIndex: 3, number: 4 },
+      { answerId: 'nina-simone', letterIndex: 3, number: 3 },
+      { answerId: 'ebba-gron', letterIndex: 5, number: 5 },
+    ],
+  },
   separators: [
     { a: { row: 3, col: 6 }, b: { row: 2, col: 6 } },
     { a: { row: 7, col: 19 }, b: { row: 7, col: 18 } },

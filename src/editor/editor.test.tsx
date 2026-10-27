@@ -454,7 +454,8 @@ describe('Editor', () => {
       loadSample()
       expect(container.querySelectorAll('[data-letter]').length).toBeGreaterThan(0)
       fireEvent.click(openPage().getByLabelText('Show letters in the editor'))
-      expect(container.querySelectorAll('[data-letter]')).toHaveLength(0)
+      // Only the sample's three always-visible letters stay.
+      expect(container.querySelectorAll('[data-letter]')).toHaveLength(3)
     })
 
     it('centers the puzzle on the page', () => {
@@ -620,8 +621,9 @@ describe('Editor', () => {
     it('marks an anagram letter with the next number', () => {
       const { container } = loadSampleAndClick('2,3')
       fireEvent.click(screen.getByLabelText('Anagram letter'))
-      expect(screen.getByLabelText('Number')).toHaveValue(1)
-      expect(container.querySelectorAll('[data-anagram-cell]')).toHaveLength(1)
+      // The sample already numbers five anagram letters.
+      expect(screen.getByLabelText('Number')).toHaveValue(6)
+      expect(container.querySelectorAll('[data-anagram-cell]')).toHaveLength(6)
     })
 
     it('makes a space wide', () => {
