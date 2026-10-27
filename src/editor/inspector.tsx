@@ -42,6 +42,7 @@ export function Inspector({ puzzle, layout, selection, dispatch, onClose }: Insp
   const chars = Array.from(answer.text)
   const isSpace = piece.kind === 'space'
   const isWide = answer.wideSpaces.includes(index)
+  const isVisible = answer.visibleLetters.includes(index)
   const isLast = index === chars.length - 1
   const turn = answer.turns.find((t) => t.atIndex === index)
   const anagramCell = puzzle.anagram.cells.find((c) => c.answerId === id && c.letterIndex === index)
@@ -125,6 +126,14 @@ export function Inspector({ puzzle, layout, selection, dispatch, onClose }: Insp
             </label>
           ) : (
             <>
+              <label title="Show this letter in every image, even the empty grid, as a hint.">
+                <input
+                  type="checkbox"
+                  checked={isVisible}
+                  onChange={() => dispatch({ type: 'toggle-visible-letter', id, index })}
+                />{' '}
+                Always visible
+              </label>
               <label>
                 <input
                   type="checkbox"

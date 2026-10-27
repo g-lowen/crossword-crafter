@@ -6,7 +6,7 @@ import { layoutPuzzle } from './layout'
 const grid = { rows: 21, columns: 29 }
 
 function answer(id: string, text: string, row: number, col: number, dir: Answer['dir'] = 'right'): Answer {
-  return { id, text, start: { row, col }, dir, turns: [], wideSpaces: [] }
+  return { id, text, start: { row, col }, dir, turns: [], wideSpaces: [], visibleLetters: [] }
 }
 
 function puzzle(cells: Puzzle['anagram']['cells']): Puzzle {

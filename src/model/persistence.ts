@@ -62,6 +62,10 @@ function readAnswer(value: unknown, i: number): Answer {
     if (!isInteger(index)) fail(`${where} has a broken wide space.`)
     return index
   })
+  const visibleLetters = readArray(value.visibleLetters ?? [], `${where}'s visible letters`).map((index) => {
+    if (!isInteger(index)) fail(`${where} has a broken visible letter.`)
+    return index
+  })
   return {
     id: value.id,
     text: value.text,
@@ -69,6 +73,7 @@ function readAnswer(value: unknown, i: number): Answer {
     dir: readDir(value.dir ?? 'right', `${where}'s direction`),
     turns,
     wideSpaces,
+    visibleLetters,
   }
 }
 

@@ -5,7 +5,7 @@ import type { Answer, Puzzle } from '../model/puzzle'
 import { GridView } from './grid-view'
 
 function answer(overrides: Partial<Answer> & Pick<Answer, 'id' | 'text'>): Answer {
-  return { start: { row: 0, col: 0 }, dir: 'right', turns: [], wideSpaces: [], ...overrides }
+  return { start: { row: 0, col: 0 }, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [], ...overrides }
 }
 
 function puzzle(overrides: Partial<Puzzle>): Puzzle {
@@ -55,6 +55,17 @@ describe('GridView', () => {
     expect(all('[data-cell-kind="letter"]')).toHaveLength(4)
     expect(all('[data-cell-kind="space"]')).toHaveLength(1)
     expect([...all('[data-letter]')].map((el) => el.textContent).sort()).toEqual(['A', 'B', 'C', 'X'])
+  })
+
+  it('draws always visible letters even when letters are hidden', () => {
+    const p = puzzle({ answers: [answer({ id: 'a', text: 'ABC', visibleLetters: [1] })] })
+    const { all } = renderGrid(p, { showLetters: false })
+    expect([...all('[data-letter]')].map((el) => el.textContent)).toEqual(['B'])
+
+    const { container } = render(
+      <GridView puzzle={p} layout={layoutPuzzle(p)} mode="export" showLetters={false} revealedAnswers={new Set()} />,
+    )
+    expect([...container.querySelectorAll('[data-letter]')].map((el) => el.textContent)).toEqual(['B'])
   })
 
   it('draws a turn arrow in white on a space and in black on a letter', () => {

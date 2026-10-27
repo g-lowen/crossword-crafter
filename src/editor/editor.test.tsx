@@ -462,7 +462,7 @@ describe('Editor', () => {
       // One answer in the top-left corner, pasted in like a copied puzzle.
       const corner = {
         ...samplePuzzle,
-        answers: [{ id: 'x', text: 'ABC', start: { row: 0, col: 0 }, dir: 'right' as const, turns: [], wideSpaces: [] }],
+        answers: [{ id: 'x', text: 'ABC', start: { row: 0, col: 0 }, dir: 'right' as const, turns: [], wideSpaces: [], visibleLetters: [] }],
         anagram: { showNumbersAndBar: false, cells: [] },
         separators: [],
       }

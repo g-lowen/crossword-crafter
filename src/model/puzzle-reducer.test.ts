@@ -15,8 +15,8 @@ describe('puzzleReducer', () => {
   it('imports answers off the grid, going right', () => {
     const puzzle = withAnswers('ABBA', 'QUEEN')
     expect(puzzle.answers).toEqual([
-      { id: 'abba', text: 'ABBA', start: null, dir: 'right', turns: [], wideSpaces: [] },
-      { id: 'queen', text: 'QUEEN', start: null, dir: 'right', turns: [], wideSpaces: [] },
+      { id: 'abba', text: 'ABBA', start: null, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [] },
+      { id: 'queen', text: 'QUEEN', start: null, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [] },
     ])
   })
 
@@ -37,6 +37,7 @@ describe('puzzleReducer', () => {
             { atIndex: 6, dir: 'right' },
           ],
           wideSpaces: [4],
+          visibleLetters: [1, 5, 8],
         },
       ],
       anagram: {
@@ -53,6 +54,7 @@ describe('puzzleReducer', () => {
     expect(edited.answers[0].text).toBe('PINKFLOY')
     expect(edited.answers[0].turns).toHaveLength(2)
     expect(edited.answers[0].wideSpaces).toEqual([])
+    expect(edited.answers[0].visibleLetters).toEqual([1, 5])
     expect(edited.anagram.cells.map((cell) => cell.letterIndex)).toEqual([1, 5])
 
     const shorter = puzzleReducer(puzzle, { type: 'set-text', id: 'pink floyd', text: 'PINK FL' })
@@ -160,6 +162,12 @@ describe('puzzleReducer editing', () => {
     const wide = puzzleReducer(placed, { type: 'toggle-wide-space', id, index: 4 })
     expect(wide.answers[0].wideSpaces).toEqual([4])
     expect(puzzleReducer(wide, { type: 'toggle-wide-space', id, index: 4 }).answers[0].wideSpaces).toEqual([])
+  })
+
+  it('toggles an always visible letter', () => {
+    const visible = puzzleReducer(placed, { type: 'toggle-visible-letter', id, index: 2 })
+    expect(visible.answers[0].visibleLetters).toEqual([2])
+    expect(puzzleReducer(visible, { type: 'toggle-visible-letter', id, index: 2 }).answers[0].visibleLetters).toEqual([])
   })
 
   it('numbers new anagram cells after the highest number, and removes them again', () => {

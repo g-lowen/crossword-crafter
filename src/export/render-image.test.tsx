@@ -8,8 +8,8 @@ const puzzle: Puzzle = {
   ...emptyPuzzle,
   highlightColor: '#ff00aa',
   answers: [
-    { id: 'cat', text: 'CAT', start: { row: 1, col: 0 }, dir: 'right', turns: [], wideSpaces: [] },
-    { id: 'bad', text: 'BAD', start: { row: 0, col: 1 }, dir: 'down', turns: [], wideSpaces: [] },
+    { id: 'cat', text: 'CAT', start: { row: 1, col: 0 }, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [] },
+    { id: 'bad', text: 'BAD', start: { row: 0, col: 1 }, dir: 'down', turns: [], wideSpaces: [], visibleLetters: [] },
   ],
 }
 const layout = layoutPuzzle(puzzle)

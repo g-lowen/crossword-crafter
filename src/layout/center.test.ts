@@ -5,7 +5,7 @@ import { centerOffset } from './center'
 import { layoutPuzzle } from './layout'
 
 function answer(id: string, text: string, row: number, col: number, dir: Answer['dir'] = 'right'): Answer {
-  return { id, text, start: { row, col }, dir, turns: [], wideSpaces: [] }
+  return { id, text, start: { row, col }, dir, turns: [], wideSpaces: [], visibleLetters: [] }
 }
 
 function puzzle(answers: Answer[], anagramCells: Puzzle['anagram']['cells'] = []): Puzzle {

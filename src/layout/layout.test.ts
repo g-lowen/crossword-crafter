@@ -3,7 +3,7 @@ import type { Answer, Puzzle } from '../model/puzzle'
 import { cellKey, layoutAnswer, layoutPuzzle, type Piece } from './layout'
 
 function answer(overrides: Partial<Answer> & Pick<Answer, 'id' | 'text'>): Answer {
-  return { start: { row: 0, col: 0 }, dir: 'right', turns: [], wideSpaces: [], ...overrides }
+  return { start: { row: 0, col: 0 }, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [], ...overrides }
 }
 
 function puzzle(answers: Answer[], anagramCells: Puzzle['anagram']['cells'] = []): Puzzle {

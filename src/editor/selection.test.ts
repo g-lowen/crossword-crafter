@@ -5,7 +5,7 @@ import { A4_LANDSCAPE_GRID } from '../model/page'
 import { arrowShortcut, canMoveBy, selectAt, separatorsMovingWith, validSelection } from './selection'
 
 function answer(id: string, text: string, row: number, col: number, dir: Answer['dir']): Answer {
-  return { id, text, start: { row, col }, dir, turns: [], wideSpaces: [] }
+  return { id, text, start: { row, col }, dir, turns: [], wideSpaces: [], visibleLetters: [] }
 }
 
 const puzzle: Puzzle = {

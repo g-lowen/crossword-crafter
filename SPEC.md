@@ -104,7 +104,8 @@ panel has:
 
 A turn arrow sits in the corner of the cell where its bend is: ↳ in the bottom-left, ↱ in the
 top-left, and so on. It is black, or white when the turn is at a space (a black cell).
-- Cell: "Wide space" for a space, or "Anagram letter" with its number for a letter.
+- Cell: "Wide space" for a space. For a letter, "Always visible" and "Anagram letter" with its
+  number.
 - Thick border: top, right, bottom, left of the selected cell.
 
 Shortcuts for the selected cell (⌘ instead of Ctrl on a Mac). Each button's tooltip says what it
@@ -161,6 +162,14 @@ dividers in the list:
 - Answers may share cells. Mismatching letters are allowed; it's up to Sammy to fix them.
 - The editor shows a warning on mismatching cells. Warnings never appear in exports.
 
+## Always visible letters
+
+- Any letter can be marked "Always visible" in the cell panel, to give a hint. It is drawn in every
+  image (the empty grid, the quiz images and the correction images) and in the editor even when
+  "Show letters in the editor" is off.
+- It is tied to an answer letter, so it moves with the answer. Where answers cross, the cell shows
+  its letter if either answer marks it.
+
 ## Separators
 
 - When two unrelated answers end up next to each other, Sammy can thicken the border between two
@@ -188,7 +197,7 @@ same size, so they stack exactly on top of each other in PowerPoint. Only answer
 images; the panel lists the ones left out, and says when the puzzle has issues.
 
 1. **Skeleton** (`skeleton.png`): the empty grid with spaces, turn arrows, separators, red anagram
-   borders, and the anagram numbers and bar if enabled.
+   borders, always visible letters, and the anagram numbers and bar if enabled.
 2. **Quiz images** (`quiz/01-the-beatles.png`, …): one per answer, in list order. The skeleton
    with that answer outlined as one shape in the highlight color Sammy picks. Only the current
    answer is marked.
@@ -283,6 +292,7 @@ type Answer = {
   dir: Dir;
   turns: { atIndex: number; dir: Dir }[];
   wideSpaces: number[]; // indices of spaces that span two cells
+  visibleLetters: number[]; // indices of letters drawn in every image
 };
 
 type CellRef = { row: number; col: number };

@@ -35,7 +35,7 @@ describe('serializePuzzle and parsePuzzle', () => {
     expect(result).toEqual({
       ok: true,
       puzzle: {
-        answers: [{ id: 'a', text: 'ABBA', start: null, dir: 'right', turns: [], wideSpaces: [] }],
+        answers: [{ id: 'a', text: 'ABBA', start: null, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [] }],
         anagram: { showNumbersAndBar: false, cells: [] },
         separators: [],
         groups: [],

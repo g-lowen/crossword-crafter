@@ -25,11 +25,13 @@ export type PuzzleAction =
   | { type: 'remove'; id: string }
   | { type: 'reorder'; fromId: string; toId: string }
   | { type: 'toggle-direction'; id: string }
-  /** Changes an answer's text. Turns, wide spaces and anagram letters that no longer fit are dropped. */
+  /** Changes an answer's text. Turns, wide spaces, visible letters and anagram letters that no longer fit are dropped. */
   | { type: 'set-text'; id: string; text: string }
   /** A null `dir` removes the turn at that letter. */
   | { type: 'set-turn'; id: string; atIndex: number; dir: Dir | null }
   | { type: 'toggle-wide-space'; id: string; index: number }
+  /** The letter is drawn in every image, even the empty grid. */
+  | { type: 'toggle-visible-letter'; id: string; index: number }
   | { type: 'toggle-anagram-cell'; answerId: string; letterIndex: number }
   | { type: 'set-anagram-number'; answerId: string; letterIndex: number; number: number | undefined }
   /** Numbers the anagram cells 1, 2, 3… in the given order. */
@@ -87,6 +89,7 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
             dir: 'right' as const,
             turns: [],
             wideSpaces: [],
+            visibleLetters: [],
           })),
         ],
       }
@@ -153,6 +156,7 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
         text: action.text,
         turns: answer.turns.filter((turn) => turn.atIndex < action.text.length - 1),
         wideSpaces: answer.wideSpaces.filter((index) => action.text[index] === ' '),
+        visibleLetters: answer.visibleLetters.filter(isLetter),
       }))
       return updateAnagramCells(edited, (cells) =>
         cells.filter((cell) => cell.answerId !== action.id || isLetter(cell.letterIndex)),
@@ -170,6 +174,12 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
       return updateAnswer(puzzle, action.id, (answer) => ({
         ...answer,
         wideSpaces: toggle(answer.wideSpaces, action.index),
+      }))
+
+    case 'toggle-visible-letter':
+      return updateAnswer(puzzle, action.id, (answer) => ({
+        ...answer,
+        visibleLetters: toggle(answer.visibleLetters, action.index),
       }))
 
     case 'toggle-anagram-cell':

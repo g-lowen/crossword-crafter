@@ -4,8 +4,8 @@ import { describeIssue } from './describe-issue'
 
 const puzzle: Puzzle = {
   answers: [
-    { id: 'a', text: 'CAT', start: { row: 0, col: 0 }, dir: 'right', turns: [], wideSpaces: [] },
-    { id: 'b', text: 'BED', start: { row: 0, col: 0 }, dir: 'down', turns: [], wideSpaces: [] },
+    { id: 'a', text: 'CAT', start: { row: 0, col: 0 }, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [] },
+    { id: 'b', text: 'BED', start: { row: 0, col: 0 }, dir: 'down', turns: [], wideSpaces: [], visibleLetters: [] },
   ],
   anagram: { showNumbersAndBar: false, cells: [] },
   separators: [],

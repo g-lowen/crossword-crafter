@@ -3,11 +3,11 @@ import type { Puzzle } from './puzzle'
 /** A small puzzle that shows every feature. Used until answers can be imported. */
 export const samplePuzzle: Puzzle = {
   answers: [
-    { id: 'beatles', text: 'THE BEATLES', start: { row: 2, col: 2 }, dir: 'right', turns: [], wideSpaces: [] },
-    { id: 'abba', text: 'ABBA', start: { row: 2, col: 8 }, dir: 'down', turns: [], wideSpaces: [] },
-    { id: 'madonna', text: 'MADONNA', start: { row: 5, col: 7 }, dir: 'right', turns: [], wideSpaces: [] },
-    { id: 'sting', text: 'STING', start: { row: 2, col: 12 }, dir: 'down', turns: [], wideSpaces: [] },
-    { id: 'queen', text: 'QUEEN', start: { row: 6, col: 13 }, dir: 'right', turns: [], wideSpaces: [] },
+    { id: 'beatles', text: 'THE BEATLES', start: { row: 2, col: 2 }, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [] },
+    { id: 'abba', text: 'ABBA', start: { row: 2, col: 8 }, dir: 'down', turns: [], wideSpaces: [], visibleLetters: [] },
+    { id: 'madonna', text: 'MADONNA', start: { row: 5, col: 7 }, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [] },
+    { id: 'sting', text: 'STING', start: { row: 2, col: 12 }, dir: 'down', turns: [], wideSpaces: [], visibleLetters: [] },
+    { id: 'queen', text: 'QUEEN', start: { row: 6, col: 13 }, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [] },
     {
       id: 'pink-floyd',
       text: 'PINK FLOYD',
@@ -15,6 +15,7 @@ export const samplePuzzle: Puzzle = {
       dir: 'right',
       turns: [{ atIndex: 5, dir: 'down' }],
       wideSpaces: [4],
+      visibleLetters: [],
     },
   ],
   anagram: {

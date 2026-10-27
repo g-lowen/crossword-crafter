@@ -28,6 +28,8 @@ export type Piece = CellRef & {
   dir: Dir
   /** Set on both cells of a wide space. */
   widePart?: 0 | 1
+  /** A letter drawn in every image, even the empty grid. */
+  alwaysVisible?: true
 }
 
 export type StartMarker = { answerId: string; cell: CellRef; dir: Dir }
@@ -83,6 +85,8 @@ export function layoutAnswer(answer: Answer, start: CellRef): AnswerPath {
     else issues.push({ type: 'invalid-wide-space', answerId: answer.id, index })
   }
 
+  const visibleLetters = new Set(answer.visibleLetters)
+
   const turns = new Map<number, Dir>()
   for (const turn of answer.turns) {
     const reason =
@@ -110,7 +114,8 @@ export function layoutAnswer(answer: Answer, start: CellRef): AnswerPath {
       wideSpaceBlocks.push({ answerId: answer.id, index, cells: [cell, second], dir })
       cell = second
     } else {
-      pieces.push({ ...cell, answerId: answer.id, index, kind, char, dir })
+      const alwaysVisible = kind === 'letter' && visibleLetters.has(index) ? { alwaysVisible: true as const } : {}
+      pieces.push({ ...cell, answerId: answer.id, index, kind, char, dir, ...alwaysVisible })
     }
 
     const turnDir = turns.get(index)

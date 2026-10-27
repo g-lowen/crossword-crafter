@@ -6,9 +6,9 @@ import { exportFileName, exportPlan, fileSlug } from './export-plan'
 const puzzle: Puzzle = {
   ...emptyPuzzle,
   answers: [
-    { id: 'a', text: 'THE BEATLES', start: { row: 0, col: 0 }, dir: 'right', turns: [], wideSpaces: [] },
-    { id: 'b', text: 'ABBA', start: null, dir: 'right', turns: [], wideSpaces: [] },
-    { id: 'c', text: 'HÅKAN HELLSTRÖM', start: { row: 2, col: 0 }, dir: 'right', turns: [], wideSpaces: [] },
+    { id: 'a', text: 'THE BEATLES', start: { row: 0, col: 0 }, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [] },
+    { id: 'b', text: 'ABBA', start: null, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [] },
+    { id: 'c', text: 'HÅKAN HELLSTRÖM', start: { row: 2, col: 0 }, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [] },
   ],
 }
 

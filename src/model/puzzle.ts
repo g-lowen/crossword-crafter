@@ -15,6 +15,8 @@ export type Answer = {
   turns: Turn[]
   /** Indices of spaces that span two cells. */
   wideSpaces: number[]
+  /** Indices of letters drawn in every image, even the empty grid, as a hint. */
+  visibleLetters: number[]
 }
 
 export type AnagramCell = {

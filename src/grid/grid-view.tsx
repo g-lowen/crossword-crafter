@@ -12,6 +12,7 @@ type GridViewProps = {
   layout: Layout
   /** The editor adds a page background, guide lines and conflict warnings. Exports get none of them. */
   mode: 'editor' | 'export'
+  /** Letters marked always visible are drawn either way. */
   showLetters: boolean
   /** When set, only these answers' letters are shown. Used for the correction images. */
   revealedAnswers?: ReadonlySet<string>
@@ -98,29 +99,30 @@ export function GridView({
         )
       })}
 
-      {showLetters &&
-        cells.map((pieces) => {
-          const letter = pieces.find(
-            (piece) => piece.kind === 'letter' && (!revealedAnswers || revealedAnswers.has(piece.answerId)),
-          )
-          if (!letter) return null
-          const { x, y } = cellOrigin(letter)
-          return (
-            <text
-              key={cellKey(letter)}
-              data-letter=""
-              x={x + CELL / 2}
-              y={y + CELL / 2 + 0.4}
-              fontSize={5.5}
-              fontFamily="Arial, Helvetica, sans-serif"
-              fontWeight="bold"
-              textAnchor="middle"
-              dominantBaseline="central"
-            >
-              {letter.char}
-            </text>
-          )
-        })}
+      {cells.map((pieces) => {
+        const letter = pieces.find(
+          (piece) =>
+            piece.kind === 'letter' &&
+            (piece.alwaysVisible || (showLetters && (!revealedAnswers || revealedAnswers.has(piece.answerId)))),
+        )
+        if (!letter) return null
+        const { x, y } = cellOrigin(letter)
+        return (
+          <text
+            key={cellKey(letter)}
+            data-letter=""
+            x={x + CELL / 2}
+            y={y + CELL / 2 + 0.4}
+            fontSize={5.5}
+            fontFamily="Arial, Helvetica, sans-serif"
+            fontWeight="bold"
+            textAnchor="middle"
+            dominantBaseline="central"
+          >
+            {letter.char}
+          </text>
+        )
+      })}
 
       {layout.anagramCells.map(({ cell, number }) => {
         const { x, y } = cellOrigin(cell)
