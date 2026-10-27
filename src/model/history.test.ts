@@ -29,12 +29,12 @@ describe('appReducer', () => {
   })
 
   it('undoes and redoes edits step by step', () => {
-    const state = run(start(), edit({ type: 'remove', id: 'abba' }), edit({ type: 'remove', id: 'sting' }))
-    expect(answers(state)).not.toContain('STING')
+    const state = run(start(), edit({ type: 'remove', id: 'gorillaz' }), edit({ type: 'remove', id: 'pantera' }))
+    expect(answers(state)).not.toContain('PANTERA')
 
     const once = run(state, undo)
-    expect(answers(once)).toContain('STING')
-    expect(answers(once)).not.toContain('ABBA')
+    expect(answers(once)).toContain('PANTERA')
+    expect(answers(once)).not.toContain('GORILLAZ')
 
     const twice = run(once, undo)
     expect(answers(twice)).toEqual(answers(start()))
@@ -46,12 +46,12 @@ describe('appReducer', () => {
   })
 
   it('forgets the redo steps after a new edit', () => {
-    const state = run(start(), edit({ type: 'remove', id: 'abba' }), undo, edit({ type: 'remove', id: 'sting' }))
+    const state = run(start(), edit({ type: 'remove', id: 'gorillaz' }), undo, edit({ type: 'remove', id: 'pantera' }))
     expect(canRedo(state)).toBe(false)
   })
 
   it('ignores edits that change nothing', () => {
-    const state = run(start(), edit({ type: 'reorder', fromId: 'abba', toId: 'missing' }))
+    const state = run(start(), edit({ type: 'reorder', fromId: 'gorillaz', toId: 'missing' }))
     expect(canUndo(state)).toBe(false)
   })
 
@@ -72,12 +72,12 @@ describe('appReducer', () => {
   })
 
   it('keeps a separate history per puzzle', () => {
-    let state = run(start(), edit({ type: 'remove', id: 'abba' }))
+    let state = run(start(), edit({ type: 'remove', id: 'gorillaz' }))
     state = run(state, { type: 'add', id: 'b', name: 'Quiz 2', puzzle: samplePuzzle, now })
     expect(canUndo(state)).toBe(false)
     state = run(state, { type: 'open', id: 'a' })
     expect(canUndo(state)).toBe(true)
-    expect(answers(run(state, undo))).toContain('ABBA')
+    expect(answers(run(state, undo))).toContain('GORILLAZ')
   })
 
   it("doesn't undo renaming, opening or adding puzzles", () => {
@@ -86,7 +86,7 @@ describe('appReducer', () => {
   })
 
   it('drops the history of a deleted puzzle', () => {
-    let state = run(start(), edit({ type: 'remove', id: 'abba' }))
+    let state = run(start(), edit({ type: 'remove', id: 'gorillaz' }))
     state = run(state, { type: 'add', id: 'b', name: 'Quiz 2', puzzle: samplePuzzle, now })
     state = run(state, { type: 'delete', id: 'a', newId: 'x', now })
     expect(state.history).not.toHaveProperty('a')

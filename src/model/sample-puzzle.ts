@@ -1,34 +1,54 @@
-import type { Puzzle } from './puzzle'
+import type { Answer, Puzzle } from './puzzle'
 
-/** A small puzzle that shows every feature. Used until answers can be imported. */
+function answer(id: string, text: string, row: number, col: number, dir: Answer['dir'], turns: Answer['turns'] = []): Answer {
+  return { id, text, start: { row, col }, dir, turns, wideSpaces: [], visibleLetters: [] }
+}
+
+/** A real quiz ("På allas läppar"): five groups of five answers, with turns and thick borders. */
 export const samplePuzzle: Puzzle = {
   answers: [
-    { id: 'beatles', text: 'THE BEATLES', start: { row: 2, col: 2 }, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [] },
-    { id: 'abba', text: 'ABBA', start: { row: 2, col: 8 }, dir: 'down', turns: [], wideSpaces: [], visibleLetters: [] },
-    { id: 'madonna', text: 'MADONNA', start: { row: 5, col: 7 }, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [] },
-    { id: 'sting', text: 'STING', start: { row: 2, col: 12 }, dir: 'down', turns: [], wideSpaces: [], visibleLetters: [] },
-    { id: 'queen', text: 'QUEEN', start: { row: 6, col: 13 }, dir: 'right', turns: [], wideSpaces: [], visibleLetters: [] },
-    {
-      id: 'pink-floyd',
-      text: 'PINK FLOYD',
-      start: { row: 8, col: 2 },
-      dir: 'right',
-      turns: [{ atIndex: 5, dir: 'down' }],
-      wideSpaces: [4],
-      visibleLetters: [],
-    },
+    answer('gorillaz', 'GORILLAZ', 3, 6, 'down'),
+    answer('the-turtles', 'THE TURTLES', 5, 0, 'right'),
+    answer('the-pussycat-dolls', 'THE PUSSYCAT DOLLS', 5, 0, 'down', [
+      { atIndex: 4, dir: 'right' },
+      { atIndex: 12, dir: 'down' },
+    ]),
+    answer('bjorn-afzelius', 'BJÖRN AFZELIUS', 2, 2, 'right'),
+    answer('pantera', 'PANTERA', 0, 9, 'right', [{ atIndex: 2, dir: 'down' }]),
+    answer('ebba-gron', 'EBBA GRÖN', 19, 22, 'right'),
+    answer('simply-red', 'SIMPLY RED', 26, 20, 'right'),
+    answer('pink', 'P!NK', 17, 30, 'down'),
+    answer('bla-taget', 'BLÅ TÅGET', 25, 24, 'down', [{ atIndex: 3, dir: 'right' }]),
+    answer('barry-white', 'BARRY WHITE', 16, 28, 'down'),
+    answer('black-eyed-peas', 'BLACK EYED PEAS', 21, 7, 'right'),
+    answer('bananarama', 'BANANARAMA', 18, 9, 'down'),
+    answer('peaches', 'PEACHES', 16, 13, 'down'),
+    answer('hall-and-oates', 'HALL&OATES', 27, 3, 'right'),
+    answer('the-cranberries', 'THE CRANBERRIES', 24, 4, 'right'),
+    answer('timbuktu', 'TIMBUKTU', 11, 25, 'right'),
+    answer('florence-and-the-machine', 'FLORENCE + THE MACHINE', 7, 19, 'right'),
+    answer('berlin', 'BERLIN', 6, 23, 'down'),
+    answer('mora-trask', 'MORA TRÄSK', 2, 30, 'down'),
+    answer('london-grammar', 'LONDON GRAMMAR', 2, 20, 'right'),
+    answer('bee-gees', 'BEE GEES', 11, 11, 'right'),
+    answer('nina-simone', 'NINA SIMONE', 1, 13, 'down'),
+    answer('janis-joplin', 'JANIS JOPLIN', 7, 18, 'down'),
+    answer('benjamin-and-carola', 'BENJAMIN & CAROLA', 17, 12, 'right'),
+    answer('bonnie-tyler', 'BONNIE TYLER', 6, 21, 'down', [{ atIndex: 9, dir: 'right' }]),
   ],
-  anagram: {
-    showNumbersAndBar: true,
-    cells: [
-      { answerId: 'beatles', letterIndex: 0, number: 1 },
-      { answerId: 'madonna', letterIndex: 3, number: 2 },
-      { answerId: 'pink-floyd', letterIndex: 7, number: 3 },
-    ],
-  },
-  separators: [{ a: { row: 6, col: 12 }, b: { row: 6, col: 13 } }],
-  groups: [],
+  anagram: { showNumbersAndBar: false, cells: [] },
+  separators: [
+    { a: { row: 3, col: 6 }, b: { row: 2, col: 6 } },
+    { a: { row: 7, col: 19 }, b: { row: 7, col: 18 } },
+  ],
+  groups: [
+    { start: 0, name: 'Djur', color: '#d4ebfb' },
+    { start: 5, name: 'Färg', color: '#fff1bf' },
+    { start: 10, name: 'Ätbart', color: '#d6f0cf' },
+    { start: 15, name: 'Städer', color: '#fbdbe6' },
+    { start: 20, name: 'Samma låt', color: '#e4dcf6' },
+  ],
   highlightColor: '#1e88e5',
-  includeStartArrow: false,
-  cellSizeMm: 10,
+  includeStartArrow: true,
+  cellSizeMm: 7,
 }

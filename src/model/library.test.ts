@@ -25,20 +25,20 @@ describe('libraryReducer', () => {
   it('edits only the open puzzle and marks it as changed', () => {
     const library = libraryReducer(twoPuzzles(), {
       type: 'edit',
-      action: { type: 'unplace', id: 'abba' },
+      action: { type: 'unplace', id: 'gorillaz' },
       now: t(5),
     })
     const [first, second] = library.entries
     expect(first.updatedAt).toBe(t(0))
     expect(second.updatedAt).toBe(t(5))
-    expect(second.puzzle.answers.find((a) => a.id === 'abba')?.start).toBeNull()
+    expect(second.puzzle.answers.find((a) => a.id === 'gorillaz')?.start).toBeNull()
   })
 
   it("doesn't mark a puzzle as changed when an edit does nothing", () => {
     const library = twoPuzzles()
     const same = libraryReducer(library, {
       type: 'edit',
-      action: { type: 'reorder', fromId: 'abba', toId: 'nope' },
+      action: { type: 'reorder', fromId: 'gorillaz', toId: 'nope' },
       now: t(9),
     })
     expect(same).toBe(library)

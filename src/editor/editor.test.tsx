@@ -105,8 +105,8 @@ describe('Editor', () => {
   it('loads the sample puzzle onto the grid', () => {
     const { container } = render(<App />)
     loadSample()
-    expect(listedAnswers()).toContain('PINK FLOYD')
-    expect(container.querySelectorAll('[data-answer-handle]')).toHaveLength(6)
+    expect(listedAnswers()).toContain('BJÖRN AFZELIUS')
+    expect(container.querySelectorAll('[data-answer-handle]')).toHaveLength(25)
   })
 
   describe('saving', () => {
@@ -277,7 +277,7 @@ describe('Editor', () => {
       importAnswers('abba')
       const text = serializePuzzle(samplePuzzle, 'Quiz 7')
       fireEvent.paste(document.body, { clipboardData: { getData: () => text } })
-      expect(listedAnswers()).toContain('PINK FLOYD')
+      expect(listedAnswers()).toContain('BJÖRN AFZELIUS')
       expect(screen.getByLabelText('Puzzle name')).toHaveValue('Quiz 18')
       fireEvent.click(screen.getByRole('button', { name: 'Puzzles ▾' }))
       expect(within(screen.getByRole('dialog', { name: 'Puzzles' })).getAllByRole('listitem')).toHaveLength(1)
@@ -295,7 +295,7 @@ describe('Editor', () => {
       await act(async () => {
         fireEvent.click(item)
       })
-      expect(listedAnswers()).toContain('PINK FLOYD')
+      expect(listedAnswers()).toContain('BJÖRN AFZELIUS')
     })
 
     it("says so when the clipboard doesn't hold a puzzle, and changes nothing", () => {
@@ -413,7 +413,7 @@ describe('Editor', () => {
       const list = openList()
       const names = list.getAllByRole('listitem').map((item) => item.querySelector('.puzzle-entry-name')?.textContent)
       expect(names).toEqual(['Sample puzzle', 'Quiz 18'])
-      expect(list.getAllByRole('listitem')[0]).toHaveTextContent(/6 answers · \d{4}-\d{2}-\d{2} \d{2}:\d{2}/)
+      expect(list.getAllByRole('listitem')[0]).toHaveTextContent(/25 answers · \d{4}-\d{2}-\d{2} \d{2}:\d{2}/)
       expect(list.getAllByTitle('Last edited')).toHaveLength(2)
     })
 
@@ -465,6 +465,7 @@ describe('Editor', () => {
         answers: [{ id: 'x', text: 'ABC', start: { row: 0, col: 0 }, dir: 'right' as const, turns: [], wideSpaces: [], visibleLetters: [] }],
         anagram: { showNumbersAndBar: false, cells: [] },
         separators: [],
+        cellSizeMm: 10,
       }
       fireEvent.paste(document.body, { clipboardData: { getData: () => serializePuzzle(corner) } })
       const page = openPage()
@@ -495,11 +496,11 @@ describe('Editor', () => {
     it('selects answers with Ctrl+click and moves them with the arrow keys', () => {
       const { container } = render(<App />)
       loadSample()
-      const beatles = cellOf(container, 'beatles')
-      const abba = cellOf(container, 'abba')
-      const sting = cellOf(container, 'sting')
-      fireEvent.click(container.querySelector(`[data-answer-handle="beatles"] [data-cell="${beatles}"]`)!, { ctrlKey: true })
-      fireEvent.click(container.querySelector(`[data-answer-handle="abba"] [data-cell="${abba}"]`)!, { ctrlKey: true })
+      const bjorn = cellOf(container, 'bjorn-afzelius')
+      const gorillaz = cellOf(container, 'gorillaz')
+      const pantera = cellOf(container, 'pantera')
+      fireEvent.click(container.querySelector(`[data-answer-handle="bjorn-afzelius"] [data-cell="${bjorn}"]`)!, { ctrlKey: true })
+      fireEvent.click(container.querySelector(`[data-answer-handle="gorillaz"] [data-cell="${gorillaz}"]`)!, { ctrlKey: true })
       expect(screen.getByRole('region', { name: 'Selected answers' })).toHaveTextContent('2 answers selected')
 
       fireEvent.keyDown(window, { key: 'ArrowDown' })
@@ -508,19 +509,19 @@ describe('Editor', () => {
         const [row, col] = key!.split(',').map(Number)
         return `${row + 1},${col + 1}`
       }
-      expect(cellOf(container, 'beatles')).toBe(shifted(beatles))
-      expect(cellOf(container, 'abba')).toBe(shifted(abba))
-      expect(cellOf(container, 'sting')).toBe(sting)
+      expect(cellOf(container, 'bjorn-afzelius')).toBe(shifted(bjorn))
+      expect(cellOf(container, 'gorillaz')).toBe(shifted(gorillaz))
+      expect(cellOf(container, 'pantera')).toBe(pantera)
 
       fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
-      expect(cellOf(container, 'beatles')).toBe(`${Number(beatles!.split(',')[0]) + 1},${beatles!.split(',')[1]}`)
+      expect(cellOf(container, 'bjorn-afzelius')).toBe(`${Number(bjorn!.split(',')[0]) + 1},${bjorn!.split(',')[1]}`)
     })
 
     it('selects every answer with Ctrl+A and clears with Escape', () => {
       render(<App />)
       loadSample()
       fireEvent.keyDown(window, { key: 'a', ctrlKey: true })
-      expect(screen.getByRole('region', { name: 'Selected answers' })).toHaveTextContent('6 answers selected')
+      expect(screen.getByRole('region', { name: 'Selected answers' })).toHaveTextContent('25 answers selected')
       fireEvent.keyDown(window, { key: 'Escape' })
       expect(screen.queryByRole('region', { name: 'Selected answers' })).not.toBeInTheDocument()
     })
@@ -536,9 +537,11 @@ describe('Editor', () => {
       const { container } = render(<App />)
       loadSample()
       fireEvent.keyDown(window, { key: 'a', ctrlKey: true })
-      const before = cellOf(container, 'beatles')
+      // PANTERA already sits on the top row, so the group can't move up at all.
+      const before = cellOf(container, 'bjorn-afzelius')
       for (let i = 0; i < 40; i++) fireEvent.keyDown(window, { key: 'ArrowUp' })
-      expect(cellOf(container, 'beatles')).toBe(`0,${before!.split(',')[1]}`)
+      expect(cellOf(container, 'pantera')).toBe('0,9')
+      expect(cellOf(container, 'bjorn-afzelius')).toBe(before)
     })
   })
 
@@ -546,7 +549,7 @@ describe('Editor', () => {
     function loadSampleAndClick(cell: string) {
       const view = render(<App />)
       loadSample()
-      fireEvent.click(view.container.querySelector(`[data-answer-handle="beatles"] [data-cell="${cell}"]`)!)
+      fireEvent.click(view.container.querySelector(`[data-answer-handle="bjorn-afzelius"] [data-cell="${cell}"]`)!)
       return view
     }
 
@@ -560,7 +563,7 @@ describe('Editor', () => {
       const { container } = loadSampleAndClick('2,4')
       fireEvent.keyDown(window, { key: 'ArrowDown', ctrlKey: true })
       expect(screen.getByRole('button', { name: 'Turn down' })).toHaveAttribute('aria-pressed', 'true')
-      expect(container.querySelector('[data-answer-handle="beatles"] [data-cell="3,4"]')).not.toBeNull()
+      expect(container.querySelector('[data-answer-handle="bjorn-afzelius"] [data-cell="3,4"]')).not.toBeNull()
       fireEvent.keyDown(window, { key: 'ArrowDown', ctrlKey: true })
       expect(screen.getByRole('button', { name: 'Turn down' })).toHaveAttribute('aria-pressed', 'false')
     })
@@ -568,7 +571,7 @@ describe('Editor', () => {
     it('takes the answer off the grid with Delete', () => {
       const { container } = loadSampleAndClick('2,4')
       fireEvent.keyDown(window, { key: 'Delete' })
-      expect(container.querySelector('[data-answer-handle="beatles"]')).toBeNull()
+      expect(container.querySelector('[data-answer-handle="bjorn-afzelius"]')).toBeNull()
       expect(screen.queryByRole('region', { name: 'Selected cell' })).not.toBeInTheDocument()
     })
 
@@ -592,8 +595,8 @@ describe('Editor', () => {
     it('opens for the clicked cell and closes with Escape', () => {
       loadSampleAndClick('2,3')
       const inspector = screen.getByRole('region', { name: 'Selected cell' })
-      expect(inspector).toHaveTextContent('THE BEATLES')
-      expect(inspector).toHaveTextContent('character 2 (H)')
+      expect(inspector).toHaveTextContent('BJÖRN AFZELIUS')
+      expect(inspector).toHaveTextContent('character 2 (J)')
       fireEvent.keyDown(window, { key: 'Escape' })
       expect(screen.queryByRole('region', { name: 'Selected cell' })).not.toBeInTheDocument()
     })
@@ -601,7 +604,7 @@ describe('Editor', () => {
     it('adds a turn, which moves the rest of the answer', () => {
       const { container } = loadSampleAndClick('2,3')
       fireEvent.click(screen.getByRole('button', { name: 'Turn down' }))
-      expect(container.querySelectorAll('[data-turn-marker]')).toHaveLength(2)
+      expect(container.querySelectorAll('[data-turn-marker]')).toHaveLength(6)
       expect(container.querySelector('[data-cell="3,3"]')).not.toBeNull()
     })
 
@@ -611,28 +614,28 @@ describe('Editor', () => {
       expect(screen.getByRole('button', { name: 'Turn down' })).toHaveAttribute('aria-pressed', 'true')
       fireEvent.click(screen.getByRole('button', { name: 'Turn down' }))
       expect(screen.getByRole('button', { name: 'Turn down' })).toHaveAttribute('aria-pressed', 'false')
-      expect(container.querySelectorAll('[data-turn-marker]')).toHaveLength(1)
+      expect(container.querySelectorAll('[data-turn-marker]')).toHaveLength(5)
     })
 
     it('marks an anagram letter with the next number', () => {
       const { container } = loadSampleAndClick('2,3')
       fireEvent.click(screen.getByLabelText('Anagram letter'))
-      expect(screen.getByLabelText('Number')).toHaveValue(4)
-      expect(container.querySelectorAll('[data-anagram-cell]')).toHaveLength(4)
+      expect(screen.getByLabelText('Number')).toHaveValue(1)
+      expect(container.querySelectorAll('[data-anagram-cell]')).toHaveLength(1)
     })
 
     it('makes a space wide', () => {
-      const { container } = loadSampleAndClick('2,5')
+      const { container } = loadSampleAndClick('2,7')
       fireEvent.click(screen.getByLabelText('Wide space (2 cells)'))
-      expect(container.querySelectorAll('[data-wide-space]')).toHaveLength(2)
+      expect(container.querySelectorAll('[data-wide-space]')).toHaveLength(1)
     })
 
     it('toggles a thick border', () => {
       const { container } = loadSampleAndClick('2,3')
       fireEvent.click(screen.getByRole('button', { name: 'Bottom' }))
-      expect(container.querySelectorAll('[data-separator]')).toHaveLength(2)
+      expect(container.querySelectorAll('[data-separator]')).toHaveLength(3)
       fireEvent.click(screen.getByRole('button', { name: 'Bottom' }))
-      expect(container.querySelectorAll('[data-separator]')).toHaveLength(1)
+      expect(container.querySelectorAll('[data-separator]')).toHaveLength(2)
     })
   })
 })
