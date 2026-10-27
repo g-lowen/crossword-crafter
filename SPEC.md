@@ -183,6 +183,8 @@ dividers in the list:
     is drawn on the page, numbered 1, 2, 3… above each cell.
   - Unchecked: only the red borders are drawn.
 - The bar sits in the middle of the bottom row of the page.
+- When letters are shown, each bar cell shows the letter of the anagram cell with its number, once
+  an answer through that cell is shown. Always visible letters don't fill the bar.
 - Sammy sets the numbering order himself. It's usually left to right, but not always. A new anagram
   letter gets the next free number, and "Number anagram left to right" renumbers them all by column.
 - An anagram cell is tied to an answer letter, so it moves with the answer.
@@ -200,13 +202,14 @@ images; the panel lists the ones left out, and says when the puzzle has issues.
    borders, always visible letters, and the anagram numbers and bar if enabled.
 2. **Quiz images** (`quiz/01-the-beatles.png`, …): one per answer, in list order. The skeleton
    with that answer outlined as one shape in the highlight color Sammy picks. Only the current
-   answer is marked.
+   answer is marked. The anagram numbers and bar are left out (the red borders stay).
    - Sammy normally adds the pointer arrow to the start of the answer himself in PowerPoint. The
      checkbox "Arrow to the start of the answer in quiz images" draws one in the cell before the
      start instead. It may cover other cells, and is cut off for an answer starting at the page
      edge.
 3. **Correction images** (`correction/01-the-beatles.png`, …): one per answer, in list order. The
-   skeleton with answers filled in cumulatively: image N shows answers 1 to N.
+   skeleton with answers filled in cumulatively: image N shows answers 1 to N. The anagram bar
+   fills in the same way.
 
 - **Images (zip):** the PNGs in the folders above.
 - **PowerPoint (.pptx):** a 16:9 deck (13.33 × 7.5 in) with one slide per image, in the same order.

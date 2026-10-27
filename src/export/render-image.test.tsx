@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { layoutPuzzle } from '../layout/layout'
 import type { Puzzle } from '../model/puzzle'
 import { emptyPuzzle } from '../model/puzzle-reducer'
+import type { ExportImage } from './export-plan'
 import { imageSize, renderImageSvg } from './render-image'
 
 const puzzle: Puzzle = {
@@ -60,5 +61,40 @@ describe('renderImageSvg', () => {
     expect(letters(doc)).toEqual(['A', 'C', 'T'])
     const both = parse(renderImageSvg(puzzle, layout, { path: 'correction/02.png', part: 'correction', label: '', revealed: ['cat', 'bad'] }))
     expect(letters(both)).toEqual(['A', 'B', 'C', 'D', 'T'])
+  })
+
+  describe('anagram', () => {
+    const withAnagram: Puzzle = {
+      ...puzzle,
+      anagram: {
+        showNumbersAndBar: true,
+        cells: [
+          { answerId: 'cat', letterIndex: 0, number: 1 },
+          { answerId: 'bad', letterIndex: 2, number: 2 },
+        ],
+      },
+    }
+    const anagramLayout = layoutPuzzle(withAnagram)
+    const render = (image: ExportImage) => parse(renderImageSvg(withAnagram, anagramLayout, image))
+    const barLetters = (doc: Document) =>
+      [...doc.querySelectorAll('[data-anagram-bar] > g')].map((g) => g.querySelector('[data-anagram-bar-letter]')?.textContent ?? '')
+
+    it('shows the numbers and the empty bar on the skeleton', () => {
+      const doc = render({ path: 'skeleton.png', part: 'skeleton', label: '', revealed: [] })
+      expect(doc.querySelectorAll('[data-anagram-number]')).toHaveLength(2)
+      expect(barLetters(doc)).toEqual(['', ''])
+    })
+
+    it('leaves the numbers and the bar out of the quiz images, but keeps the red borders', () => {
+      const doc = render({ path: 'quiz/01.png', part: 'quiz', label: '', revealed: [], highlightId: 'cat' })
+      expect(doc.querySelectorAll('[data-anagram-number]')).toHaveLength(0)
+      expect(doc.querySelector('[data-anagram-bar]')).toBeNull()
+      expect(doc.querySelectorAll('[data-anagram-cell]')).toHaveLength(2)
+    })
+
+    it('fills in the bar as the answers come in', () => {
+      expect(barLetters(render({ path: 'correction/01.png', part: 'correction', label: '', revealed: ['cat'] }))).toEqual(['C', ''])
+      expect(barLetters(render({ path: 'correction/02.png', part: 'correction', label: '', revealed: ['cat', 'bad'] }))).toEqual(['C', 'D'])
+    })
   })
 })

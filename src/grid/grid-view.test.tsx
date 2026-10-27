@@ -140,7 +140,7 @@ describe('GridView', () => {
       { answerId: 'a', letterIndex: 2, number: 2 },
     ]
     const shown = renderGrid(puzzle({ answers, anagram: { showNumbersAndBar: true, cells } }))
-    expect([...shown.all('[data-anagram-bar] text')].map((el) => el.textContent)).toEqual(['1', '2'])
+    expect([...shown.all('[data-anagram-bar-number]')].map((el) => el.textContent)).toEqual(['1', '2'])
 
     const hidden = renderGrid(puzzle({ answers, anagram: { showNumbersAndBar: false, cells } }))
     expect(hidden.all('[data-anagram-bar]')).toHaveLength(0)

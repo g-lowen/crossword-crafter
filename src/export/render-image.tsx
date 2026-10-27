@@ -29,6 +29,7 @@ export function renderImageSvg(puzzle: Puzzle, layout: Layout, image: ExportImag
       mode="export"
       showLetters={image.revealed.length > 0}
       revealedAnswers={new Set(image.revealed)}
+      hideAnagramNumbers={image.part === 'quiz'}
       highlight={
         image.highlightId
           ? { answerId: image.highlightId, color: puzzle.highlightColor, startArrow: puzzle.includeStartArrow }

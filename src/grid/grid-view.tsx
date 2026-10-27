@@ -18,6 +18,8 @@ type GridViewProps = {
   revealedAnswers?: ReadonlySet<string>
   /** Marks one answer with a thick colored outline, optionally with an arrow to its start. */
   highlight?: { answerId: string; color: string; startArrow: boolean }
+  /** Leaves out the anagram numbers and bar even when the puzzle shows them. Used for the quiz images. */
+  hideAnagramNumbers?: boolean
   /** Pixel size for exported images. The editor scales with the page instead. */
   size?: { width: number; height: number }
   grid?: GridSize
@@ -39,6 +41,7 @@ export function GridView({
   showLetters,
   revealedAnswers,
   highlight,
+  hideAnagramNumbers = false,
   size,
   grid = puzzleGrid(puzzle),
   preview,
@@ -54,7 +57,17 @@ export function GridView({
   // Where answers from different groups cross, the one earliest in the list decides the color.
   const cellFill = (pieces: Piece[]) =>
     pieces.map((piece) => colors.get(piece.answerId)).find((color) => color !== undefined) ?? 'white'
-  const barCells = puzzle.anagram.showNumbersAndBar ? anagramBarCells(layout, grid) : []
+  const showAnagramNumbers = puzzle.anagram.showNumbersAndBar && !hideAnagramNumbers
+  const barCells = showAnagramNumbers ? anagramBarCells(layout, grid) : []
+  const answerShown = (answerId: string) => showLetters && (!revealedAnswers || revealedAnswers.has(answerId))
+  // A bar cell gets its letter once an answer through the numbered anagram cell is shown.
+  const barLetter = (number: number) => {
+    const anagramCell = layout.anagramCells.find((c) => c.number === number)
+    if (!anagramCell) return undefined
+    return layout.cells
+      .get(cellKey(anagramCell.cell))
+      ?.find((piece) => piece.kind === 'letter' && answerShown(piece.answerId))?.char
+  }
 
   return (
     <svg
@@ -101,9 +114,7 @@ export function GridView({
 
       {cells.map((pieces) => {
         const letter = pieces.find(
-          (piece) =>
-            piece.kind === 'letter' &&
-            (piece.alwaysVisible || (showLetters && (!revealedAnswers || revealedAnswers.has(piece.answerId)))),
+          (piece) => piece.kind === 'letter' && (piece.alwaysVisible || answerShown(piece.answerId)),
         )
         if (!letter) return null
         const { x, y } = cellOrigin(letter)
@@ -138,7 +149,7 @@ export function GridView({
               stroke={ANAGRAM_RED}
               strokeWidth={ANAGRAM_BORDER}
             />
-            {puzzle.anagram.showNumbersAndBar && number !== undefined && (
+            {showAnagramNumbers && number !== undefined && (
               <text data-anagram-number="" x={x + 1.6} y={y + 3.2} fontSize={2.6} fontFamily="Arial, Helvetica, sans-serif">
                 {number}
               </text>
@@ -166,10 +177,26 @@ export function GridView({
         <g data-anagram-bar="">
           {barCells.map((cell, i) => {
             const { x, y } = cellOrigin(cell)
+            const letter = barLetter(i + 1)
             return (
               <g key={i}>
                 <rect x={x} y={y} width={CELL} height={CELL} fill="white" stroke="black" strokeWidth={LINE} />
+                {letter && (
+                  <text
+                    data-anagram-bar-letter=""
+                    x={x + CELL / 2}
+                    y={y + CELL / 2 + 0.4}
+                    fontSize={5.5}
+                    fontFamily="Arial, Helvetica, sans-serif"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                  >
+                    {letter}
+                  </text>
+                )}
                 <text
+                  data-anagram-bar-number=""
                   x={x + CELL / 2}
                   y={y - 1.2}
                   fontSize={2.8}
