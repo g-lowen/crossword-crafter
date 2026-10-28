@@ -50,6 +50,7 @@ without scrolling:
   and blue `#63ccf0` for links, outlines and placed answers. In dark mode everything around
   the grid goes dark, but the A4 page stays white with black cells, like paper and like the
   exported images, in every theme. Colors are CSS variables at the top of `src/index.css`.
+- A Feedback button sits in the bottom-right corner of the window (see Feedback).
 
 ## Answers
 
@@ -291,7 +292,8 @@ downloads, to keep the editor small.
 
 ## Saving and the puzzle list
 
-There is no backend. Everything is saved in the browser Sammy uses, and nowhere else.
+There is no backend. Everything is saved in the browser Sammy uses, and nowhere else. The only
+thing that ever leaves the browser is feedback, when someone presses Send (see Feedback).
 
 - Sammy can keep several puzzles. Each has a name and a last-changed time. The open puzzle
   autosaves to `localStorage` on every change, and the last one opened comes back when the page
@@ -338,8 +340,8 @@ on a Mac), so Sammy can learn the shortcuts once:
   events, so it never asks for clipboard permission; the menu items use the clipboard API, which
   some browsers ask about the first time.
 
-Messages such as "Puzzle copied to the clipboard." pop up in the bottom-right corner of the window
-for 5 seconds: green for success, red when something didn't work.
+Messages such as "Puzzle copied to the clipboard." pop up in the bottom-right corner of the window,
+above the Feedback button, for 5 seconds: green for success, red when something didn't work.
 
 ## Saved shapes
 
@@ -407,6 +409,26 @@ component draws the editor (page background, guide lines, conflict warnings) and
 5. Editing: turns, wide spaces, separators, anagram cells and numbering.
 6. Save and load: autosave, the puzzle list, Edit menu with undo, redo, copy and paste.
 7. PNG exports as a zip: print grid, quiz and correction images.
+
+## Feedback
+
+The Feedback button in the bottom-right corner opens a box above it to tell the developers what
+works, what doesn't and what's missing:
+
+- A message of up to 1500 characters, an optional name, and "Include the open puzzle", which is
+  ticked by default. Send is greyed out until there's a message.
+- The name is remembered in the browser for next time.
+- After sending, the box closes and a green message thanks the sender. If it can't be sent, the box
+  stays open with the message, and says so.
+- Esc, ✕ or a click outside closes the box. A message that wasn't sent stays for next time, until
+  the page reloads.
+
+The feedback lands in the developers' Discord channel, with the open puzzle attached as
+`puzzle.json` in the Copy puzzle format, so it can be pasted into the app. It goes through a small
+Cloudflare Worker in `feedback/`, which holds the Discord webhook as a secret: anyone with the
+webhook URL could post to the channel, so it can't be in the app. The worker's address is set as
+`VITE_FEEDBACK_URL` in `.env`; without it the app has no Feedback button. Setting it up is in
+`feedback/README.md`.
 
 ## Open decisions
 

@@ -4,6 +4,7 @@ import { currentEntry } from '../model/library'
 import { loadLibrary, parsePuzzle, saveLibrary, serializePuzzle } from '../model/persistence'
 import type { PuzzleAction } from '../model/puzzle-reducer'
 import { Editor } from './editor'
+import { Feedback } from './feedback'
 import { PuzzleMenu, type EditCommands, type Status } from './puzzle-menu'
 import { ThemeSwitch } from './theme-switch'
 import { SHORTCUT_LABELS, useShortcuts } from './use-shortcuts'
@@ -91,40 +92,53 @@ export function AppShell() {
     onToggleLetters: () => setShowLetters((show) => !show),
   })
 
+  // Set in .env once the feedback worker is running; see feedback/README.md.
+  const feedbackUrl = import.meta.env.VITE_FEEDBACK_URL
+
   return (
-    <Editor
-      // A fresh editor per puzzle, so selection and drag state don't carry over.
-      key={entry.id}
-      puzzle={entry.puzzle}
-      dispatch={dispatch}
-      nameField={
-        <label className="puzzle-name-field">
-          Name
-          <input
-            className="puzzle-name"
-            aria-label="Puzzle name"
-            placeholder="Untitled puzzle"
-            value={entry.name}
-            onChange={(e) => dispatchApp({ type: 'rename', id: entry.id, name: e.target.value })}
-          />
-        </label>
-      }
-      menu={
-        <>
-          <PuzzleMenu
-            library={library}
-            dispatch={dispatchApp}
-            commands={commands}
-            status={status}
-            onStatus={setStatus}
-            showLetters={showLetters}
-            onShowLettersChange={setShowLetters}
-          />
-          <ThemeSwitch />
-        </>
-      }
-      showLetters={showLetters}
-      saveFailed={!saved}
-    />
+    <>
+      <Editor
+        // A fresh editor per puzzle, so selection and drag state don't carry over.
+        key={entry.id}
+        puzzle={entry.puzzle}
+        dispatch={dispatch}
+        nameField={
+          <label className="puzzle-name-field">
+            Name
+            <input
+              className="puzzle-name"
+              aria-label="Puzzle name"
+              placeholder="Untitled puzzle"
+              value={entry.name}
+              onChange={(e) => dispatchApp({ type: 'rename', id: entry.id, name: e.target.value })}
+            />
+          </label>
+        }
+        menu={
+          <>
+            <PuzzleMenu
+              library={library}
+              dispatch={dispatchApp}
+              commands={commands}
+              status={status}
+              onStatus={setStatus}
+              showLetters={showLetters}
+              onShowLettersChange={setShowLetters}
+            />
+            <ThemeSwitch />
+          </>
+        }
+        showLetters={showLetters}
+        saveFailed={!saved}
+      />
+      {feedbackUrl && (
+        <Feedback
+          url={feedbackUrl}
+          puzzleName={entry.name}
+          puzzleText={copyText}
+          onSent={() => setStatus({ kind: 'ok', text: 'Thanks! Your feedback was sent.' })}
+        />
+      )}
+    </>
   )
 }

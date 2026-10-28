@@ -231,11 +231,12 @@ button:disabled {
   margin-left: auto;
 }
 
-/* Messages such as "Puzzle copied" pop up in the bottom-right corner of the window. */
+/* Messages such as "Puzzle copied" pop up in the bottom-right corner of the window, above the
+   Feedback button. */
 .menu-status {
   position: fixed;
   right: 24px;
-  bottom: 24px;
+  bottom: 72px;
   z-index: 100;
   max-width: 420px;
   padding: 14px 20px;
@@ -709,6 +710,8 @@ button:disabled {
   flex-direction: column;
   gap: 10px;
   min-height: 0;
+  /* Room to scroll the last issue out from under the Feedback button. */
+  padding-bottom: 48px;
   overflow-y: auto;
 }
 
@@ -1185,4 +1188,61 @@ button:disabled {
   background: var(--accent);
   border-color: var(--accent);
   border-style: solid;
+}
+
+/* The Feedback button sits in the bottom-right corner, and opens its box above itself. */
+.feedback {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 50;
+}
+
+.feedback-button {
+  padding: 6px 16px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+.feedback-button:hover {
+  border-color: var(--border-hover);
+}
+
+.feedback-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 360px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px var(--shadow);
+}
+
+.feedback-panel label:not(.side-checkbox) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.feedback-panel textarea {
+  font: inherit;
+  resize: vertical;
+}
+
+.feedback-panel .paste-error {
+  margin: 0;
+}
+
+.feedback-panel .primary-button {
+  align-self: flex-end;
+  padding: 4px 16px;
 }

@@ -1,0 +1,8 @@
+# The Cloudflare Worker that passes feedback from the app on to Discord. See README.md.
+name = "crossword-crafter-feedback"
+main = "src/index.ts"
+compatibility_date = "2026-06-01"
+
+[vars]
+# Where the app runs: GitHub Pages, and `npm run dev` and `npm run preview` on this computer.
+ALLOWED_ORIGINS = "https://g-lowen.github.io,http://localhost:5173,http://localhost:4173"

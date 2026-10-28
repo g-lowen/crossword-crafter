@@ -15,3 +15,6 @@ npm test         # run tests once
 npm run build    # type-check and build
 npm run lint
 ```
+
+The Feedback button sends feedback to Discord through a Cloudflare Worker in [feedback/](feedback/),
+which has its own setup steps.

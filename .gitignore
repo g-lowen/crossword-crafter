@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Wrangler's local state for the feedback worker
+.wrangler
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
