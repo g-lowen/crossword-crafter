@@ -116,6 +116,7 @@ export function AppShell() {
             dispatch={dispatchApp}
             commands={commands}
             status={status}
+            onStatus={setStatus}
             showLetters={showLetters}
             onShowLettersChange={setShowLetters}
           />

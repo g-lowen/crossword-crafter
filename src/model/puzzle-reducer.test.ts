@@ -100,6 +100,23 @@ describe('puzzleReducer', () => {
     expect(unplaced.answers[0].start).toBeNull()
   })
 
+  it('places answers where the generator put them, with its thick borders instead of the old ones', () => {
+    const puzzle = { ...withAnswers('ABBA', 'QUEEN'), separators: [{ a: { row: 0, col: 0 }, b: { row: 0, col: 1 } }] }
+    const border = { a: { row: 4, col: 3 }, b: { row: 5, col: 3 } }
+    const placed = puzzleReducer(puzzle, {
+      type: 'place-all',
+      placements: [{ id: 'abba', start: { row: 2, col: 3 }, dir: 'down', turns: [{ atIndex: 1, dir: 'right' }] }],
+      separators: [border],
+    })
+    expect(placed.answers[0]).toMatchObject({
+      start: { row: 2, col: 3 },
+      dir: 'down',
+      turns: [{ atIndex: 1, dir: 'right' }],
+    })
+    expect(placed.answers[1]).toBe(puzzle.answers[1])
+    expect(placed.separators).toEqual([border])
+  })
+
   it('removes an answer together with its anagram cells', () => {
     const puzzle: Puzzle = {
       ...withAnswers('ABBA', 'QUEEN'),

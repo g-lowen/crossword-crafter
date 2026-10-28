@@ -19,6 +19,9 @@ export type Answer = {
   visibleLetters: number[]
 }
 
+/** Where an answer goes on the grid, as "Generate solution" decides it. */
+export type Placement = { id: string; start: CellRef; dir: Dir; turns: Turn[] }
+
 export type AnagramCell = {
   answerId: string
   letterIndex: number

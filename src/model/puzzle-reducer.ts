@@ -8,7 +8,7 @@ import {
   removeGroup,
 } from './groups'
 import { DEFAULT_CELL_SIZE_MM } from './page'
-import type { AnagramCell, AnswerGroup, Answer, CellRef, Dir, Puzzle, Separator } from './puzzle'
+import type { AnagramCell, AnswerGroup, Answer, CellRef, Dir, Placement, Puzzle, Separator } from './puzzle'
 
 export const emptyPuzzle: Puzzle = {
   answers: [],
@@ -25,6 +25,11 @@ export type PuzzleAction =
   /** Ids are passed in so the reducer stays pure. */
   | { type: 'import'; answers: { id: string; text: string }[] }
   | { type: 'place'; id: string; start: CellRef }
+  /**
+   * Puts answers where "Generate solution" placed them, with thick borders where they touch. The
+   * thick borders of the old layout go.
+   */
+  | { type: 'place-all'; placements: Placement[]; separators: Separator[] }
   | { type: 'unplace'; id: string }
   | { type: 'unplace-answers'; ids: string[] }
   /** Moves placed answers, and the thick borders that go with them, by whole cells. */
@@ -110,6 +115,20 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
 
     case 'place':
       return updateAnswer(puzzle, action.id, (answer) => ({ ...answer, start: action.start }))
+
+    case 'place-all': {
+      const placements = new Map(action.placements.map((placement) => [placement.id, placement]))
+      return {
+        ...puzzle,
+        answers: puzzle.answers.map((answer) => {
+          const placement = placements.get(answer.id)
+          return placement
+            ? { ...answer, start: placement.start, dir: placement.dir, turns: placement.turns }
+            : answer
+        }),
+        separators: action.separators,
+      }
+    }
 
     case 'unplace-answers':
       return {

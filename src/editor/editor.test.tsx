@@ -529,6 +529,18 @@ describe('Editor', () => {
       expect(page.getByRole('button', { name: 'Center on page' })).toBeDisabled()
     })
 
+    it('generates a solution with every answer on the grid, and undoes it', () => {
+      const { container } = render(<App />)
+      const page = openPage()
+      expect(page.getByRole('button', { name: 'Generate solution' })).toBeDisabled()
+      importAnswers('madonna\nnirvana\nsantana\nrihanna')
+      fireEvent.click(page.getByRole('button', { name: 'Generate solution' }))
+      expect(container.querySelectorAll('[data-answer-handle]')).toHaveLength(4)
+      expect(screen.getByText(/^Answers placed/)).toBeInTheDocument()
+      fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+      expect(container.querySelectorAll('[data-answer-handle]')).toHaveLength(0)
+    })
+
     it('shows the anagram numbers and bar from the anagram section', () => {
       render(<App />)
       const anagram = within(screen.getByRole('region', { name: 'Anagram' }))

@@ -4,7 +4,8 @@ A desktop web tool for building music quiz crosswords by hand and exporting the 
 PowerPoint presentations. Replaces the current workflow in Excel.
 
 Existing crossword generators don't fit: every puzzle is hand-customized. The goal is not to
-automate layout but to make manual layout fast.
+automate layout but to make manual layout fast. "Generate solution" only gives a first layout to
+adjust by hand.
 
 ## Users and context
 
@@ -35,7 +36,7 @@ without scrolling:
 - Page ▾ holds the page settings: Cell size and "Show letters" (shortcut L, outside
   text fields). Cell size belongs to the puzzle and goes into the exports. Show letters only
   changes the editor (the exports decide for themselves) and stays the same when switching
-  puzzles.
+  puzzles. It also has "Center on page" and "Generate solution", which move the answers.
 - Left column: the answer list. The paste box is open while there are no answers, and folds away
   behind "+ Add answers" once there are.
 - Middle: the grid, as large as the window allows while keeping its A4 proportions.
@@ -141,6 +142,46 @@ does and its shortcut; the direction one says it works on the first letter of th
   puzzle sits in the middle of the page. When the anagram bar is shown, its row and the row with
   its numbers are kept free. It is greyed out when the puzzle is already centered, empty, or too big
   to fit. Handy after switching to smaller cells, since the puzzle stays in the top-left.
+
+## Generate solution
+
+"Generate solution" in the Page menu places every answer on the grid at random, as a starting
+point. Each click gives a new layout, the same one again only when there is no other. The puzzle
+ends up in the middle of the page, the thick borders of the old layout go, and Undo brings the old
+layout back. The rules are in `src/generate/rules.ts`, apart from the search, so they are easy to
+change:
+
+1. Every answer crosses at least two other answers, or as many as it can: with two answers each
+   can only cross one, an answer can't cross one it has no letter in common with, and an answer
+   with its letters side by side, like U2, only crosses one. Crossings are at right angles on the
+   same letter, never on a space or a bend.
+2. The puzzle hangs together: from any answer, every other can be reached by going from answer to
+   crossing answer.
+3. Every answer is inside the page, and above the anagram bar when it's shown.
+4. Only answers longer than 4 characters bend. Lengths count every character, spaces included.
+5. At most 1 bend below 6 characters, 2 below 12, then 3.
+6. Bends are at least 2 characters apart.
+7. No bend on the second or second to last character, where it would leave one letter sticking
+   out. This is why a 4-letter answer never bends.
+8. Bends are on spaces when they can be. Every bend costs a little, so an answer only bends when
+   that wins a crossing or room, and a bend on a space costs less than one on a letter.
+9. Answers only touch where they cross, or end-on: where an answer ends against the side of
+   another that goes at right angles there. Each place answers touch gets a thick border, and
+   costs a little, so they stay few.
+
+Answers read right or down all the way, so their bends take turns between the two.
+
+When no layout turns up, rules are dropped one at a time, the most restrictive first, until one
+does: 1, 9, 2, 5, 6, 7, then 4. Rules 3 and 8 are never dropped. A rule no layout can keep, such
+as rule 2 when an answer has no letter in common with the rest, is dropped from the start. Without
+rules 1 and 2, answers still cross as many others as they can and hang together as far as they
+can. Without rule 9, answers may lie side by side, and get thick borders there too. The message
+after generating names the rules the layout breaks. If the answers don't fit even then, a red
+message says so and nothing changes.
+
+The search is random and gets 0.4 seconds with every rule, and a third of that for each set after,
+so on a hard puzzle it can miss a layout that keeps every rule; another click may find one. Groups
+are ignored for now, so answers from different groups may cross and hang together.
 
 ## Groups (several mini puzzles in one grid)
 

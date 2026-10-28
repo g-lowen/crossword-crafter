@@ -25,6 +25,7 @@ type PuzzleMenuProps = {
   dispatch: Dispatch<LibraryAction>
   commands: EditCommands
   status: Status | null
+  onStatus: (status: Status) => void
   showLetters: boolean
   onShowLettersChange: (value: boolean) => void
 }
@@ -51,7 +52,15 @@ function moveInMenu(event: ReactKeyboardEvent<HTMLElement>) {
 }
 
 /** Starting and switching puzzles, the Edit and Page menus, and exporting images. */
-export function PuzzleMenu({ library, dispatch, commands, status, showLetters, onShowLettersChange }: PuzzleMenuProps) {
+export function PuzzleMenu({
+  library,
+  dispatch,
+  commands,
+  status,
+  onStatus,
+  showLetters,
+  onShowLettersChange,
+}: PuzzleMenuProps) {
   const [panel, setPanel] = useState<Panel>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const current = currentEntry(library)
@@ -179,6 +188,7 @@ export function PuzzleMenu({ library, dispatch, commands, status, showLetters, o
           dispatch={editPuzzle}
           showLetters={showLetters}
           onShowLettersChange={onShowLettersChange}
+          onStatus={onStatus}
         />
       )}
       {panel === 'export' && <ExportPanel puzzle={current.puzzle} name={current.name} dispatch={editPuzzle} />}
