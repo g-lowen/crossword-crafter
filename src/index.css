@@ -190,6 +190,11 @@ button {
   cursor: pointer;
 }
 
+/* A disabled button shouldn't look clickable when the pointer is on it. */
+button:disabled {
+  cursor: default;
+}
+
 /* The whole editor fits the window, so the grid can be seen in one go on a laptop. */
 .app {
   box-sizing: border-box;
@@ -468,7 +473,7 @@ button {
   color: var(--text-muted);
 }
 
-.pen-button:hover {
+.pen-button:hover:not(:disabled) {
   color: var(--link);
 }
 
@@ -525,7 +530,7 @@ button {
   border: none;
 }
 
-.link-button:hover {
+.link-button:hover:not(:disabled) {
   text-decoration: underline;
 }
 
@@ -655,7 +660,7 @@ button {
   border-radius: 4px;
 }
 
-.icon-button:hover {
+.icon-button:hover:not(:disabled) {
   background: var(--hover);
 }
 
