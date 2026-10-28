@@ -50,11 +50,11 @@ export function PageMenu({ puzzle, dispatch, showLetters, onShowLettersChange }:
       <label className="page-menu-row" title={`Shortcut: ${SHORTCUT_LABELS.showLetters}`}>
         <input
           type="checkbox"
-          aria-label="Show letters in the editor"
+          aria-label="Show letters"
           checked={showLetters}
           onChange={(e) => onShowLettersChange(e.target.checked)}
         />
-        Show letters in the editor
+        Show letters
         <kbd>{SHORTCUT_LABELS.showLetters}</kbd>
       </label>
       <button

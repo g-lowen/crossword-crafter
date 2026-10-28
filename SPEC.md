@@ -32,7 +32,7 @@ without scrolling:
   the right.
 - Puzzles ▾ opens the puzzle list, with "New puzzle" at the top and "Add sample puzzle" at the
   bottom.
-- Page ▾ holds the page settings: Cell size and "Show letters in the editor" (shortcut L, outside
+- Page ▾ holds the page settings: Cell size and "Show letters" (shortcut L, outside
   text fields). Cell size belongs to the puzzle and goes into the exports. Show letters only
   changes the editor (the exports decide for themselves) and stays the same when switching
   puzzles.
@@ -172,7 +172,7 @@ dividers in the list:
 
 - Any letter can be marked "Always visible" in the cell panel, to give a hint. It is drawn in every
   image (the empty grid, the quiz images and the correction images) and in the editor even when
-  "Show letters in the editor" is off.
+  "Show letters" is off.
 - It is tied to an answer letter, so it moves with the answer. Where answers cross, the cell shows
   its letter if either answer marks it.
 

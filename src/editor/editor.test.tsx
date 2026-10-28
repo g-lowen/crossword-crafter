@@ -504,7 +504,7 @@ describe('Editor', () => {
       const { container } = render(<App />)
       loadSample()
       expect(container.querySelectorAll('[data-letter]').length).toBeGreaterThan(0)
-      fireEvent.click(openPage().getByLabelText('Show letters in the editor'))
+      fireEvent.click(openPage().getByLabelText('Show letters'))
       // Only the sample's three always-visible letters stay.
       expect(container.querySelectorAll('[data-letter]')).toHaveLength(3)
     })
