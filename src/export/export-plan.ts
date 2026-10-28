@@ -4,9 +4,9 @@ import type { Answer, Puzzle } from '../model/puzzle'
 export type ExportImage = {
   path: string
   /** What the image is, for PowerPoint sections and speaker notes. */
-  part: 'quiz' | 'correction'
+  part: 'print' | 'quiz' | 'correction'
   label: string
-  /** Answers whose letters are filled in. None for the empty grids and the quiz images. */
+  /** Answers whose letters are filled in. None for the print grid, the empty grids and the quiz images. */
   revealed: string[]
   /** The answer being asked, outlined in the highlight color. */
   highlightId?: string
@@ -39,6 +39,7 @@ export function exportFileName(puzzleName: string, extension: 'zip' | 'pptx'): s
 
 /**
  * The images for one puzzle, in list order:
+ * - `print-grid.png`: the empty grid Sammy prints and hands out to the players.
  * - `quiz/00-empty-grid.png`, then `quiz/NN-answer.png`: the empty grid with answer NN outlined.
  * - `correction/00-empty-grid.png`, then `correction/NN-answer.png`: answers 1 to NN filled in.
  */
@@ -48,7 +49,10 @@ export function exportPlan(puzzle: Puzzle): ExportPlan {
   const name = (answer: Answer, i: number) => `${String(i + 1).padStart(2, '0')}-${fileSlug(answer.text)}.png`
 
   const emptyGrid = 'Empty grid'
-  const images: ExportImage[] = [{ path: 'quiz/00-empty-grid.png', part: 'quiz', label: emptyGrid, revealed: [] }]
+  const images: ExportImage[] = [
+    { path: 'print-grid.png', part: 'print', label: 'Print grid', revealed: [] },
+    { path: 'quiz/00-empty-grid.png', part: 'quiz', label: emptyGrid, revealed: [] },
+  ]
   placed.forEach((answer, i) => {
     images.push({
       path: `quiz/${name(answer, i)}`,

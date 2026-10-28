@@ -79,10 +79,12 @@ describe('renderImageSvg', () => {
     const barLetters = (doc: Document) =>
       [...doc.querySelectorAll('[data-anagram-bar] > g')].map((g) => g.querySelector('[data-anagram-bar-letter]')?.textContent ?? '')
 
-    it('shows the numbers and the empty bar on the empty grid in the correction', () => {
-      const doc = render({ path: 'correction/00-empty-grid.png', part: 'correction', label: '', revealed: [] })
-      expect(doc.querySelectorAll('[data-anagram-number]')).toHaveLength(2)
-      expect(barLetters(doc)).toEqual(['', ''])
+    it('shows the numbers and the empty bar on the print grid and the empty grid in the correction', () => {
+      for (const part of ['print', 'correction'] as const) {
+        const doc = render({ path: 'x.png', part, label: '', revealed: [] })
+        expect(doc.querySelectorAll('[data-anagram-number]')).toHaveLength(2)
+        expect(barLetters(doc)).toEqual(['', ''])
+      }
     })
 
     it('leaves the numbers and the bar out of the quiz images, including the empty grid, but keeps the red borders', () => {

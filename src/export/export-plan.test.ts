@@ -13,9 +13,10 @@ const puzzle: Puzzle = {
 }
 
 describe('exportPlan', () => {
-  it('makes quiz and correction images for placed answers in list order, each starting with the empty grid', () => {
+  it('makes the print grid, then quiz and correction images for placed answers in list order, each starting with the empty grid', () => {
     const { images } = exportPlan(puzzle)
     expect(images).toEqual([
+      { path: 'print-grid.png', part: 'print', label: 'Print grid', revealed: [] },
       { path: 'quiz/00-empty-grid.png', part: 'quiz', label: 'Empty grid', revealed: [] },
       {
         path: 'quiz/01-the-beatles.png',
@@ -46,8 +47,9 @@ describe('exportPlan', () => {
     expect(exportPlan(puzzle).leftOut.map((answer) => answer.text)).toEqual(['ABBA'])
   })
 
-  it('makes only the empty grids for a puzzle without placed answers', () => {
+  it('makes only the print grid and the empty grids for a puzzle without placed answers', () => {
     expect(exportPlan(emptyPuzzle).images.map((image) => image.path)).toEqual([
+      'print-grid.png',
       'quiz/00-empty-grid.png',
       'correction/00-empty-grid.png',
     ])

@@ -199,10 +199,13 @@ same size, so they stack exactly on top of each other in PowerPoint. Only answer
 images; the panel lists the ones left out, and says when the puzzle has issues.
 
 The **skeleton** is the empty grid with spaces, turn arrows, separators, red anagram borders,
-always visible letters, and the anagram numbers and bar if enabled. Both folders (and both deck
-sections) start with it, so stepping through either one begins at the empty grid.
+always visible letters, and the anagram numbers and bar if enabled. The quiz and correction
+folders (and deck sections) start with it, so stepping through either one begins at the empty grid.
 
-1. **Quiz images** (`quiz/00-empty-grid.png`, then `quiz/01-the-beatles.png`, …): the skeleton,
+1. **Print grid** (`print-grid.png`): the grid Sammy prints and hands out to the players. It is
+   kept separate from the quiz and correction images because it may come to differ from them. For
+   now it is the skeleton.
+2. **Quiz images** (`quiz/00-empty-grid.png`, then `quiz/01-the-beatles.png`, …): the skeleton,
    then one per answer, in list order: the skeleton with that answer outlined as one shape in the
    highlight color Sammy picks. Only the current answer is marked. The anagram numbers and bar are
    left out of every quiz image, the empty grid included (the red borders stay).
@@ -210,16 +213,16 @@ sections) start with it, so stepping through either one begins at the empty grid
      checkbox "Arrow to the start of the answer in quiz images" draws one in the cell before the
      start instead. It may cover other cells, and is cut off for an answer starting at the page
      edge.
-2. **Correction images** (`correction/00-empty-grid.png`, then `correction/01-the-beatles.png`, …):
+3. **Correction images** (`correction/00-empty-grid.png`, then `correction/01-the-beatles.png`, …):
    the skeleton, then one per answer, in list order: the skeleton with answers filled in
    cumulatively: image N shows answers 1 to N. The anagram bar fills in the same way.
 
 - **Images (zip):** the PNGs in the folders above.
 - **PowerPoint (.pptx):** a 16:9 deck (13.33 × 7.5 in) with one slide per image, in the same order.
   Each image fills the slide height and is centred, in the same spot on every slide, so stepping
-  through the slides behaves like stacked images. The deck has the sections "Quiz" and
-  "Correction", and each slide's notes say "Empty grid", "Question 3: MADONNA" or
-  "Answer 3: MADONNA".
+  through the slides behaves like stacked images. The deck has the sections "Print grid",
+  "Quiz" and "Correction", and each slide's notes say "Print grid", "Empty grid",
+  "Question 3: MADONNA" or "Answer 3: MADONNA".
   Sammy can copy the slides into his own deck and add titles there.
 
 Both are named after the puzzle. The rendering (`src/export/render-image.tsx`, `react-dom/server`)
@@ -339,7 +342,7 @@ component draws the editor (page background, guide lines, conflict warnings) and
 4. Answer import and drag and drop onto the grid.
 5. Editing: turns, wide spaces, separators, anagram cells and numbering.
 6. Save and load: autosave, the puzzle list, Edit menu with undo, redo, copy and paste.
-7. PNG exports as a zip: skeleton, quiz and correction images.
+7. PNG exports as a zip: print grid, quiz and correction images.
 
 ## Open decisions
 

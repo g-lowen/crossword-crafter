@@ -6,6 +6,7 @@ import type { ImageSize, RenderedImage } from './render-image'
 const SLIDE = { width: 13.333, height: 7.5 }
 
 const SECTIONS: Record<ExportImage['part'], string> = {
+  print: 'Print grid',
   quiz: 'Quiz',
   correction: 'Correction',
 }
@@ -26,7 +27,8 @@ function toBase64(bytes: Uint8Array): string {
 }
 
 /**
- * One slide per image, in order: the quiz, then the correction, each starting with the empty grid.
+ * One slide per image, in order: the print grid, the quiz, then the correction, the last two each
+ * starting with the empty grid.
  * Each part is its own section, and each slide's notes say which question or answer it is.
  */
 export async function buildPptx(images: RenderedImage[], size: ImageSize, title: string): Promise<Blob> {
