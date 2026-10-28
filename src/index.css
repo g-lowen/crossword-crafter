@@ -1115,3 +1115,56 @@ button {
 .new-group-button:focus-visible {
   display: block;
 }
+
+/* The handle for dragging a group, with its answers, in edit mode. */
+.group-handle {
+  flex: none;
+  padding: 0 2px;
+  color: var(--text-muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+/* Where a dragged group would land. */
+.drop-above {
+  box-shadow: 0 -3px 0 var(--accent);
+}
+
+.drop-below {
+  box-shadow: 0 3px 0 var(--accent);
+}
+
+/*
+ * Shown between groups while an answer is dragged in the list, to take it out of its group. It lies
+ * over the gap between the rows instead of pushing them apart.
+ */
+.no-group-spot {
+  position: relative;
+  z-index: 3;
+  height: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.no-group-spot-label {
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  padding: 0 10px;
+  font-size: 0.75rem;
+  line-height: 18px;
+  white-space: nowrap;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: 9px;
+  transform: translate(-50%, -50%);
+}
+
+.no-group-spot-label--over {
+  color: var(--on-accent);
+  background: var(--accent);
+  border-color: var(--accent);
+  border-style: solid;
+}

@@ -227,7 +227,7 @@ describe('puzzleReducer groups', () => {
     let p = puzzleReducer(base, { type: 'add-group', start: 2, color: '#222222' })
     p = puzzleReducer(p, { type: 'set-group-name', start: 2, name: 'Mini 2' })
     p = puzzleReducer(p, { type: 'set-group-color', start: 2, color: '#abcdef' })
-    expect(p.groups).toEqual([{ start: 2, name: 'Mini 2', color: '#abcdef' }])
+    expect(p.groups).toEqual([{ start: 2, end: 5, name: 'Mini 2', color: '#abcdef' }])
     expect(puzzleReducer(p, { type: 'remove-group', start: 2 }).groups).toEqual([])
   })
 
@@ -236,10 +236,24 @@ describe('puzzleReducer groups', () => {
     expect(puzzleReducer(p, { type: 'remove', id: 'a' }).groups[0].start).toBe(2)
   })
 
-  it('leaves dividers where they are when answers are reordered', () => {
+  it('moves a reordered answer into the group it is dropped in, without pushing others out', () => {
     const p = puzzleReducer(base, { type: 'add-group', start: 3, color: '#222222' })
-    const moved = puzzleReducer(p, { type: 'reorder', fromId: 'e', toId: 'a' })
-    expect(moved.groups[0].start).toBe(3)
-    expect(moved.answers.map((a) => a.id)).toEqual(['e', 'a', 'b', 'c', 'd'])
+    const out = puzzleReducer(p, { type: 'reorder', fromId: 'e', toId: 'a' })
+    expect(out.answers.map((a) => a.id)).toEqual(['e', 'a', 'b', 'c', 'd'])
+    expect(out.groups[0].start).toBe(4)
+    const into = puzzleReducer(p, { type: 'reorder', fromId: 'a', toId: 'e' })
+    expect(into.answers.map((a) => a.id)).toEqual(['b', 'c', 'd', 'e', 'a'])
+    expect(into.groups[0].start).toBe(2)
+  })
+
+  it('moves a group with its answers', () => {
+    let p = puzzleReducer(base, { type: 'add-group', start: 1, color: '#111111' })
+    p = puzzleReducer(p, { type: 'add-group', start: 3, color: '#222222' })
+    const up = puzzleReducer(p, { type: 'move-group', start: 3, target: 1 })
+    expect(up.answers.map((a) => a.id)).toEqual(['a', 'd', 'e', 'b', 'c'])
+    expect(up.groups.map((g) => [g.start, g.color])).toEqual([
+      [1, '#222222'],
+      [3, '#111111'],
+    ])
   })
 })
