@@ -23,7 +23,7 @@ const letters = (doc: Document) => [...doc.querySelectorAll('[data-letter]')].ma
 
 describe('renderImageSvg', () => {
   it('is a standalone SVG at the export size, with a transparent background', () => {
-    const doc = parse(renderImageSvg(puzzle, layout, { path: 'skeleton.png', part: 'skeleton', label: '', revealed: [] }))
+    const doc = parse(renderImageSvg(puzzle, layout, { path: 'correction/00-empty-grid.png', part: 'correction', label: '', revealed: [] }))
     const svg = doc.documentElement
     expect(svg.getAttribute('xmlns')).toBe('http://www.w3.org/2000/svg')
     expect(svg.getAttribute('width')).toBe(String(imageSize(10).width))
@@ -37,8 +37,8 @@ describe('renderImageSvg', () => {
     expect(imageSize(7)).toEqual({ width: 2315, height: 1654 })
   })
 
-  it('shows no letters on the skeleton', () => {
-    expect(letters(parse(renderImageSvg(puzzle, layout, { path: 'skeleton.png', part: 'skeleton', label: '', revealed: [] })))).toEqual([])
+  it('shows no letters on the empty grid', () => {
+    expect(letters(parse(renderImageSvg(puzzle, layout, { path: 'correction/00-empty-grid.png', part: 'correction', label: '', revealed: [] })))).toEqual([])
   })
 
   it('outlines the asked answer in the highlight color, without letters', () => {
@@ -79,17 +79,19 @@ describe('renderImageSvg', () => {
     const barLetters = (doc: Document) =>
       [...doc.querySelectorAll('[data-anagram-bar] > g')].map((g) => g.querySelector('[data-anagram-bar-letter]')?.textContent ?? '')
 
-    it('shows the numbers and the empty bar on the skeleton', () => {
-      const doc = render({ path: 'skeleton.png', part: 'skeleton', label: '', revealed: [] })
+    it('shows the numbers and the empty bar on the empty grid in the correction', () => {
+      const doc = render({ path: 'correction/00-empty-grid.png', part: 'correction', label: '', revealed: [] })
       expect(doc.querySelectorAll('[data-anagram-number]')).toHaveLength(2)
       expect(barLetters(doc)).toEqual(['', ''])
     })
 
-    it('leaves the numbers and the bar out of the quiz images, but keeps the red borders', () => {
-      const doc = render({ path: 'quiz/01.png', part: 'quiz', label: '', revealed: [], highlightId: 'cat' })
-      expect(doc.querySelectorAll('[data-anagram-number]')).toHaveLength(0)
-      expect(doc.querySelector('[data-anagram-bar]')).toBeNull()
-      expect(doc.querySelectorAll('[data-anagram-cell]')).toHaveLength(2)
+    it('leaves the numbers and the bar out of the quiz images, including the empty grid, but keeps the red borders', () => {
+      for (const highlightId of ['cat', undefined]) {
+        const doc = render({ path: 'quiz/01.png', part: 'quiz', label: '', revealed: [], highlightId })
+        expect(doc.querySelectorAll('[data-anagram-number]')).toHaveLength(0)
+        expect(doc.querySelector('[data-anagram-bar]')).toBeNull()
+        expect(doc.querySelectorAll('[data-anagram-cell]')).toHaveLength(2)
+      }
     })
 
     it('fills in the bar as the answers come in', () => {

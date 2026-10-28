@@ -13,10 +13,10 @@ const puzzle: Puzzle = {
 }
 
 describe('exportPlan', () => {
-  it('makes a skeleton, then quiz and correction images for placed answers in list order', () => {
+  it('makes quiz and correction images for placed answers in list order, each starting with the empty grid', () => {
     const { images } = exportPlan(puzzle)
     expect(images).toEqual([
-      { path: 'skeleton.png', part: 'skeleton', label: 'Empty grid', revealed: [] },
+      { path: 'quiz/00-empty-grid.png', part: 'quiz', label: 'Empty grid', revealed: [] },
       {
         path: 'quiz/01-the-beatles.png',
         part: 'quiz',
@@ -31,6 +31,7 @@ describe('exportPlan', () => {
         revealed: [],
         highlightId: 'c',
       },
+      { path: 'correction/00-empty-grid.png', part: 'correction', label: 'Empty grid', revealed: [] },
       { path: 'correction/01-the-beatles.png', part: 'correction', label: 'Answer 1: THE BEATLES', revealed: ['a'] },
       {
         path: 'correction/02-håkan-hellström.png',
@@ -45,8 +46,11 @@ describe('exportPlan', () => {
     expect(exportPlan(puzzle).leftOut.map((answer) => answer.text)).toEqual(['ABBA'])
   })
 
-  it('makes only the skeleton for a puzzle without placed answers', () => {
-    expect(exportPlan(emptyPuzzle).images.map((image) => image.path)).toEqual(['skeleton.png'])
+  it('makes only the empty grids for a puzzle without placed answers', () => {
+    expect(exportPlan(emptyPuzzle).images.map((image) => image.path)).toEqual([
+      'quiz/00-empty-grid.png',
+      'correction/00-empty-grid.png',
+    ])
   })
 })
 

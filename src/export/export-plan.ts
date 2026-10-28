@@ -4,9 +4,9 @@ import type { Answer, Puzzle } from '../model/puzzle'
 export type ExportImage = {
   path: string
   /** What the image is, for PowerPoint sections and speaker notes. */
-  part: 'skeleton' | 'quiz' | 'correction'
+  part: 'quiz' | 'correction'
   label: string
-  /** Answers whose letters are filled in. None for the skeleton and the quiz images. */
+  /** Answers whose letters are filled in. None for the empty grids and the quiz images. */
   revealed: string[]
   /** The answer being asked, outlined in the highlight color. */
   highlightId?: string
@@ -39,16 +39,16 @@ export function exportFileName(puzzleName: string, extension: 'zip' | 'pptx'): s
 
 /**
  * The images for one puzzle, in list order:
- * - `skeleton.png`: the empty grid.
- * - `quiz/NN-answer.png`: the empty grid with answer NN outlined.
- * - `correction/NN-answer.png`: answers 1 to NN filled in.
+ * - `quiz/00-empty-grid.png`, then `quiz/NN-answer.png`: the empty grid with answer NN outlined.
+ * - `correction/00-empty-grid.png`, then `correction/NN-answer.png`: answers 1 to NN filled in.
  */
 export function exportPlan(puzzle: Puzzle): ExportPlan {
   const placed = puzzle.answers.filter((answer) => answer.start !== null)
   const leftOut = puzzle.answers.filter((answer) => answer.start === null)
   const name = (answer: Answer, i: number) => `${String(i + 1).padStart(2, '0')}-${fileSlug(answer.text)}.png`
 
-  const images: ExportImage[] = [{ path: 'skeleton.png', part: 'skeleton', label: 'Empty grid', revealed: [] }]
+  const emptyGrid = 'Empty grid'
+  const images: ExportImage[] = [{ path: 'quiz/00-empty-grid.png', part: 'quiz', label: emptyGrid, revealed: [] }]
   placed.forEach((answer, i) => {
     images.push({
       path: `quiz/${name(answer, i)}`,
@@ -58,6 +58,7 @@ export function exportPlan(puzzle: Puzzle): ExportPlan {
       highlightId: answer.id,
     })
   })
+  images.push({ path: 'correction/00-empty-grid.png', part: 'correction', label: emptyGrid, revealed: [] })
   placed.forEach((answer, i) => {
     images.push({
       path: `correction/${name(answer, i)}`,

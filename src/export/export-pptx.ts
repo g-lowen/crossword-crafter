@@ -6,7 +6,6 @@ import type { ImageSize, RenderedImage } from './render-image'
 const SLIDE = { width: 13.333, height: 7.5 }
 
 const SECTIONS: Record<ExportImage['part'], string> = {
-  skeleton: 'Empty grid',
   quiz: 'Quiz',
   correction: 'Correction',
 }
@@ -27,8 +26,8 @@ function toBase64(bytes: Uint8Array): string {
 }
 
 /**
- * One slide per image, in order: the empty grid, the quiz, then the correction. Each part is its
- * own section, and each slide's notes say which question or answer it is.
+ * One slide per image, in order: the quiz, then the correction, each starting with the empty grid.
+ * Each part is its own section, and each slide's notes say which question or answer it is.
  */
 export async function buildPptx(images: RenderedImage[], size: ImageSize, title: string): Promise<Blob> {
   const pptx = new PptxGenJS()

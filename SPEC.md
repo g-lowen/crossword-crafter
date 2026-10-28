@@ -198,24 +198,28 @@ suits him; both contain the same images. Images are transparent PNGs of the grid
 same size, so they stack exactly on top of each other in PowerPoint. Only answers on the grid get
 images; the panel lists the ones left out, and says when the puzzle has issues.
 
-1. **Skeleton** (`skeleton.png`): the empty grid with spaces, turn arrows, separators, red anagram
-   borders, always visible letters, and the anagram numbers and bar if enabled.
-2. **Quiz images** (`quiz/01-the-beatles.png`, …): one per answer, in list order. The skeleton
-   with that answer outlined as one shape in the highlight color Sammy picks. Only the current
-   answer is marked. The anagram numbers and bar are left out (the red borders stay).
+The **skeleton** is the empty grid with spaces, turn arrows, separators, red anagram borders,
+always visible letters, and the anagram numbers and bar if enabled. Both folders (and both deck
+sections) start with it, so stepping through either one begins at the empty grid.
+
+1. **Quiz images** (`quiz/00-empty-grid.png`, then `quiz/01-the-beatles.png`, …): the skeleton,
+   then one per answer, in list order: the skeleton with that answer outlined as one shape in the
+   highlight color Sammy picks. Only the current answer is marked. The anagram numbers and bar are
+   left out of every quiz image, the empty grid included (the red borders stay).
    - Sammy normally adds the pointer arrow to the start of the answer himself in PowerPoint. The
      checkbox "Arrow to the start of the answer in quiz images" draws one in the cell before the
      start instead. It may cover other cells, and is cut off for an answer starting at the page
      edge.
-3. **Correction images** (`correction/01-the-beatles.png`, …): one per answer, in list order. The
-   skeleton with answers filled in cumulatively: image N shows answers 1 to N. The anagram bar
-   fills in the same way.
+2. **Correction images** (`correction/00-empty-grid.png`, then `correction/01-the-beatles.png`, …):
+   the skeleton, then one per answer, in list order: the skeleton with answers filled in
+   cumulatively: image N shows answers 1 to N. The anagram bar fills in the same way.
 
 - **Images (zip):** the PNGs in the folders above.
 - **PowerPoint (.pptx):** a 16:9 deck (13.33 × 7.5 in) with one slide per image, in the same order.
   Each image fills the slide height and is centred, in the same spot on every slide, so stepping
-  through the slides behaves like stacked images. The deck has the sections "Empty grid", "Quiz"
-  and "Correction", and each slide's notes say "Question 3: MADONNA" or "Answer 3: MADONNA".
+  through the slides behaves like stacked images. The deck has the sections "Quiz" and
+  "Correction", and each slide's notes say "Empty grid", "Question 3: MADONNA" or
+  "Answer 3: MADONNA".
   Sammy can copy the slides into his own deck and add titles there.
 
 Both are named after the puzzle. The rendering (`src/export/render-image.tsx`, `react-dom/server`)

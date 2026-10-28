@@ -27,7 +27,7 @@ const FORMATS: { value: Format; label: string; description: string; button: stri
     value: 'pptx',
     label: 'PowerPoint',
     description:
-      'A 16:9 deck with one slide per image, all in the same spot: the empty grid, then the quiz, then the correction. The notes say which question each slide is.',
+      'A 16:9 deck with one slide per image, all in the same spot: the quiz, then the correction, each starting with the empty grid. The notes say which question each slide is.',
     button: 'Download PowerPoint',
   },
 ]
@@ -110,6 +110,7 @@ export function ExportPanel({ puzzle, name, dispatch }: ExportPanelProps) {
             layout={layout}
             mode="export"
             showLetters={false}
+            hideAnagramNumbers
             highlight={{
               answerId: firstQuiz.highlightId!,
               color: puzzle.highlightColor,
@@ -121,8 +122,8 @@ export function ExportPanel({ puzzle, name, dispatch }: ExportPanelProps) {
       )}
 
       <p className="export-summary">
-        1 empty grid, {quizCount} quiz {quizCount === 1 ? 'image' : 'images'} and {quizCount} correction{' '}
-        {quizCount === 1 ? 'image' : 'images'}
+        {quizCount} quiz and {quizCount} correction {quizCount === 1 ? 'image' : 'images'}, each set starting with
+        the empty grid
         {format === 'pptx' ? `, one slide each (${images.length} slides).` : '.'}
       </p>
       {leftOut.length > 0 && (
