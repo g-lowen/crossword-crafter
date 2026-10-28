@@ -560,6 +560,33 @@ describe('Editor', () => {
     })
   })
 
+  describe('create anagram', () => {
+    const anagram = () => within(screen.getByRole('region', { name: 'Anagram' }))
+
+    it('replaces the anagram letters with one from each answer, and undoes it', () => {
+      const { container } = render(<App />)
+      loadSample()
+      expect(container.querySelectorAll('[data-anagram-cell]')).toHaveLength(5)
+      fireEvent.click(anagram().getByRole('button', { name: 'Create anagram' }))
+      fireEvent.change(anagram().getByLabelText('Anagram'), { target: { value: 'abba' } })
+      fireEvent.click(anagram().getByRole('button', { name: 'Create' }))
+      expect(container.querySelectorAll('[data-anagram-cell]')).toHaveLength(4)
+      expect(anagram().getByText('ABBA: one letter from each of 4 answers.')).toBeInTheDocument()
+      fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+      expect(container.querySelectorAll('[data-anagram-cell]')).toHaveLength(5)
+    })
+
+    it('says which letters are missing and changes nothing', () => {
+      const { container } = render(<App />)
+      loadSample()
+      fireEvent.click(anagram().getByRole('button', { name: 'Create anagram' }))
+      fireEvent.change(anagram().getByLabelText('Anagram'), { target: { value: 'Quiz' } })
+      fireEvent.click(anagram().getByRole('button', { name: 'Create' }))
+      expect(anagram().getByRole('alert')).toHaveTextContent('Q (1 needed, 0 found)')
+      expect(container.querySelectorAll('[data-anagram-cell]')).toHaveLength(5)
+    })
+  })
+
   describe('moving several answers', () => {
     /** The top-left cell of an answer. */
     const cellOf = (container: HTMLElement, answerId: string) =>

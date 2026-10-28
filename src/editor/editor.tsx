@@ -35,6 +35,7 @@ import { puzzleGrid, type GridSize } from '../model/page'
 import type { CellRef, Dir, Puzzle } from '../model/puzzle'
 import type { PuzzleAction } from '../model/puzzle-reducer'
 import { AnswerList } from './answer-list'
+import { CreateAnagram } from './create-anagram'
 import {
   ANSWER_LIST_ID,
   GRID_ID,
@@ -498,6 +499,7 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
             >
               Number anagram left to right
             </button>
+            <CreateAnagram puzzle={puzzle} layout={layout} dispatch={dispatch} />
           </section>
 
           {layout.issues.length > 0 && (

@@ -55,6 +55,8 @@ export type PuzzleAction =
   | { type: 'set-anagram-number'; answerId: string; letterIndex: number; number: number | undefined }
   /** Numbers the anagram cells 1, 2, 3… in the given order. */
   | { type: 'renumber-anagram'; order: { answerId: string; letterIndex: number }[] }
+  /** Replaces every anagram letter, as Create anagram does. */
+  | { type: 'set-anagram-cells'; cells: AnagramCell[] }
   | { type: 'set-show-anagram-numbers'; value: boolean }
   | { type: 'toggle-separator'; separator: Separator }
   | { type: 'set-highlight-color'; color: string }
@@ -254,6 +256,9 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
           return position < 0 ? cell : { ...cell, number: position + 1 }
         }),
       )
+
+    case 'set-anagram-cells':
+      return updateAnagramCells(puzzle, () => action.cells)
 
     case 'set-show-anagram-numbers':
       return { ...puzzle, anagram: { ...puzzle.anagram, showNumbersAndBar: action.value } }

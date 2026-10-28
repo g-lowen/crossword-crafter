@@ -1246,3 +1246,37 @@ button:disabled {
   align-self: flex-end;
   padding: 4px 16px;
 }
+
+/* Create anagram, in the Anagram section of the right column. */
+.create-anagram {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  gap: 6px;
+}
+
+.create-anagram label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.create-anagram .hint,
+.create-anagram .paste-error {
+  margin: 0;
+}
+
+.create-anagram-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.anagram-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.anagram-note--warn {
+  color: var(--warn-text);
+}

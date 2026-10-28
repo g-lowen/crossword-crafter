@@ -40,8 +40,8 @@ without scrolling:
 - Left column: the answer list. The paste box is open while there are no answers, and folds away
   behind "+ Add answers" once there are.
 - Middle: the grid, as large as the window allows while keeping its A4 proportions.
-- Right column: the selected cell's settings, then Anagram ("Show anagram numbers and bar" and
-  "Number anagram left to right") and any issues.
+- Right column: the selected cell's settings, then Anagram ("Show anagram numbers and bar",
+  "Number anagram left to right" and "Create anagram") and any issues.
 - A small Light / Dark / GG switch sits at the right end of the header. Until Sammy picks one, the
   app follows the computer's light or dark setting and the switch shows which theme that is. A
   picked theme is remembered in the browser.
@@ -249,6 +249,18 @@ in the reveal order:
 - Sammy sets the numbering order himself. It's usually left to right, but not always. A new anagram
   letter gets the next free number, and "Number anagram left to right" renumbers them all by column.
 - An anagram cell is tied to an answer letter, so it moves with the answer.
+- "Create anagram" asks for the word the anagram should spell, and marks a letter in the answers
+  for each of its letters, ignoring spaces. They replace the anagram letters there were, as one step
+  for undo, and are numbered left to right, so the bar shows them jumbled. Answers off the grid can
+  give letters too; theirs come after the ones on the grid.
+  - Each letter comes from a different answer when the answers allow it. A letter where answers
+    cross counts for both. When there are too few answers with the letters, some give more than
+    one, as few as possible, and a note under the button says which.
+  - Letters on crossings and always visible letters are only used when nothing else will do.
+    Otherwise the letters are picked at random, so another try may pick others.
+  - When the answers don't have enough of a letter at all, nothing changes and the form says which
+    letters are missing.
+  - The note stays until the next Create anagram. The search is in `src/layout/pick-anagram.ts`.
 
 ## Exports
 
