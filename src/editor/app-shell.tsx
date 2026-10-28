@@ -82,7 +82,14 @@ export function AppShell() {
     },
   }
 
-  useShortcuts({ onUndo: commands.undo, onRedo: commands.redo, copyText, onCopied: copied, onPaste: pasteText })
+  useShortcuts({
+    onUndo: commands.undo,
+    onRedo: commands.redo,
+    copyText,
+    onCopied: copied,
+    onPaste: pasteText,
+    onToggleLetters: () => setShowLetters((show) => !show),
+  })
 
   return (
     <Editor

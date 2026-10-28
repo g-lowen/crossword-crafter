@@ -4,8 +4,8 @@ export const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test
 
 /** How each shortcut is written on this computer, for showing next to the commands. */
 export const SHORTCUT_LABELS = IS_MAC
-  ? { undo: '⌘Z', redo: '⇧⌘Z', copy: '⌘C', paste: '⌘V' }
-  : { undo: 'Ctrl+Z', redo: 'Ctrl+Y', copy: 'Ctrl+C', paste: 'Ctrl+V' }
+  ? { undo: '⌘Z', redo: '⇧⌘Z', copy: '⌘C', paste: '⌘V', showLetters: 'L' }
+  : { undo: 'Ctrl+Z', redo: 'Ctrl+Y', copy: 'Ctrl+C', paste: 'Ctrl+V', showLetters: 'L' }
 
 /** Text fields keep their own undo, copy and paste. */
 export function isEditable(target: EventTarget | null): boolean {
@@ -20,11 +20,13 @@ type ShortcutHandlers = {
   copyText: () => string
   onCopied: () => void
   onPaste: (text: string) => void
+  onToggleLetters: () => void
 }
 
 /**
  * Ctrl+Z / Ctrl+Y (or Ctrl+Shift+Z) undo and redo, Ctrl+C copies the puzzle and Ctrl+V pastes one,
- * everywhere except in text fields. Ctrl+C also leaves selected page text alone.
+ * everywhere except in text fields. Ctrl+C also leaves selected page text alone. L shows or hides
+ * the letters in the editor.
  */
 export function useShortcuts(handlers: ShortcutHandlers) {
   const latest = useRef(handlers)
@@ -34,8 +36,13 @@ export function useShortcuts(handlers: ShortcutHandlers) {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (isEditable(event.target) || !(event.ctrlKey || event.metaKey) || event.altKey) return
+      if (isEditable(event.target) || event.altKey) return
       const key = event.key.toLowerCase()
+      if (key === 'l' && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+        latest.current.onToggleLetters()
+        return
+      }
+      if (!(event.ctrlKey || event.metaKey)) return
       if (key === 'z' && !event.shiftKey) {
         event.preventDefault()
         latest.current.onUndo()

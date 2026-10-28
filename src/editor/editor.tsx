@@ -44,7 +44,16 @@ import {
 } from './drag-ids'
 import { cellAtPoint, moveByPixels } from './grid-coordinates'
 import { Inspector } from './inspector'
-import { arrowShortcut, canMoveBy, selectAt, separatorsMovingWith, validSelection, type Selection } from './selection'
+import {
+  arrowShortcut,
+  canMoveBy,
+  firstSelection,
+  selectAt,
+  separatorsMovingWith,
+  stepSelection,
+  validSelection,
+  type Selection,
+} from './selection'
 import { isEditable } from './use-shortcuts'
 
 type Point = { x: number; y: number }
@@ -62,6 +71,10 @@ const ARROW_KEYS: Record<string, CellRef> = {
   ArrowLeft: { row: 0, col: -1 },
   ArrowRight: { row: 0, col: 1 },
 }
+
+/** Whether a key press comes from inside an open header menu or panel. */
+const inMenu = (target: EventTarget | null) =>
+  target instanceof Element && target.closest('[role="menu"], [role="dialog"]') !== null
 
 const contains = (rect: DOMRect, point: Point) =>
   point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom
@@ -165,8 +178,8 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
         clearSelection()
         return
       }
-      // dnd-kit uses the arrow keys during a keyboard drag.
-      if (isEditable(event.target) || dragging) return
+      // dnd-kit uses the arrow keys during a keyboard drag, and open menus use them for themselves.
+      if (isEditable(event.target) || dragging || inMenu(event.target)) return
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
         event.preventDefault()
         setSelection(null)
@@ -187,9 +200,17 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
         const action = selection && arrowShortcut(puzzle, layout, selection, dir)
         if (selection) event.preventDefault()
         if (action) dispatch(action)
-      } else if (movable.length > 0) {
+      } else if (event.shiftKey || group.length > 0) {
+        // Shift+arrow moves the answer of the selected cell. A group has no selected cell to step
+        // from, so plain arrows move it too.
+        if (movable.length === 0) return
         event.preventDefault()
         moveBy(ARROW_KEYS[event.key])
+      } else {
+        // Plain arrows step to the next filled cell, or start at the first answer.
+        const next = selection ? stepSelection(layout, selection, dir, grid) : firstSelection(puzzle, layout)
+        if (selection || next) event.preventDefault()
+        if (next) setSelection(next)
       }
     }
   })
@@ -409,12 +430,22 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
           ) : (
             <section className="side-section">
               <h2>Cell</h2>
-              <p className="hint">Click a cell to add turns, wide spaces, anagram letters and thick borders.</p>
+              <p className="hint">
+                Click a cell, or press an arrow key, to add turns, wide spaces, anagram letters and thick borders.
+              </p>
             </section>
           )}
 
           <section className="side-section" aria-label="Anagram">
             <h2>Anagram</h2>
+            <label className="side-checkbox">
+              <input
+                type="checkbox"
+                checked={puzzle.anagram.showNumbersAndBar}
+                onChange={(e) => dispatch({ type: 'set-show-anagram-numbers', value: e.target.checked })}
+              />
+              Show anagram numbers and bar
+            </label>
             <button
               type="button"
               disabled={layout.anagramCells.length === 0}

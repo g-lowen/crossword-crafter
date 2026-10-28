@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { serializePuzzle } from '../model/persistence'
 import { samplePuzzle } from '../model/sample-puzzle'
@@ -11,6 +11,13 @@ function importAnswers(text: string) {
   }
   fireEvent.change(screen.getByLabelText('Paste answers, one per line'), { target: { value: text } })
   fireEvent.click(screen.getByRole('button', { name: 'Add answers' }))
+}
+
+function pasteBox() {
+  if (!screen.queryByLabelText('Paste answers, one per line')) {
+    fireEvent.click(screen.getByRole('button', { name: '+ Add answers' }))
+  }
+  return screen.getByLabelText('Paste answers, one per line') as HTMLTextAreaElement
 }
 
 function editList() {
@@ -42,6 +49,20 @@ describe('Editor', () => {
     expect(screen.queryByLabelText('Paste answers, one per line')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: '+ Add answers' }))
     expect(screen.getByLabelText('Paste answers, one per line')).toHaveValue('')
+  })
+
+  it('adds the pasted answers with Enter, and starts a new line with Ctrl+Enter', () => {
+    render(<App />)
+    const box = pasteBox()
+    fireEvent.change(box, { target: { value: 'abba' } })
+    box.setSelectionRange(4, 4)
+    fireEvent.keyDown(box, { key: 'Enter', ctrlKey: true })
+    expect(box).toHaveValue('abba\n')
+    fireEvent.change(box, { target: { value: 'abba\nqueen' } })
+    fireEvent.keyDown(box, { key: 'Enter', shiftKey: true })
+    expect(listedAnswers()).toEqual([])
+    fireEvent.keyDown(box, { key: 'Enter' })
+    expect(listedAnswers()).toEqual(['ABBA', 'QUEEN'])
   })
 
   it('edits an answer with Enter and cancels with Escape', () => {
@@ -337,6 +358,36 @@ describe('Editor', () => {
     })
   })
 
+  describe('header menu focus', () => {
+    it('focuses the opened menu and goes back to its button on Escape', async () => {
+      render(<App />)
+      const button = screen.getByRole('button', { name: 'Edit ▾' })
+      fireEvent.click(button)
+      expect(screen.getByRole('menuitem', { name: /Copy puzzle/ })).toHaveFocus()
+      fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' })
+      expect(screen.getByRole('menuitem', { name: /Paste puzzle/ })).toHaveFocus()
+      fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' })
+      expect(screen.getByRole('menuitem', { name: /Copy puzzle/ })).toHaveFocus()
+      fireEvent.keyDown(document.activeElement!, { key: 'Escape' })
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+      await waitFor(() => expect(button).toHaveFocus())
+    })
+
+    it('focuses the first field of a panel and gives the focus back when it closes', async () => {
+      render(<App />)
+      fireEvent.click(screen.getByRole('button', { name: 'Page ▾' }))
+      expect(screen.getByLabelText('Cell size')).toHaveFocus()
+      fireEvent.keyDown(document.activeElement!, { key: 'Escape' })
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Page ▾' })).toHaveFocus())
+    })
+
+    it('gives the focus back to Puzzles after opening a puzzle from the list', async () => {
+      render(<App />)
+      loadSample()
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Puzzles ▾' })).toHaveFocus())
+    })
+  })
+
   describe('puzzles menu', () => {
     function openList() {
       fireEvent.click(screen.getByRole('button', { name: 'Puzzles ▾' }))
@@ -478,11 +529,22 @@ describe('Editor', () => {
       expect(page.getByRole('button', { name: 'Center on page' })).toBeDisabled()
     })
 
-    it('shows the anagram numbers and bar', () => {
+    it('shows the anagram numbers and bar from the anagram section', () => {
       render(<App />)
-      const page = openPage()
-      fireEvent.click(page.getByLabelText('Show anagram numbers and bar'))
-      expect(page.getByLabelText('Show anagram numbers and bar')).toBeChecked()
+      const anagram = within(screen.getByRole('region', { name: 'Anagram' }))
+      fireEvent.click(anagram.getByLabelText('Show anagram numbers and bar'))
+      expect(anagram.getByLabelText('Show anagram numbers and bar')).toBeChecked()
+    })
+
+    it('shows and hides the letters with L', () => {
+      const { container } = render(<App />)
+      loadSample()
+      fireEvent.keyDown(document.body, { key: 'l' })
+      expect(container.querySelectorAll('[data-letter]')).toHaveLength(3)
+      fireEvent.keyDown(screen.getByLabelText('Puzzle name'), { key: 'l' })
+      expect(container.querySelectorAll('[data-letter]')).toHaveLength(3)
+      fireEvent.keyDown(document.body, { key: 'L' })
+      expect(container.querySelectorAll('[data-letter]').length).toBeGreaterThan(3)
     })
   })
 
@@ -567,6 +629,29 @@ describe('Editor', () => {
       expect(container.querySelector('[data-answer-handle="bjorn-afzelius"] [data-cell="3,4"]')).not.toBeNull()
       fireEvent.keyDown(window, { key: 'ArrowDown', ctrlKey: true })
       expect(screen.getByRole('button', { name: 'Turn down' })).toHaveAttribute('aria-pressed', 'false')
+    })
+
+    it('steps to the next cell with the arrow keys', () => {
+      loadSampleAndClick('2,3')
+      fireEvent.keyDown(window, { key: 'ArrowRight' })
+      expect(screen.getByRole('region', { name: 'Selected cell' })).toHaveTextContent('character 3 (Ö)')
+      fireEvent.keyDown(window, { key: 'ArrowLeft' })
+      fireEvent.keyDown(window, { key: 'ArrowLeft' })
+      expect(screen.getByRole('region', { name: 'Selected cell' })).toHaveTextContent('character 1 (B)')
+    })
+
+    it('selects the first answer with an arrow key when nothing is selected', () => {
+      render(<App />)
+      loadSample()
+      fireEvent.keyDown(window, { key: 'ArrowDown' })
+      expect(screen.getByRole('region', { name: 'Selected cell' })).toHaveTextContent('character 1')
+    })
+
+    it('moves the answer with Shift+arrow', () => {
+      const { container } = loadSampleAndClick('2,3')
+      fireEvent.keyDown(window, { key: 'ArrowDown', shiftKey: true })
+      expect(container.querySelector('[data-answer-handle="bjorn-afzelius"] [data-cell="3,2"]')).not.toBeNull()
+      expect(screen.getByRole('region', { name: 'Selected cell' })).toHaveTextContent('character 2 (J)')
     })
 
     it('takes the answer off the grid with Delete', () => {

@@ -83,3 +83,44 @@ export function arrowShortcut(puzzle: Puzzle, layout: Layout, selection: Selecti
   const turn = answer.turns.find((t) => t.atIndex === index)
   return { type: 'set-turn', id, atIndex: index, dir: turn?.dir === dir ? null : dir }
 }
+
+const STEP: Record<Dir, CellRef> = {
+  up: { row: -1, col: 0 },
+  down: { row: 1, col: 0 },
+  left: { row: 0, col: -1 },
+  right: { row: 0, col: 1 },
+}
+
+/**
+ * Where an arrow key moves the selection: the nearest filled cell that way, skipping empty cells.
+ * In a crossing it stays on the same answer if it can, and otherwise picks the answer that reads
+ * along the arrow. Null when there is no filled cell that way.
+ */
+export function stepSelection(layout: Layout, selection: Selection, dir: Dir, grid: GridSize): Selection | null {
+  const step = STEP[dir]
+  let { row, col } = selection.cell
+  for (;;) {
+    row += step.row
+    col += step.col
+    if (row < 0 || row >= grid.rows || col < 0 || col >= grid.columns) return null
+    const pieces = layout.cells.get(cellKey({ row, col }))
+    if (!pieces || pieces.length === 0) continue
+    const piece =
+      pieces.find((p) => p.answerId === selection.answerId) ??
+      pieces.find((p) => isAcross(p.dir) === isAcross(dir)) ??
+      pieces[0]
+    return { answerId: piece.answerId, index: piece.index, cell: { row, col } }
+  }
+}
+
+/** What an arrow key selects when nothing is: the first letter of the first placed answer. */
+export function firstSelection(puzzle: Puzzle, layout: Layout): Selection | null {
+  for (const answer of puzzle.answers) {
+    if (!answer.start) continue
+    const pieces = layout.cells.get(cellKey(answer.start))
+    if (pieces?.some((p) => p.answerId === answer.id && p.index === 0)) {
+      return { answerId: answer.id, index: 0, cell: answer.start }
+    }
+  }
+  return null
+}

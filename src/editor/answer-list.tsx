@@ -53,6 +53,8 @@ export function AnswerList({
     setSpotifyTracks(null)
   }
 
+  const canImport = spotifyLink === null && parseAnswerList(text).length > 0
+
   const importAnswers = () => {
     // A Spotify list typed or dropped in, rather than pasted, still gets the preview.
     const tracks = parseSpotifyText(text)
@@ -82,6 +84,18 @@ export function AnswerList({
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
+              // Enter adds the answers. Shift+Enter or Ctrl+Enter starts a new line.
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' || e.nativeEvent.isComposing || e.shiftKey || e.altKey) return
+                e.preventDefault()
+                if (e.ctrlKey || e.metaKey) {
+                  const field = e.currentTarget
+                  field.setRangeText('\n', field.selectionStart, field.selectionEnd, 'end')
+                  setText(field.value)
+                } else if (canImport) {
+                  importAnswers()
+                }
+              }}
               onPaste={(e) => {
                 const tracks = parseSpotifyPaste(
                   e.clipboardData.getData('text/html'),
@@ -105,12 +119,15 @@ export function AnswerList({
               , press Ctrl+A and Ctrl+C there, then paste here.
             </p>
           ) : (
-            <p className="hint">Or paste a Spotify playlist link to get its artists.</p>
+            <p className="hint">
+              Enter adds them, Shift+Enter starts a new line. Or paste a Spotify playlist link to get its
+              artists.
+            </p>
           )}
           <button
             type="button"
             onClick={importAnswers}
-            disabled={spotifyLink !== null || parseAnswerList(text).length === 0}
+            disabled={!canImport}
           >
             Add answers
           </button>

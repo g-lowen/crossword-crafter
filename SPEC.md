@@ -32,14 +32,15 @@ without scrolling:
   the right.
 - Puzzles ▾ opens the puzzle list, with "New puzzle" at the top and "Add sample puzzle" at the
   bottom.
-- Page ▾ holds the page settings: Cell size, "Show anagram numbers and bar", and "Show letters in
-  the editor". The first two belong to the puzzle and go into the exports. Show letters only
+- Page ▾ holds the page settings: Cell size and "Show letters in the editor" (shortcut L, outside
+  text fields). Cell size belongs to the puzzle and goes into the exports. Show letters only
   changes the editor (the exports decide for themselves) and stays the same when switching
   puzzles.
 - Left column: the answer list. The paste box is open while there are no answers, and folds away
   behind "+ Add answers" once there are.
 - Middle: the grid, as large as the window allows while keeping its A4 proportions.
-- Right column: the selected cell's settings, then Anagram (number left to right) and any issues.
+- Right column: the selected cell's settings, then Anagram ("Show anagram numbers and bar" and
+  "Number anagram left to right") and any issues.
 - A small Light / Dark / GG switch sits at the right end of the header. Until Sammy picks one, the
   app follows the computer's light or dark setting and the switch shows which theme that is. A
   picked theme is remembered in the browser.
@@ -51,7 +52,8 @@ without scrolling:
 
 ## Answers
 
-- Imported as a list (pasted text, one answer per line). List order is the reveal order.
+- Imported as a list (pasted text, one answer per line). List order is the reveal order. In the
+  paste box, Enter adds the answers; Shift+Enter or Ctrl+Enter starts a new line.
 - The order can be changed after import.
 - **From a Spotify playlist** (Sammy builds his quizzes from Spotify lists and usually uses the
   artists as answers):
@@ -114,6 +116,10 @@ does and its shortcut; the direction one says it works on the first letter of th
 - Ctrl+arrow does what the arrow buttons do. On the first letter, Ctrl+→ and Ctrl+↓ set the
   direction. Elsewhere, an arrow across the reading direction adds a turn at that letter, or
   removes it if it is already that turn. Arrows that would do nothing are ignored.
+- The arrow keys step to the nearest filled cell that way, skipping empty cells. In a crossing the
+  selection stays on the same answer if it can, and otherwise takes the answer reading along the
+  arrow. With nothing selected, an arrow key selects the first letter of the first placed answer.
+- Shift+arrow moves the selected cell's answer one cell (see below).
 - Delete or Backspace takes the answer off the grid, like "Take off grid". With several answers
   selected, it takes them all off.
 
@@ -126,8 +132,8 @@ does and its shortcut; the direction one says it works on the first letter of th
   showing the cell settings.
 - Dragging any of them moves them all, with the same preview as a single answer. Dropping them on
   the answer list takes them all off the grid.
-- The arrow keys move them one cell at a time. They also move the answer of a single selected
-  cell. A move that would push any of their cells off the page does nothing.
+- The arrow keys move them one cell at a time. Shift+arrow moves the answer of a single selected
+  cell (plain arrows step between cells there). A move that would push any of their cells off the page does nothing.
 - Thick borders move along when they touch the moving answers and don't touch an answer that
   stays.
 - Each move is one step for undo.
@@ -178,7 +184,7 @@ dividers in the list:
 ## Anagram
 
 - Any letter cell can be marked as an anagram cell. Anagram cells always have a red, thick border.
-- Checkbox "Show anagram numbers and bar" in the Page menu:
+- Checkbox "Show anagram numbers and bar" in the Anagram section of the right column:
   - Checked: anagram cells show a small number, and a bar of empty cells (one per anagram letter)
     is drawn on the page, numbered 1, 2, 3… above each cell.
   - Unchecked: only the red borders are drawn.
@@ -246,7 +252,11 @@ There is no backend. Everything is saved in the browser Sammy uses, and nowhere 
 - "New puzzle" and "Add sample puzzle" add a puzzle to the list and open it. A new puzzle whose name is
   taken gets the lowest free number: "Untitled puzzle (1)", "Quiz 18 (2)". Renaming doesn't add
   numbers.
-- The header panels (Puzzles, Edit, Page, Export images) close on Esc or a click outside them.
+- The header panels (Puzzles, Edit, Page, Export images) close on Esc, a click outside them, or
+  tabbing out of them. The header buttons can be reached with Tab. An opened panel puts the focus
+  on its first control, and the Edit menu's items are moved between with ↑ and ↓ (Home, End).
+  Closing with Esc, ✕ or a command puts the focus back on the button that opened the panel; a click
+  outside leaves it where it was clicked.
 
 ## Edit menu: undo, redo, copy and paste
 

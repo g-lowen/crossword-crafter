@@ -189,6 +189,9 @@ export function Inspector({ puzzle, layout, selection, dispatch, onClose }: Insp
           </div>
         </fieldset>
       </div>
+      <p className="hint">
+        Arrow keys go to the next cell. {IS_MAC ? '⇧' : 'Shift+'}arrow keys move the answer.
+      </p>
     </section>
   )
 }

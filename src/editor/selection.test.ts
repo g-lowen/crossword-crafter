@@ -2,7 +2,15 @@ import { describe, expect, it } from 'vitest'
 import { layoutPuzzle } from '../layout/layout'
 import type { Answer, Puzzle } from '../model/puzzle'
 import { A4_LANDSCAPE_GRID } from '../model/page'
-import { arrowShortcut, canMoveBy, selectAt, separatorsMovingWith, validSelection } from './selection'
+import {
+  arrowShortcut,
+  canMoveBy,
+  firstSelection,
+  selectAt,
+  separatorsMovingWith,
+  stepSelection,
+  validSelection,
+} from './selection'
 
 function answer(id: string, text: string, row: number, col: number, dir: Answer['dir']): Answer {
   return { id, text, start: { row, col }, dir, turns: [], wideSpaces: [], visibleLetters: [] }
@@ -105,5 +113,45 @@ describe('arrowShortcut', () => {
 
   it('does not turn at the last letter', () => {
     expect(arrowShortcut(puzzle, layout, at('cat', 2, 1, 2), 'down')).toBeNull()
+  })
+})
+
+describe('stepSelection', () => {
+  it('moves to the next cell of the same answer', () => {
+    const from = { answerId: 'cat', index: 0, cell: { row: 1, col: 0 } }
+    expect(stepSelection(layout, from, 'right', A4_LANDSCAPE_GRID)).toEqual({
+      answerId: 'cat',
+      index: 1,
+      cell: crossing,
+    })
+  })
+
+  it('picks the answer that reads along the arrow in a crossing', () => {
+    const from = { answerId: 'cat', index: 1, cell: crossing }
+    expect(stepSelection(layout, from, 'down', A4_LANDSCAPE_GRID)).toEqual({
+      answerId: 'bad',
+      index: 2,
+      cell: { row: 2, col: 1 },
+    })
+    expect(stepSelection(layout, { answerId: 'bad', index: 0, cell: { row: 0, col: 1 } }, 'down', A4_LANDSCAPE_GRID))
+      .toEqual({ answerId: 'bad', index: 1, cell: crossing })
+  })
+
+  it('skips empty cells and stops at the page edge', () => {
+    const far: Puzzle = { ...puzzle, answers: [...puzzle.answers, answer('dog', 'DOG', 1, 10, 'right')] }
+    const farLayout = layoutPuzzle(far)
+    const from = { answerId: 'cat', index: 2, cell: { row: 1, col: 2 } }
+    expect(stepSelection(farLayout, from, 'right', A4_LANDSCAPE_GRID)).toEqual({
+      answerId: 'dog',
+      index: 0,
+      cell: { row: 1, col: 10 },
+    })
+    expect(stepSelection(farLayout, from, 'up', A4_LANDSCAPE_GRID)).toBeNull()
+  })
+})
+
+describe('firstSelection', () => {
+  it('selects the first letter of the first placed answer', () => {
+    expect(firstSelection(puzzle, layout)).toEqual({ answerId: 'cat', index: 0, cell: { row: 1, col: 0 } })
   })
 })
