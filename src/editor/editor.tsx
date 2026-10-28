@@ -12,6 +12,7 @@ import {
   type DragEndEvent,
   type DragMoveEvent,
   type DragStartEvent,
+  type DroppableContainer,
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import {
@@ -29,7 +30,7 @@ import { GridView } from '../grid/grid-view'
 import { leftToRightOrder } from '../layout/anagram'
 import { describeIssue } from '../layout/describe-issue'
 import { cellKey, layoutAnswer, layoutPuzzle, type Piece } from '../layout/layout'
-import { nextGroupColor } from '../model/groups'
+import { groupLabel, nextGroupColor } from '../model/groups'
 import { puzzleGrid, type GridSize } from '../model/page'
 import type { CellRef, Dir, Puzzle } from '../model/puzzle'
 import type { PuzzleAction } from '../model/puzzle-reducer'
@@ -38,9 +39,15 @@ import {
   ANSWER_LIST_ID,
   GRID_ID,
   answerIdFromListItem,
+  atFromNoGroup,
   gridHandleId,
+  isGroupItemId,
   isListItemId,
+  isNoGroupId,
+  runStartAt,
+  startFromGroupItem,
   type DragData,
+  type GroupDragData,
 } from './drag-ids'
 import { cellAtPoint, moveByPixels } from './grid-coordinates'
 import { Inspector } from './inspector'
@@ -79,9 +86,12 @@ const inMenu = (target: EventTarget | null) =>
 const contains = (rect: DOMRect, point: Point) =>
   point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom
 
+/** An answer or a group header in the list. Both slide aside to make room during a drag. */
+const isListRowId = (id: string) => isListItemId(id) || isGroupItemId(id)
+
 /** Prefer list items over the list itself, so dropping on an item reorders. */
 function preferListItems<T extends { id: string | number }>(hits: T[]): T[] {
-  const item = hits.find((hit) => isListItemId(String(hit.id)))
+  const item = hits.find((hit) => isListRowId(String(hit.id)) || isNoGroupId(String(hit.id)))
   return item ? [item] : hits
 }
 
@@ -99,6 +109,8 @@ type EditorProps = {
 
 export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFailed }: EditorProps) {
   const [dragging, setDragging] = useState<DragData | null>(null)
+  /** The start of the group being dragged within the list. */
+  const [draggingGroup, setDraggingGroup] = useState<number | null>(null)
   const [previewStart, setPreviewStart] = useState<CellRef | null>(null)
   const [rawSelection, setSelection] = useState<Selection | null>(null)
   // Answers picked with Ctrl+click or Ctrl+A, to move together. Replaces the single selection.
@@ -129,13 +141,24 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
     if (!pointer) return preferListItems(pointerWithin(args))
     const hits = args.droppableContainers
       .filter((container) => {
-        const rect = isListItemId(String(container.id))
+        const rect = isListRowId(String(container.id))
           ? args.droppableRects.get(container.id)
           : container.node.current?.getBoundingClientRect()
         return rect !== undefined && contains(rect as DOMRect, pointer)
       })
       .map((container) => ({ id: container.id, data: { droppableContainer: container, value: 0 } }))
-    return preferListItems(hits)
+    const rowHit = preferListItems(hits)
+    if (rowHit.length !== 1 || rowHit[0].id !== ANSWER_LIST_ID) return rowHit
+    // In the gaps between rows, the nearest row counts, so the list doesn't snap back under the
+    // pointer. Rows are only drop targets in edit mode; otherwise the list itself stays the hit.
+    let nearest: { container: DroppableContainer; distance: number } | null = null
+    for (const container of args.droppableContainers) {
+      const rect = args.droppableRects.get(container.id)
+      if (!rect || !isListRowId(String(container.id))) continue
+      const distance = Math.max(rect.top - pointer.y, pointer.y - rect.bottom, 0)
+      if (!nearest || distance < nearest.distance) nearest = { container, distance }
+    }
+    return nearest ? [{ id: nearest.container.id, data: { droppableContainer: nearest.container, value: 0 } }] : rowHit
   }
 
   const layout = useMemo(() => layoutPuzzle(puzzle), [puzzle])
@@ -179,7 +202,7 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
         return
       }
       // dnd-kit uses the arrow keys during a keyboard drag, and open menus use them for themselves.
-      if (isEditable(event.target) || dragging || inMenu(event.target)) return
+      if (isEditable(event.target) || dragging || draggingGroup !== null || inMenu(event.target)) return
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
         event.preventDefault()
         setSelection(null)
@@ -254,7 +277,12 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
   }
 
   function handleDragStart(event: DragStartEvent) {
-    setDragging((event.active.data.current as DragData | undefined) ?? null)
+    const data = event.active.data.current as DragData | GroupDragData | undefined
+    if (data?.source === 'group') {
+      setDraggingGroup(data.start)
+      return
+    }
+    setDragging(data ?? null)
     const activator = event.activatorEvent as PointerEvent
     const start = typeof activator.clientX === 'number' ? { x: activator.clientX, y: activator.clientY } : null
     dragOriginRef.current = start
@@ -271,8 +299,17 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
   }
 
   function handleDragEnd(event: DragEndEvent) {
-    const data = event.active.data.current as DragData | undefined
     const overId = event.over ? String(event.over.id) : null
+    const groupData = event.active.data.current as GroupDragData | DragData | undefined
+    if (groupData?.source === 'group') {
+      setDraggingGroup(null)
+      endPointerTracking()
+      const target = overId ? runStartAt(puzzle.answers, puzzle.groups, overId) : null
+      if (target !== null) dispatch({ type: 'move-group', start: groupData.start, target })
+      return
+    }
+
+    const data = event.active.data.current as DragData | undefined
     const start = overId === GRID_ID ? targetStart(event) : null
     setDragging(null)
     setPreviewStart(null)
@@ -287,16 +324,21 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
       }
     } else if (overId === GRID_ID) {
       if (start) dispatch({ type: 'place', id: data.answerId, start })
-    } else if (data.source === 'grid' && (overId === ANSWER_LIST_ID || isListItemId(overId))) {
+    } else if (data.source === 'grid' && (overId === ANSWER_LIST_ID || isListRowId(overId))) {
       if (groupDrag) dispatch({ type: 'unplace-answers', ids: group })
       else dispatch({ type: 'unplace', id: data.answerId })
     } else if (data.source === 'list' && isListItemId(overId)) {
       dispatch({ type: 'reorder', fromId: data.answerId, toId: answerIdFromListItem(overId) })
+    } else if (data.source === 'list' && isNoGroupId(overId)) {
+      dispatch({ type: 'ungroup-answer', id: data.answerId, at: atFromNoGroup(overId) })
+    } else if (data.source === 'list' && isGroupItemId(overId)) {
+      dispatch({ type: 'move-answer-to-header', id: data.answerId, start: startFromGroupItem(overId) })
     }
   }
 
   function handleDragCancel() {
     setDragging(null)
+    setDraggingGroup(null)
     setPreviewStart(null)
     endPointerTracking()
   }
@@ -311,6 +353,8 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
         : [],
     )
   }
+  const draggedGroup = puzzle.groups.find((g) => g.start === draggingGroup)
+  const draggedGroupChip = draggedGroup && groupLabel(puzzle.groups, draggedGroup)
   const preview = previewStart ? { pieces: previewPieces(), color: puzzle.highlightColor } : undefined
 
   function handleCellClick(answerId: string, cell: CellRef, addToGroup: boolean) {
@@ -472,6 +516,8 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
       <DragOverlay dropAnimation={null}>
         {dragging?.source === 'list' && draggedAnswer && !previewStart ? (
           <div className="drag-chip">{draggedAnswer.text}</div>
+        ) : draggedGroupChip ? (
+          <div className="drag-chip">{draggedGroupChip}</div>
         ) : null}
       </DragOverlay>
     </DndContext>

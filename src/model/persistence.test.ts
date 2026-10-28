@@ -66,7 +66,23 @@ describe('serializePuzzle and parsePuzzle', () => {
         ],
       }),
     )
-    expect(result.ok && result.puzzle.groups).toEqual([{ start: 1, name: 'Mini 2', color: '#fff1bf' }])
+    expect(result.ok && result.puzzle.groups).toEqual([{ start: 1, end: 2, name: 'Mini 2', color: '#fff1bf' }])
+  })
+
+  it('gives groups saved without an end the answers up to the next group', () => {
+    const result = parsePuzzle(
+      saved({
+        answers: ['a', 'b', 'c', 'd'].map((id) => ({ id, text: id })),
+        groups: [
+          { start: 2, color: '#222222' },
+          { start: 0, color: '#111111' },
+        ],
+      }),
+    )
+    expect(result.ok && result.puzzle.groups.map((g) => [g.start, g.end])).toEqual([
+      [0, 2],
+      [2, 4],
+    ])
   })
 
   it('drops unknown fields', () => {

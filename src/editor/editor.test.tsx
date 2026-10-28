@@ -161,7 +161,7 @@ describe('Editor', () => {
       editList()
       fireEvent.click(screen.getByRole('button', { name: 'New group from A' }))
       fireEvent.click(screen.getByRole('button', { name: 'New group from D' }))
-      expect(headers()).toEqual(['3✕', '2✕'])
+      expect(headers()).toEqual(['⠿3✕', '⠿2✕'])
       expect(screen.getByLabelText('Name of Group 1')).toHaveAttribute('placeholder', 'Group 1')
       expect(screen.queryByRole('button', { name: 'New group from A' })).not.toBeInTheDocument()
     })

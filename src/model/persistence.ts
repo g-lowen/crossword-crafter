@@ -91,9 +91,18 @@ function readSeparator(value: unknown, i: number): Separator {
   return { a: readCell(value.a, `Thick border ${i + 1}`), b: readCell(value.b, `Thick border ${i + 1}`) }
 }
 
-function readGroup(value: unknown, i: number): AnswerGroup {
-  if (!isObject(value) || !isInteger(value.start) || typeof value.color !== 'string') fail(`Group ${i + 1} is broken.`)
-  return { start: value.start, name: typeof value.name === 'string' ? value.name : '', color: value.color }
+/** Groups saved before they had an end ran until the next group, or the end of the list. */
+function readGroups(value: unknown, answerCount: number): AnswerGroup[] {
+  const groups = readArray(value, 'The groups').map((group, i) => {
+    if (!isObject(group) || !isInteger(group.start) || typeof group.color !== 'string') fail(`Group ${i + 1} is broken.`)
+    if (group.end !== undefined && !isInteger(group.end)) fail(`Group ${i + 1} has a broken end.`)
+    return { start: group.start, end: group.end, name: typeof group.name === 'string' ? group.name : '', color: group.color }
+  })
+  const starts = groups.map((group) => group.start).sort((a, b) => a - b)
+  return normalizeGroups(
+    groups.map((group) => ({ ...group, end: group.end ?? starts.find((start) => start > group.start) ?? answerCount })),
+    answerCount,
+  )
 }
 
 function readPuzzle(value: unknown): Puzzle {
@@ -110,7 +119,7 @@ function readPuzzle(value: unknown): Puzzle {
       cells: readArray(anagram.cells ?? [], 'The anagram letters').map(readAnagramCell),
     },
     separators: readArray(value.separators ?? [], 'The thick borders').map(readSeparator),
-    groups: normalizeGroups(readArray(value.groups ?? [], 'The groups').map(readGroup), answers.length),
+    groups: readGroups(value.groups ?? [], answers.length),
     highlightColor: typeof value.highlightColor === 'string' ? value.highlightColor : emptyPuzzle.highlightColor,
     includeStartArrow: value.includeStartArrow === true,
     // Puzzles from before cells could be smaller have 1 cm cells.

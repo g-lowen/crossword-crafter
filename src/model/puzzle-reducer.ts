@@ -1,5 +1,12 @@
-import { arrayMove } from '@dnd-kit/sortable'
-import { groupsAfterRemoving, normalizeGroups } from './groups'
+import {
+  addGroup,
+  groupsAfterRemoving,
+  moveAnswer,
+  moveAnswerToHeader,
+  moveGroup,
+  moveOutOfGroups,
+  removeGroup,
+} from './groups'
 import { DEFAULT_CELL_SIZE_MM } from './page'
 import type { AnagramCell, AnswerGroup, Answer, CellRef, Dir, Puzzle, Separator } from './puzzle'
 
@@ -23,7 +30,14 @@ export type PuzzleAction =
   /** Moves placed answers, and the thick borders that go with them, by whole cells. */
   | { type: 'move-answers'; ids: string[]; by: CellRef; separators: Separator[] }
   | { type: 'remove'; id: string }
+  /** The answer joins the group of the answer it's dropped on. */
   | { type: 'reorder'; fromId: string; toId: string }
+  /** Dropped on the header of the group starting at `start`: see `moveAnswerToHeader`. */
+  | { type: 'move-answer-to-header'; id: string; start: number }
+  /** Takes the answer out of its group, to land just before list index `at`, at the edge of a group. */
+  | { type: 'ungroup-answer'; id: string; at: number }
+  /** Moves the group starting at `start`, with its answers, to the run starting at `target`. */
+  | { type: 'move-group'; start: number; target: number }
   | { type: 'toggle-direction'; id: string }
   /** Changes an answer's text. Turns, wide spaces, visible letters and anagram letters that no longer fit are dropped. */
   | { type: 'set-text'; id: string; text: string }
@@ -140,7 +154,24 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
       const from = puzzle.answers.findIndex((answer) => answer.id === action.fromId)
       const to = puzzle.answers.findIndex((answer) => answer.id === action.toId)
       if (from < 0 || to < 0 || from === to) return puzzle
-      return { ...puzzle, answers: arrayMove(puzzle.answers, from, to) }
+      return { ...puzzle, ...moveAnswer(puzzle, from, to) }
+    }
+
+    case 'move-answer-to-header': {
+      const from = puzzle.answers.findIndex((answer) => answer.id === action.id)
+      if (from < 0 || !puzzle.groups.some((group) => group.start === action.start)) return puzzle
+      return { ...puzzle, ...moveAnswerToHeader(puzzle, from, action.start) }
+    }
+
+    case 'ungroup-answer': {
+      const from = puzzle.answers.findIndex((answer) => answer.id === action.id)
+      if (from < 0) return puzzle
+      return { ...puzzle, ...moveOutOfGroups(puzzle, from, action.at) }
+    }
+
+    case 'move-group': {
+      const moved = moveGroup(puzzle, action.start, action.target)
+      return moved.answers === puzzle.answers ? puzzle : { ...puzzle, ...moved }
     }
 
     case 'toggle-direction':
@@ -227,18 +258,13 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
     case 'set-cell-size':
       return { ...puzzle, cellSizeMm: action.cellSizeMm }
 
-    case 'add-group':
-      if (puzzle.groups.some((group) => group.start === action.start)) return puzzle
-      return {
-        ...puzzle,
-        groups: normalizeGroups(
-          [...puzzle.groups, { start: action.start, name: '', color: action.color }],
-          puzzle.answers.length,
-        ),
-      }
+    case 'add-group': {
+      const groups = addGroup(puzzle.groups, action.start, action.color, puzzle.answers.length)
+      return groups === puzzle.groups ? puzzle : { ...puzzle, groups }
+    }
 
     case 'remove-group':
-      return { ...puzzle, groups: puzzle.groups.filter((group) => group.start !== action.start) }
+      return { ...puzzle, groups: removeGroup(puzzle.groups, action.start) }
 
     case 'set-group-color':
       return updateGroup(puzzle, action.start, (group) => ({ ...group, color: action.color }))

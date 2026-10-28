@@ -29,12 +29,13 @@ export type AnagramCell = {
 export type Separator = { a: CellRef; b: CellRef }
 
 /**
- * A run of consecutive answers in the list, such as one mini puzzle in a grid with several. It
- * starts at the answer with list index `start` and runs until the next group's start. The divider
- * belongs to the position, not to an answer, so dragging an answer across it changes its group.
+ * A run of consecutive answers in the list, such as one mini puzzle in a grid with several: list
+ * indices `start` up to but not including `end`. Answers between groups have none. An answer
+ * dragged within the list joins the group it's dropped in (`moveAnswer` in `groups.ts`).
  */
 export type AnswerGroup = {
   start: number
+  end: number
   /** Empty means the default "Group N". */
   name: string
   /** Background color of the group's letter cells. */

@@ -145,23 +145,36 @@ does and its shortcut; the direction one says it works on the first letter of th
 ## Groups (several mini puzzles in one grid)
 
 Gustav sometimes builds one grid out of several mini puzzles, each with its own background color.
-The answers of one mini puzzle are always next to each other in the list, so groups are made with
-dividers in the list:
+The answers of one mini puzzle are always next to each other in the list, so a group is a run of
+answers in the list. Answers can also have no group, anywhere in the list, so they keep their place
+in the reveal order:
 
 - In edit mode, hovering an answer shows "+ New group" on its top edge. Clicking it starts a new
-  group from that answer; the group runs until the next divider. Answers before the first divider
-  have no group.
+  group from that answer. Inside a group it splits that group in two; on an answer without a group
+  the new group runs until the next group.
 - Each group has a header in the list with a color swatch, its name (empty shows "Group N") and
-  its answer count. In edit mode the swatch and name can be changed, and ✕ removes the divider (its
-  answers join the group above).
-- A divider belongs to its position in the list, not to an answer: dragging an answer across it
-  moves the answer into the other group. Removing an answer moves the dividers below it up.
+  its answer count. In edit mode the swatch and name can be changed, and ✕ removes the group. Its
+  answers join the group right above it, or have no group if there is none right above.
+- An answer dragged within the list joins the group of the answer it's dropped on. Dropped on an
+  answer without a group, it has no group either. Dropped on a group's header, it lands where the
+  list made room for it: dragged down, as the group's first answer; dragged up, above the header at
+  the end of what comes before (answers without a group, or the group above). That
+  group grows and the one it left shrinks; no other answer changes group. A group whose last answer
+  is dragged out is removed. Removing an answer moves the groups below it up.
+- While an answer is dragged in edit mode, a "No group" spot shows after each group, and above the
+  first group when it starts the list. Dropping the answer there takes it out of its group, at that
+  place in the list.
+- Answers added with "+ Add answers" go to the end of the list without a group.
+- In edit mode each group header has a ⠿ handle. Dragging it moves the group with all its answers;
+  a line shows where it will land. Dragged down it goes after the group, or the answers without a
+  group, it's dropped on; dragged up it goes before them.
 - The letter cells of a grouped answer get the group's color, in the editor, the exported images
   and the PowerPoint deck. Spaces stay black and anagram borders stay red. Where answers from
   different groups cross, the one earliest in the list decides the color. Answers without a group
   stay white, so puzzles without groups look exactly as before.
 - New groups get the next unused color from a pale palette, so black letters stay readable.
-- Stored as `groups: { start, name, color }[]` on the puzzle (`src/model/groups.ts`).
+- Stored as `groups: { start, end, name, color }[]` on the puzzle (`src/model/groups.ts`). Groups saved
+  before they had an `end` run until the next group, as they used to.
 
 ## Crossings
 
@@ -324,7 +337,7 @@ type Puzzle = {
     cells: { answerId: string; letterIndex: number; number?: number }[];
   };
   separators: { a: CellRef; b: CellRef }[];
-  groups: { start: number; name: string; color: string }[]; // start = list index of first answer
+  groups: { start: number; end: number; name: string; color: string }[]; // list indices start up to end
   highlightColor: string;
   includeStartArrow: boolean;
 };

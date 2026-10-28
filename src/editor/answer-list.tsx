@@ -1,10 +1,18 @@
-import { useDroppable } from '@dnd-kit/core'
-import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { useDndContext, useDroppable } from '@dnd-kit/core'
+import { SortableContext, useSortable, verticalListSortingStrategy, type SortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useRef, useState } from 'react'
-import { groupAt, groupLabel } from '../model/groups'
+import { groupAt, groupLabel, runStart } from '../model/groups'
 import type { Answer, AnswerGroup } from '../model/puzzle'
-import { ANSWER_LIST_ID, listItemId, type DragData } from './drag-ids'
+import {
+  ANSWER_LIST_ID,
+  groupItemId,
+  listItemId,
+  noGroupId,
+  runStartAt,
+  type DragData,
+  type GroupDragData,
+} from './drag-ids'
 import { normalizeAnswer, parseAnswerList } from './parse-answer-list'
 import { PenIcon } from './pen-icon'
 import { embedLink, parseSpotifyPaste, parseSpotifyText, type SpotifyTrack } from './spotify'
@@ -16,6 +24,33 @@ export type GroupActions = {
   remove: (start: number) => void
   setColor: (start: number, color: string) => void
   setName: (start: number, name: string) => void
+}
+
+/** A dragged group moves as a block, so the rows don't slide aside for it. */
+const keepRowsInPlace: SortingStrategy = () => null
+
+/** Where a dragged group would land: above the first row of the answer at `index`, or below it. */
+type DropLine = { side: 'above' | 'below'; index: number }
+
+function dropLine(groups: AnswerGroup[], answerCount: number, dragged: number, target: number | null): DropLine | null {
+  if (target === null || target === dragged) return null
+  if (target < dragged) return { side: 'above', index: target }
+  // Dragged down it goes after the run it's dropped on: a group, or answers without one.
+  const end =
+    groups.find((group) => group.start === target)?.end ??
+    groups.find((group) => group.start > target)?.start ??
+    answerCount
+  return { side: 'below', index: end - 1 }
+}
+
+/**
+ * Where an answer can be dropped to leave its group: after each group, and above the first one when
+ * it starts the list. Given as the list index the answer would land before.
+ */
+function noGroupSpots(groups: AnswerGroup[]): number[] {
+  const spots = groups.map((group) => group.end)
+  if (groups[0]?.start === 0) spots.unshift(0)
+  return [...new Set(spots)]
 }
 
 type AnswerListProps = {
@@ -45,6 +80,16 @@ export function AnswerList({
   // Off by default, so an answer dragged back from the grid can't land somewhere else in the list,
   // and the list only shows what's needed for placing answers.
   const [editable, setEditable] = useState(false)
+  const { active, over } = useDndContext()
+  const groupDrag = active?.data.current as GroupDragData | DragData | undefined
+  const draggedGroup = groupDrag?.source === 'group' ? groupDrag.start : null
+  const line =
+    draggedGroup === null
+      ? null
+      : dropLine(groups, answers.length, draggedGroup, over ? runStartAt(answers, groups, String(over.id)) : null)
+  const inDraggedGroup = (index: number) => draggedGroup !== null && runStart(groups, index) === draggedGroup
+  // While an answer is dragged within the list, spots appear for taking it out of its group.
+  const spots = editable && groupDrag?.source === 'list' ? noGroupSpots(groups) : []
 
   const finish = (texts: string[]) => {
     onImport(texts)
@@ -146,7 +191,7 @@ export function AnswerList({
             <div className="answer-list-hint">
               <p className="hint">
                 {editable
-                  ? 'Drag up or down to reorder. Hover an answer to start a group.'
+                  ? 'Drag up or down to reorder, or into a group. Hover an answer to start a group.'
                   : 'Drag onto the grid. Drag back here to take off.'}
               </p>
               <button
@@ -159,20 +204,28 @@ export function AnswerList({
                 {editable ? 'Done' : 'Edit list'}
               </button>
             </div>
-            <SortableContext items={answers.map((a) => listItemId(a.id))} strategy={verticalListSortingStrategy}>
+            <SortableContext
+              items={answers.flatMap((answer, index) => [
+                ...(groups.some((group) => group.start === index) ? [groupItemId(index)] : []),
+                listItemId(answer.id),
+              ])}
+              strategy={draggedGroup === null ? verticalListSortingStrategy : keepRowsInPlace}
+            >
               <ol>
                 {answers.map((answer, index) => {
                   const startsHere = groups.find((group) => group.start === index)
-                  const nextStart = groups.find((group) => group.start > index)?.start ?? answers.length
+                  const lineAbove = line?.side === 'above' && line.index === index
                   return [
+                    spots.includes(index) && <NoGroupSpot key={`no-group-${index}`} at={index} />,
                     startsHere && (
                       <GroupHeader
                         key={`group-${index}`}
                         group={startsHere}
                         label={groupLabel(groups, startsHere)}
-                        count={nextStart - index}
+                        count={startsHere.end - index}
                         editable={editable}
                         actions={groupActions}
+                        dropAbove={lineAbove}
                       />
                     ),
                     <AnswerItem
@@ -181,12 +234,16 @@ export function AnswerList({
                       number={index + 1}
                       groupColor={groupAt(groups, index)?.color}
                       editable={editable}
+                      dimmed={inDraggedGroup(index)}
+                      dropAbove={lineAbove && !startsHere}
+                      dropBelow={line?.side === 'below' && line.index === index}
                       onStartGroup={startsHere ? undefined : () => groupActions.add(index)}
                       onEdit={onEdit}
                       onRemove={onRemove}
                     />,
                   ]
                 })}
+                {spots.includes(answers.length) && <NoGroupSpot at={answers.length} />}
               </ol>
             </SortableContext>
           </>
@@ -197,8 +254,24 @@ export function AnswerList({
 }
 
 /**
+ * A spot between groups to drop an answer on, so it has no group. It takes no room in the list: it
+ * appears once the drag has started, and moving the rows then would put the dragged chip off the
+ * pointer.
+ */
+function NoGroupSpot({ at }: { at: number }) {
+  const { setNodeRef, isOver } = useDroppable({ id: noGroupId(at) })
+  return (
+    <li className="no-group-spot">
+      <span ref={setNodeRef} className={`no-group-spot-label${isOver ? ' no-group-spot-label--over' : ''}`}>
+        No group
+      </span>
+    </li>
+  )
+}
+
+/**
  * The start of a group in the list: its color, name and size. In edit mode the color and name can
- * be changed and the divider removed.
+ * be changed, the divider removed, and the group dragged by its handle with its answers.
  */
 function GroupHeader({
   group,
@@ -206,16 +279,27 @@ function GroupHeader({
   count,
   editable,
   actions,
+  dropAbove,
 }: {
   group: AnswerGroup
   label: string
   count: number
   editable: boolean
   actions: GroupActions
+  /** Shows where a dragged group would land. */
+  dropAbove: boolean
 }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: groupItemId(group.start),
+    data: { source: 'group', start: group.start } satisfies GroupDragData,
+    disabled: { draggable: !editable, droppable: !editable },
+  })
+  const className = `group-header${isDragging ? ' answer--dragging' : ''}${dropAbove ? ' drop-above' : ''}`
+  const style = { borderColor: group.color, transform: CSS.Translate.toString(transform), transition }
+
   if (!editable) {
     return (
-      <li className="group-header" style={{ borderColor: group.color }} aria-label={label}>
+      <li className={className} style={{ borderColor: group.color }} aria-label={label}>
         <span className="group-swatch" style={{ background: group.color }} />
         <span className="group-label">{label}</span>
         <span className="group-count">{count}</span>
@@ -223,7 +307,16 @@ function GroupHeader({
     )
   }
   return (
-    <li className="group-header" style={{ borderColor: group.color }} aria-label={label}>
+    <li ref={setNodeRef} className={className} style={style} aria-label={label}>
+      <span
+        className="group-handle"
+        {...attributes}
+        {...listeners}
+        aria-label={`Drag ${label}`}
+        title="Drag to move the group and its answers"
+      >
+        ⠿
+      </span>
       <input
         type="color"
         className="group-color"
@@ -262,13 +355,29 @@ type AnswerItemProps = {
    * don't make room for a dragged answer and dropping it doesn't reorder.
    */
   editable: boolean
+  /** Part of a group that is being dragged. */
+  dimmed: boolean
+  /** Shows that a dragged group would land above or below this answer. */
+  dropAbove: boolean
+  dropBelow: boolean
   /** Starts a new group with this answer; undefined when one already starts here. */
   onStartGroup: (() => void) | undefined
   onEdit: (id: string, text: string) => void
   onRemove: (id: string) => void
 }
 
-function AnswerItem({ answer, number, groupColor, editable, onStartGroup, onEdit, onRemove }: AnswerItemProps) {
+function AnswerItem({
+  answer,
+  number,
+  groupColor,
+  editable,
+  dimmed,
+  dropAbove,
+  dropBelow,
+  onStartGroup,
+  onEdit,
+  onRemove,
+}: AnswerItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: listItemId(answer.id),
     data: { answerId: answer.id, source: 'list' } satisfies DragData,
@@ -287,9 +396,9 @@ function AnswerItem({ answer, number, groupColor, editable, onStartGroup, onEdit
         transition,
         borderLeftColor: groupColor,
       }}
-      className={`answer${placed ? ' answer--placed' : ''}${isDragging ? ' answer--dragging' : ''}${
+      className={`answer${placed ? ' answer--placed' : ''}${isDragging || dimmed ? ' answer--dragging' : ''}${
         groupColor ? ' answer--grouped' : ''
-      }`}
+      }${dropAbove ? ' drop-above' : ''}${dropBelow ? ' drop-below' : ''}`}
     >
       {editable && onStartGroup && !editing && (
         <button

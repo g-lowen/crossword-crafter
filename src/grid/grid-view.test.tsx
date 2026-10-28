@@ -153,7 +153,7 @@ describe('GridView', () => {
           answer({ id: 'a', text: 'AB C' }),
           answer({ id: 'b', text: 'XY', start: { row: 3, col: 0 } }),
         ],
-        groups: [{ start: 0, name: '', color: '#fbdbe6' }],
+        groups: [{ start: 0, end: 2, name: '', color: '#fbdbe6' }],
       }),
     )
     const fills = [...all('[data-cell-kind]')].map((el) => `${el.getAttribute('data-cell-kind')}:${el.getAttribute('fill')}`)
@@ -169,8 +169,8 @@ describe('GridView', () => {
           answer({ id: 'b', text: 'BAD', start: { row: 0, col: 1 }, dir: 'down' }),
         ],
         groups: [
-          { start: 0, name: '', color: '#111111' },
-          { start: 1, name: '', color: '#222222' },
+          { start: 0, end: 1, name: '', color: '#111111' },
+          { start: 1, end: 2, name: '', color: '#222222' },
         ],
       }),
     )
