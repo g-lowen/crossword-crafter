@@ -1,6 +1,6 @@
 import { cellKey, type Layout } from '../layout/layout'
 import type { GridSize } from '../model/page'
-import type { CellRef, Dir, Puzzle, Separator } from '../model/puzzle'
+import type { Answer, CellRef, Dir, Puzzle, Separator } from '../model/puzzle'
 import type { PuzzleAction } from '../model/puzzle-reducer'
 
 /** One character of one answer, plus the cell that was clicked (a wide space has two). */
@@ -113,14 +113,20 @@ export function stepSelection(layout: Layout, selection: Selection, dir: Dir, gr
   }
 }
 
+/** The first letter of an answer, or null when it isn't on the grid. */
+export function firstLetter(layout: Layout, answer: Answer): Selection | null {
+  if (!answer.start) return null
+  const pieces = layout.cells.get(cellKey(answer.start))
+  return pieces?.some((p) => p.answerId === answer.id && p.index === 0)
+    ? { answerId: answer.id, index: 0, cell: answer.start }
+    : null
+}
+
 /** What an arrow key selects when nothing is: the first letter of the first placed answer. */
 export function firstSelection(puzzle: Puzzle, layout: Layout): Selection | null {
   for (const answer of puzzle.answers) {
-    if (!answer.start) continue
-    const pieces = layout.cells.get(cellKey(answer.start))
-    if (pieces?.some((p) => p.answerId === answer.id && p.index === 0)) {
-      return { answerId: answer.id, index: 0, cell: answer.start }
-    }
+    const selection = firstLetter(layout, answer)
+    if (selection) return selection
   }
   return null
 }

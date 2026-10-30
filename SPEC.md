@@ -71,6 +71,8 @@ without scrolling:
   - The copied HTML is preferred: it marks the explicit badge, which is left out. Plain text is a
     fallback; there an "E" glued to the front of the artists is removed when followed by a capital
     or a sign, which can be wrong for artists such as "ELO".
+  - Enter adds the answers, even with the focus still in the paste box. On a button, Enter clicks
+    that button.
   - The embed view shows at most 100 tracks. It's only been tried with a public playlist.
   - No Spotify login and no server: the app never contacts Spotify itself
     (`src/editor/spotify.ts`).
@@ -111,6 +113,11 @@ top-left, and so on. It is black, or white when the turn is at a space (a black 
 - Cell: "Wide space" for a space. For a letter, "Always visible" and "Anagram letter" with its
   number.
 - Thick border: top, right, bottom, left of the selected cell.
+
+Clicking an answer in the list selects its first letter on the grid, the same as clicking that
+cell; Ctrl+click adds it to a selection of several (see below). Clicking an answer that isn't on
+the grid clears the selection. The other way round, the answers selected on the grid are outlined
+in the list, which scrolls to show a single selected answer.
 
 Shortcuts for the selected cell (⌘ instead of Ctrl on a Mac). Each button's tooltip says what it
 does and its shortcut; the direction one says it works on the first letter of the answer:

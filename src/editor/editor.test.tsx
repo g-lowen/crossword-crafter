@@ -216,6 +216,22 @@ describe('Editor', () => {
       expect(listedAnswers()).toEqual(['RÖTTERNA', 'EVERYDAY'])
     })
 
+    it('adds them with Enter, even with the focus still in the paste box', () => {
+      render(<App />)
+      pasteSpotify()
+      fireEvent.keyDown(screen.getByLabelText('Paste answers, one per line'), { key: 'Enter' })
+      expect(listedAnswers()).toEqual(['LASSE TENNANDER', 'A$AP ROCKY', 'HEART'])
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+
+    it('adds them with Enter in an answer field', () => {
+      render(<App />)
+      const dialog = pasteSpotify()
+      fireEvent.click(dialog.getByLabelText('Include Barracuda'))
+      fireEvent.keyDown(dialog.getByLabelText('Answer for Rötter'), { key: 'Enter' })
+      expect(listedAnswers()).toEqual(['LASSE TENNANDER', 'A$AP ROCKY'])
+    })
+
     it('adds nothing on cancel', () => {
       render(<App />)
       fireEvent.click(pasteSpotify().getByRole('button', { name: 'Cancel' }))
@@ -644,6 +660,47 @@ describe('Editor', () => {
       for (let i = 0; i < 40; i++) fireEvent.keyDown(window, { key: 'ArrowUp' })
       expect(cellOf(container, 'pantera')).toBe('0,9')
       expect(cellOf(container, 'bjorn-afzelius')).toBe(before)
+    })
+  })
+
+  describe('selecting from the answer list', () => {
+    const row = (text: string) => screen.getByRole('button', { name: `Drag ${text}` }).closest('li')!
+
+    it('selects the first letter on the grid when an answer in the list is clicked', () => {
+      render(<App />)
+      loadSample()
+      fireEvent.click(screen.getByRole('button', { name: 'Drag BJÖRN AFZELIUS' }))
+      const inspector = screen.getByRole('region', { name: 'Selected cell' })
+      expect(inspector).toHaveTextContent('BJÖRN AFZELIUS')
+      expect(inspector).toHaveTextContent('character 1 (B)')
+      expect(row('BJÖRN AFZELIUS')).toHaveClass('answer--selected')
+    })
+
+    it('marks the answer of a clicked cell in the list', () => {
+      const { container } = render(<App />)
+      loadSample()
+      fireEvent.click(container.querySelector('[data-answer-handle="bjorn-afzelius"] [data-cell="2,4"]')!)
+      expect(row('BJÖRN AFZELIUS')).toHaveClass('answer--selected')
+      fireEvent.keyDown(window, { key: 'Escape' })
+      expect(row('BJÖRN AFZELIUS')).not.toHaveClass('answer--selected')
+    })
+
+    it('adds answers to the selection with Ctrl+click in the list', () => {
+      render(<App />)
+      loadSample()
+      fireEvent.click(screen.getByRole('button', { name: 'Drag BJÖRN AFZELIUS' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Drag PANTERA' }), { ctrlKey: true })
+      expect(screen.getByRole('region', { name: 'Selected answers' })).toHaveTextContent('2 answers selected')
+      expect(row('PANTERA')).toHaveClass('answer--selected')
+    })
+
+    it('clears the selection when an answer that is not on the grid is clicked', () => {
+      render(<App />)
+      loadSample()
+      importAnswers('abba')
+      fireEvent.click(screen.getByRole('button', { name: 'Drag PANTERA' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Drag ABBA' }))
+      expect(screen.queryByRole('region', { name: 'Selected cell' })).not.toBeInTheDocument()
     })
   })
 

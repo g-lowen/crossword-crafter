@@ -596,6 +596,12 @@ button:disabled {
   border-color: var(--placed-border);
 }
 
+/* Selected on the grid, or clicked here to select it there. */
+.answer--selected {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
 .answer--dragging {
   opacity: 0.4;
 }

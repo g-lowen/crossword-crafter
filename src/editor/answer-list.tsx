@@ -1,7 +1,7 @@
 import { useDndContext, useDroppable } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy, type SortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { groupAt, groupLabel, runStart } from '../model/groups'
 import type { Answer, AnswerGroup } from '../model/puzzle'
 import {
@@ -60,6 +60,10 @@ type AnswerListProps = {
   onImport: (texts: string[]) => void
   onEdit: (id: string, text: string) => void
   onRemove: (id: string) => void
+  /** The answers selected on the grid, shown in the list too. */
+  selectedIds: string[]
+  /** A click on an answer, with Ctrl or ⌘ held to add it to or remove it from the selection. */
+  onSelect: (id: string, addToGroup: boolean) => void
 }
 
 export function AnswerList({
@@ -69,6 +73,8 @@ export function AnswerList({
   onImport,
   onEdit,
   onRemove,
+  selectedIds,
+  onSelect,
 }: AnswerListProps) {
   const [text, setText] = useState('')
   // The paste box takes room from the list, so it's folded away once there are answers.
@@ -240,6 +246,10 @@ export function AnswerList({
                       onStartGroup={startsHere ? undefined : () => groupActions.add(index)}
                       onEdit={onEdit}
                       onRemove={onRemove}
+                      selected={selectedIds.includes(answer.id)}
+                      // With several selected, scrolling to each would jump around.
+                      scrollIntoView={selectedIds.length === 1}
+                      onSelect={onSelect}
                     />,
                   ]
                 })}
@@ -364,6 +374,10 @@ type AnswerItemProps = {
   onStartGroup: (() => void) | undefined
   onEdit: (id: string, text: string) => void
   onRemove: (id: string) => void
+  selected: boolean
+  /** Scrolls the list to show this answer when it becomes selected. */
+  scrollIntoView: boolean
+  onSelect: (id: string, addToGroup: boolean) => void
 }
 
 function AnswerItem({
@@ -377,6 +391,9 @@ function AnswerItem({
   onStartGroup,
   onEdit,
   onRemove,
+  selected,
+  scrollIntoView,
+  onSelect,
 }: AnswerItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: listItemId(answer.id),
@@ -387,10 +404,17 @@ function AnswerItem({
   const placed = answer.start !== null
   const [editingText, setEditingText] = useState(false)
   const editing = editable && editingText
+  const rowRef = useRef<HTMLLIElement | null>(null)
+  useEffect(() => {
+    if (selected && scrollIntoView) rowRef.current?.scrollIntoView?.({ block: 'nearest' })
+  }, [selected, scrollIntoView])
 
   return (
     <li
-      ref={setNodeRef}
+      ref={(element) => {
+        rowRef.current = element
+        setNodeRef(element)
+      }}
       style={{
         transform: CSS.Translate.toString(transform),
         transition,
@@ -398,7 +422,7 @@ function AnswerItem({
       }}
       className={`answer${placed ? ' answer--placed' : ''}${isDragging || dimmed ? ' answer--dragging' : ''}${
         groupColor ? ' answer--grouped' : ''
-      }${dropAbove ? ' drop-above' : ''}${dropBelow ? ' drop-below' : ''}`}
+      }${selected ? ' answer--selected' : ''}${dropAbove ? ' drop-above' : ''}${dropBelow ? ' drop-below' : ''}`}
     >
       {editable && onStartGroup && !editing && (
         <button
@@ -423,7 +447,13 @@ function AnswerItem({
           />
         </span>
       ) : (
-        <span className="answer-handle" {...attributes} {...listeners} aria-label={`Drag ${answer.text}`}>
+        <span
+          className="answer-handle"
+          {...attributes}
+          {...listeners}
+          aria-label={`Drag ${answer.text}`}
+          onClick={(e) => onSelect(answer.id, e.ctrlKey || e.metaKey)}
+        >
           <span className="answer-number">{number}.</span>
           <span className="answer-text" title={answer.text}>
             {answer.text}

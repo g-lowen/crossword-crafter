@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { parseAnswerList } from './parse-answer-list'
 import { suggestedAnswer, type AnswerChoice, type SpotifyTrack } from './spotify'
 
@@ -23,21 +23,33 @@ export function SpotifyImport({ tracks, onAdd, onCancel }: SpotifyImportProps) {
   const [answers, setAnswers] = useState(() => tracks.map((track) => suggestedAnswer(track, 'artist')))
   const [included, setIncluded] = useState(() => tracks.map(() => true))
 
+  const chosen = answers.filter((answer, i) => included[i] && answer.trim() !== '')
+  const add = () => {
+    if (chosen.length > 0) onAdd(parseAnswerList(chosen.join('\n')))
+  }
+
+  // Enter adds the answers, wherever the focus is (it's often still in the paste box behind the
+  // dialog). On a button, Enter clicks that button instead. Esc cancels.
+  const onKeyDownRef = useRef<(event: KeyboardEvent) => void>(() => {})
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
+    onKeyDownRef.current = (event) => {
       if (event.key === 'Escape') onCancel()
+      if (event.key !== 'Enter' || event.isComposing || event.target instanceof HTMLButtonElement) return
+      event.preventDefault()
+      add()
     }
+  })
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => onKeyDownRef.current(event)
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onCancel])
+  }, [])
 
   function choose(next: AnswerChoice) {
     // Switching replaces the suggestions, including any edits, so the column is consistent.
     setChoice(next)
     setAnswers(tracks.map((track) => suggestedAnswer(track, next)))
   }
-
-  const chosen = answers.filter((answer, i) => included[i] && answer.trim() !== '')
 
   return (
     <div className="modal-backdrop">
@@ -57,7 +69,7 @@ export function SpotifyImport({ tracks, onAdd, onCancel }: SpotifyImportProps) {
               </button>
             ))}
           </div>
-          <span className="hint">You can change any answer before adding.</span>
+          <span className="hint">You can change any answer before adding. Enter adds them.</span>
         </div>
 
         <ol className="spotify-tracks">
@@ -89,7 +101,7 @@ export function SpotifyImport({ tracks, onAdd, onCancel }: SpotifyImportProps) {
             type="button"
             className="primary-button"
             disabled={chosen.length === 0}
-            onClick={() => onAdd(parseAnswerList(chosen.join('\n')))}
+            onClick={add}
           >
             Add {chosen.length} {chosen.length === 1 ? 'answer' : 'answers'}
           </button>

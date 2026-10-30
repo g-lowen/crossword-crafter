@@ -55,6 +55,7 @@ import { Inspector } from './inspector'
 import {
   arrowShortcut,
   canMoveBy,
+  firstLetter,
   firstSelection,
   selectAt,
   separatorsMovingWith,
@@ -358,16 +359,26 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
   const draggedGroupChip = draggedGroup && groupLabel(puzzle.groups, draggedGroup)
   const preview = previewStart ? { pieces: previewPieces(), color: puzzle.highlightColor } : undefined
 
-  function handleCellClick(answerId: string, cell: CellRef, addToGroup: boolean) {
-    if (!addToGroup) {
-      setGroup([])
-      setSelection(selectAt(layout, cell, answerId, selection))
-      return
-    }
-    // Ctrl+click starts a group from the selected answer, or adds to or removes from the group.
-    const current = group.length > 0 ? group : selection ? [selection.answerId] : []
-    setGroup(current.includes(answerId) ? current.filter((id) => id !== answerId) : [...current, answerId])
+  // Ctrl+click starts a group from the selected answer, or adds to or removes from the group.
+  function toggleInGroup(answerId: string) {
+    setGroup(movable.includes(answerId) ? movable.filter((id) => id !== answerId) : [...movable, answerId])
     setSelection(null)
+  }
+
+  function handleCellClick(answerId: string, cell: CellRef, addToGroup: boolean) {
+    if (addToGroup) return toggleInGroup(answerId)
+    setGroup([])
+    setSelection(selectAt(layout, cell, answerId, selection))
+  }
+
+  /** A click on an answer in the list selects its first letter on the grid, if it's placed. */
+  function handleListClick(answerId: string, addToGroup: boolean) {
+    const answer = puzzle.answers.find((a) => a.id === answerId)
+    const first = answer && firstLetter(layout, answer)
+    if (!first) return clearSelection()
+    if (addToGroup) return toggleInGroup(answerId)
+    setGroup([])
+    setSelection(first)
   }
 
   return (
@@ -405,6 +416,8 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
           }
           onEdit={(id, text) => dispatch({ type: 'set-text', id, text })}
           onRemove={(id) => dispatch({ type: 'remove', id })}
+          selectedIds={movable}
+          onSelect={handleListClick}
         />
 
         <div className="workspace">
