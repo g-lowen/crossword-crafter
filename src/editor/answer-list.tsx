@@ -1,7 +1,7 @@
 import { useDndContext, useDroppable } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy, type SortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { groupAt, groupLabel, runStart } from '../model/groups'
 import type { Answer, AnswerGroup } from '../model/puzzle'
 import {
@@ -53,6 +53,12 @@ function noGroupSpots(groups: AnswerGroup[]): number[] {
   return [...new Set(spots)]
 }
 
+/** How a click in the list changes the selection: replace it, add or remove one (Ctrl), or a range (Shift). */
+export type SelectHow = 'replace' | 'toggle' | 'range'
+
+/** The two checkbox columns: included by "Generate solution", and locked in place for it. */
+type Column = 'include' | 'lock'
+
 type AnswerListProps = {
   answers: Answer[]
   groups: AnswerGroup[]
@@ -60,10 +66,12 @@ type AnswerListProps = {
   onImport: (texts: string[]) => void
   onEdit: (id: string, text: string) => void
   onRemove: (id: string) => void
-  /** The answers selected on the grid, shown in the list too. */
+  /** The selected answers, on the grid or off it. */
   selectedIds: string[]
-  /** A click on an answer, with Ctrl or ⌘ held to add it to or remove it from the selection. */
-  onSelect: (id: string, addToGroup: boolean) => void
+  onSelect: (id: string, how: SelectHow) => void
+  onSetIncluded: (ids: string[], value: boolean) => void
+  onSetLocked: (ids: string[], value: boolean) => void
+  onGenerate: () => void
 }
 
 export function AnswerList({
@@ -75,6 +83,9 @@ export function AnswerList({
   onRemove,
   selectedIds,
   onSelect,
+  onSetIncluded,
+  onSetLocked,
+  onGenerate,
 }: AnswerListProps) {
   const [text, setText] = useState('')
   // The paste box takes room from the list, so it's folded away once there are answers.
@@ -105,6 +116,30 @@ export function AnswerList({
   }
 
   const canImport = spotifyLink === null && parseAnswerList(text).length > 0
+
+  const included = answers.filter((answer) => !answer.excluded || answer.locked)
+  const placed = answers.filter((answer) => answer.start)
+  const locked = placed.filter((answer) => answer.locked)
+  // Where the last click in each column was, for Shift+click.
+  const anchors = useRef<Record<Column, string | null>>({ include: null, lock: null })
+
+  /**
+   * A click on a checkbox. Shift+click sets every answer from the last click in that column to this
+   * one, and a click on one of several selected answers sets them all.
+   */
+  function setColumn(column: Column, id: string, value: boolean, shift: boolean) {
+    const index = answers.findIndex((answer) => answer.id === id)
+    const anchor = answers.findIndex((answer) => answer.id === anchors.current[column])
+    const ids =
+      shift && anchor >= 0
+        ? answers.slice(Math.min(anchor, index), Math.max(anchor, index) + 1).map((answer) => answer.id)
+        : selectedIds.length > 1 && selectedIds.includes(id)
+          ? selectedIds
+          : [id]
+    anchors.current[column] = id
+    if (column === 'include') onSetIncluded(ids, value)
+    else onSetLocked(ids, value)
+  }
 
   const importAnswers = () => {
     // A Spotify list typed or dropped in, rather than pasted, still gets the preview.
@@ -189,6 +224,20 @@ export function AnswerList({
         <SpotifyImport tracks={spotifyTracks} onAdd={finish} onCancel={() => setSpotifyTracks(null)} />
       )}
 
+      {answers.length > 0 && (
+        <div className="generate-row">
+          <button
+            type="button"
+            className="primary-button"
+            disabled={included.length === 0}
+            title="Place the checked answers on the page at random, crossing each other, around the locked ones. Each click gives a new layout."
+            onClick={onGenerate}
+          >
+            Generate solution
+          </button>
+        </div>
+      )}
+
       <section ref={setNodeRef} className={`answer-list${isOver ? ' answer-list--over' : ''}`} aria-label="Answers">
         {answers.length === 0 ? (
           <p className="hint">No answers yet.</p>
@@ -209,6 +258,26 @@ export function AnswerList({
               >
                 {editable ? 'Done' : 'Edit list'}
               </button>
+            </div>
+            <div className="answer-columns">
+              <TriStateBox
+                checked={included.length === answers.length}
+                mixed={included.length > 0 && included.length < answers.length}
+                label="Include every answer in Generate solution"
+                onChange={(value) => onSetIncluded(answers.map((answer) => answer.id), value)}
+              />
+              <TriStateBox
+                className="lock-box"
+                checked={placed.length > 0 && locked.length === placed.length}
+                mixed={locked.length > 0 && locked.length < placed.length}
+                disabled={placed.length === 0}
+                label="Lock every answer on the grid"
+                onChange={(value) => onSetLocked(placed.map((answer) => answer.id), value)}
+              />
+              <span className="hint" title="Generate solution places the checked answers, and leaves locked ones where they are">
+                {included.length} of {answers.length} included
+                {locked.length > 0 && `, ${locked.length} locked`}
+              </span>
             </div>
             <SortableContext
               items={answers.flatMap((answer, index) => [
@@ -250,6 +319,7 @@ export function AnswerList({
                       // With several selected, scrolling to each would jump around.
                       scrollIntoView={selectedIds.length === 1}
                       onSelect={onSelect}
+                      onColumn={setColumn}
                     />,
                   ]
                 })}
@@ -377,7 +447,8 @@ type AnswerItemProps = {
   selected: boolean
   /** Scrolls the list to show this answer when it becomes selected. */
   scrollIntoView: boolean
-  onSelect: (id: string, addToGroup: boolean) => void
+  onSelect: (id: string, how: SelectHow) => void
+  onColumn: (column: Column, id: string, value: boolean, shift: boolean) => void
 }
 
 function AnswerItem({
@@ -394,6 +465,7 @@ function AnswerItem({
   selected,
   scrollIntoView,
   onSelect,
+  onColumn,
 }: AnswerItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: listItemId(answer.id),
@@ -402,6 +474,8 @@ function AnswerItem({
     disabled: { draggable: false, droppable: !editable },
   })
   const placed = answer.start !== null
+  const locked = placed && answer.locked === true
+  const included = locked || !answer.excluded
   const [editingText, setEditingText] = useState(false)
   const editing = editable && editingText
   const rowRef = useRef<HTMLLIElement | null>(null)
@@ -420,9 +494,10 @@ function AnswerItem({
         transition,
         borderLeftColor: groupColor,
       }}
+      data-answer-id={answer.id}
       className={`answer${placed ? ' answer--placed' : ''}${isDragging || dimmed ? ' answer--dragging' : ''}${
         groupColor ? ' answer--grouped' : ''
-      }${selected ? ' answer--selected' : ''}${dropAbove ? ' drop-above' : ''}${dropBelow ? ' drop-below' : ''}`}
+      }${selected ? ' answer--selected' : ''}${included ? '' : ' answer--excluded'}${dropAbove ? ' drop-above' : ''}${dropBelow ? ' drop-below' : ''}`}
     >
       {editable && onStartGroup && !editing && (
         <button
@@ -435,6 +510,29 @@ function AnswerItem({
           + New group
         </button>
       )}
+      <input
+        type="checkbox"
+        className="answer-box"
+        checked={included}
+        aria-label={`Include ${answer.text} in Generate solution`}
+        title="Include in Generate solution. Shift+click sets a range."
+        onChange={() => {}}
+        onClick={(e) => onColumn('include', answer.id, !included, e.shiftKey)}
+      />
+      <input
+        type="checkbox"
+        className="answer-box lock-box"
+        checked={locked}
+        disabled={!placed}
+        aria-label={`Lock ${answer.text}`}
+        title={
+          placed
+            ? 'Lock in place, so Generate solution leaves it where it is. Shift+click sets a range.'
+            : 'Only answers on the grid can be locked'
+        }
+        onChange={() => {}}
+        onClick={(e) => onColumn('lock', answer.id, !locked, e.shiftKey)}
+      />
       {editing ? (
         <span className="answer-handle">
           <span className="answer-number">{number}.</span>
@@ -452,7 +550,7 @@ function AnswerItem({
           {...attributes}
           {...listeners}
           aria-label={`Drag ${answer.text}`}
-          onClick={(e) => onSelect(answer.id, e.ctrlKey || e.metaKey)}
+          onClick={(e: MouseEvent) => onSelect(answer.id, e.shiftKey ? 'range' : e.ctrlKey || e.metaKey ? 'toggle' : 'replace')}
         >
           <span className="answer-number">{number}.</span>
           <span className="answer-text" title={answer.text}>
@@ -483,6 +581,41 @@ function AnswerItem({
         </>
       )}
     </li>
+  )
+}
+
+/** A checkbox for a whole column, showing a dash when only some rows are checked. */
+function TriStateBox({
+  checked,
+  mixed,
+  disabled = false,
+  label,
+  className = '',
+  onChange,
+}: {
+  checked: boolean
+  mixed: boolean
+  disabled?: boolean
+  label: string
+  className?: string
+  /** Checks every row, or unchecks them all when every row was checked. */
+  onChange: (value: boolean) => void
+}) {
+  const ref = useRef<HTMLInputElement | null>(null)
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = mixed
+  }, [mixed])
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      className={`answer-box ${className}`}
+      checked={checked}
+      disabled={disabled}
+      aria-label={label}
+      title={label}
+      onChange={() => onChange(!checked)}
+    />
   )
 }
 

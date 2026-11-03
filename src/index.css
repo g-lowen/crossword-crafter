@@ -1286,3 +1286,94 @@ button:disabled {
 .anagram-note--warn {
   color: var(--warn-text);
 }
+
+/* Generate solution, above the answers it places. */
+.generate-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.generate-row .primary-button {
+  flex: 1;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+/* The header row of the list's two checkbox columns: include in, and lock for, Generate solution. */
+.answer-columns {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 0 4px 7px;
+  user-select: none;
+}
+
+.answer-columns .hint {
+  margin: 0 0 0 4px;
+  font-size: 0.75rem;
+  line-height: 1.2;
+}
+
+.answer-box {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0 2px;
+  cursor: pointer;
+}
+
+/* Shift+click on a checkbox would otherwise select the text between. */
+.answer-list ol {
+  user-select: none;
+}
+
+/* The lock column draws a padlock instead of a box: faint while unlocked. */
+.lock-box {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  font-size: 12px;
+  line-height: 1;
+  border: none;
+  background: none;
+}
+
+.lock-box::before {
+  content: '🔒';
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+
+.lock-box:hover:not(:disabled)::before {
+  opacity: 0.6;
+}
+
+.lock-box:checked::before {
+  opacity: 1;
+  filter: none;
+}
+
+.lock-box:indeterminate::before {
+  opacity: 0.6;
+  filter: none;
+}
+
+.lock-box:disabled {
+  cursor: default;
+}
+
+.lock-box:disabled::before {
+  opacity: 0.08;
+}
+
+.lock-box:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Left out of Generate solution. */
+.answer--excluded .answer-text,
+.answer--excluded .answer-number {
+  opacity: 0.45;
+}

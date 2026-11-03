@@ -274,3 +274,39 @@ describe('puzzleReducer groups', () => {
     ])
   })
 })
+
+describe('puzzleReducer include and lock for Generate solution', () => {
+  const flags = (puzzle: Puzzle) => puzzle.answers.map(({ excluded, locked }) => `${excluded ? 'out' : 'in'}${locked ? ' locked' : ''}`)
+  const placed = puzzleReducer(withAnswers('ABBA', 'QUEEN', 'STING'), {
+    type: 'place',
+    id: 'abba',
+    start: { row: 1, col: 1 },
+  })
+
+  it('locks only answers on the grid, and locking includes them', () => {
+    const out = puzzleReducer(placed, { type: 'set-included', ids: ['abba', 'queen'], value: false })
+    expect(flags(out)).toEqual(['out', 'out', 'in'])
+    expect(flags(puzzleReducer(out, { type: 'set-locked', ids: ['abba', 'queen'], value: true }))).toEqual([
+      'in locked',
+      'out',
+      'in',
+    ])
+  })
+
+  it('unlocks an answer that is left out or taken off the grid', () => {
+    const locked = puzzleReducer(placed, { type: 'set-locked', ids: ['abba'], value: true })
+    expect(flags(puzzleReducer(locked, { type: 'set-included', ids: ['abba'], value: false }))).toEqual(['out', 'in', 'in'])
+    expect(flags(puzzleReducer(locked, { type: 'unplace', id: 'abba' }))).toEqual(['in', 'in', 'in'])
+    expect(flags(puzzleReducer(locked, { type: 'unplace-answers', ids: ['abba'] }))).toEqual(['in', 'in', 'in'])
+  })
+
+  it('keeps an answer included when it is unlocked', () => {
+    const locked = puzzleReducer(placed, { type: 'set-locked', ids: ['abba'], value: true })
+    expect(flags(puzzleReducer(locked, { type: 'set-locked', ids: ['abba'], value: false }))).toEqual(['in', 'in', 'in'])
+  })
+
+  it('takes the answers Generate solution leaves out off the grid', () => {
+    const puzzle = puzzleReducer(placed, { type: 'place-all', placements: [], separators: [], unplace: ['abba'] })
+    expect(puzzle.answers[0].start).toBeNull()
+  })
+})

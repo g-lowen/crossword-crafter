@@ -36,9 +36,9 @@ without scrolling:
 - Page ▾ holds the page settings: Cell size and "Show letters" (shortcut L, outside
   text fields). Cell size belongs to the puzzle and goes into the exports. Show letters only
   changes the editor (the exports decide for themselves) and stays the same when switching
-  puzzles. It also has "Center on page" and "Generate solution", which move the answers.
+  puzzles. It also has "Center on page", which moves the answers.
 - Left column: the answer list. The paste box is open while there are no answers, and folds away
-  behind "+ Add answers" once there are.
+  behind "+ Add answers" once there are. "Generate solution" sits above the list, full width.
 - Middle: the grid, as large as the window allows while keeping its A4 proportions.
 - Right column: the selected cell's settings, then Anagram ("Show anagram numbers and bar",
   "Number anagram left to right" and "Create anagram") and any issues.
@@ -115,9 +115,11 @@ top-left, and so on. It is black, or white when the turn is at a space (a black 
 - Thick border: top, right, bottom, left of the selected cell.
 
 Clicking an answer in the list selects its first letter on the grid, the same as clicking that
-cell; Ctrl+click adds it to a selection of several (see below). Clicking an answer that isn't on
-the grid clears the selection. The other way round, the answers selected on the grid are outlined
-in the list, which scrolls to show a single selected answer.
+cell; Ctrl+click adds it to a selection of several (see below), and Shift+click selects every
+answer from the last one clicked, like in Explorer. In the list, answers off the grid can be
+selected too; on the grid only the placed ones are tinted and moved. The other way round, the
+answers selected on the grid are outlined in the list, which scrolls to show a single selected
+answer.
 
 Shortcuts for the selected cell (⌘ instead of Ctrl on a Mac). Each button's tooltip says what it
 does and its shortcut; the direction one says it works on the first letter of the answer:
@@ -153,10 +155,32 @@ does and its shortcut; the direction one says it works on the first letter of th
 
 ## Generate solution
 
-"Generate solution" in the Page menu places every answer on the grid at random, as a starting
-point. Each click gives a new layout, the same one again only when there is no other. The puzzle
-ends up in the middle of the page, the thick borders of the old layout go, and Undo brings the old
-layout back. The rules are in `src/generate/rules.ts`, apart from the search, so they are easy to
+"Generate solution", above the answer list, places the included answers on the grid at random, as
+a starting point. Each click gives a new layout, the same one again only when there is no other.
+The puzzle ends up in the middle of the page, the thick borders of the old layout go, and Undo
+brings the old layout back.
+
+The list works like a table with two checkbox columns before each answer:
+
+- **Include** (checked by default): Generate solution places the answer. An unchecked answer is
+  left out, and taken off the grid if it is on it. Its text is greyed out.
+- **Lock** (a padlock): Generate solution leaves the answer exactly where it is, with its
+  direction and turns, and places the others around it, crossing it where they can. Only answers
+  on the grid can be locked, and locking includes them. Unchecking Include, or taking the answer
+  off the grid, unlocks it. Nothing else respects a lock: a locked answer can still be dragged,
+  moved with the keys and centred.
+- Both columns work the same way. Shift+click sets every answer from the last click in that
+  column to the same value. Clicking the box of one of several selected answers sets them all.
+  The header row has a box for each column that checks or unchecks every answer (Lock: every
+  answer on the grid), shows a dash when only some are checked, and says how many are included
+  and locked.
+- Stored on each answer as `excluded` and `locked`, both left out when false.
+
+With locked answers the puzzle isn't moved to the middle, and the thick borders between two
+locked answers stay. Locked answers count for the rules (crossings, hanging together), but their
+own bends and the places two locked answers touch are as Sammy left them and never break a rule.
+
+The rules are in `src/generate/rules.ts`, apart from the search, so they are easy to
 change:
 
 1. Every answer crosses at least two other answers, or as many as it can: with two answers each
@@ -388,6 +412,8 @@ type Answer = {
   turns: { atIndex: number; dir: Dir }[];
   wideSpaces: number[]; // indices of spaces that span two cells
   visibleLetters: number[]; // indices of letters drawn in every image
+  excluded?: boolean; // left out by Generate solution
+  locked?: boolean; // kept in place by Generate solution; only on the grid
 };
 
 type CellRef = { row: number; col: number };

@@ -74,6 +74,8 @@ function readAnswer(value: unknown, i: number): Answer {
     turns,
     wideSpaces,
     visibleLetters,
+    ...(value.excluded === true && { excluded: true }),
+    ...(value.locked === true && value.start != null && { locked: true }),
   }
 }
 

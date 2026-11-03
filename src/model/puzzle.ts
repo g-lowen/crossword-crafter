@@ -17,6 +17,13 @@ export type Answer = {
   wideSpaces: number[]
   /** Indices of letters drawn in every image, even the empty grid, as a hint. */
   visibleLetters: number[]
+  /** Left out by "Generate solution", which takes it off the grid. Missing means included. */
+  excluded?: boolean
+  /**
+   * Kept where it is by "Generate solution", which places the other answers around it. Only for an
+   * answer on the grid, and only Generate solution respects it.
+   */
+  locked?: boolean
 }
 
 /** Where an answer goes on the grid, as "Generate solution" decides it. */

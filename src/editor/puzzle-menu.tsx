@@ -25,7 +25,6 @@ type PuzzleMenuProps = {
   dispatch: Dispatch<LibraryAction>
   commands: EditCommands
   status: Status | null
-  onStatus: (status: Status) => void
   showLetters: boolean
   onShowLettersChange: (value: boolean) => void
 }
@@ -57,7 +56,6 @@ export function PuzzleMenu({
   dispatch,
   commands,
   status,
-  onStatus,
   showLetters,
   onShowLettersChange,
 }: PuzzleMenuProps) {
@@ -188,7 +186,6 @@ export function PuzzleMenu({
           dispatch={editPuzzle}
           showLetters={showLetters}
           onShowLettersChange={onShowLettersChange}
-          onStatus={onStatus}
         />
       )}
       {panel === 'export' && <ExportPanel puzzle={current.puzzle} name={current.name} dispatch={editPuzzle} />}

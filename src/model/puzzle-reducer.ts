@@ -26,15 +26,19 @@ export type PuzzleAction =
   | { type: 'import'; answers: { id: string; text: string }[] }
   | { type: 'place'; id: string; start: CellRef }
   /**
-   * Puts answers where "Generate solution" placed them, with thick borders where they touch. The
-   * thick borders of the old layout go.
+   * Puts answers where "Generate solution" placed them, with thick borders where they touch, and
+   * takes the answers in `unplace` off the grid. The thick borders of the old layout go.
    */
-  | { type: 'place-all'; placements: Placement[]; separators: Separator[] }
+  | { type: 'place-all'; placements: Placement[]; separators: Separator[]; unplace?: string[] }
   | { type: 'unplace'; id: string }
   | { type: 'unplace-answers'; ids: string[] }
   /** Moves placed answers, and the thick borders that go with them, by whole cells. */
   | { type: 'move-answers'; ids: string[]; by: CellRef; separators: Separator[] }
   | { type: 'remove'; id: string }
+  /** Whether "Generate solution" places these answers. Leaving one out also unlocks it. */
+  | { type: 'set-included'; ids: string[]; value: boolean }
+  /** Locking keeps answers in place for "Generate solution", and includes them. Only answers on the grid lock. */
+  | { type: 'set-locked'; ids: string[]; value: boolean }
   /** The answer joins the group of the answer it's dropped on. */
   | { type: 'reorder'; fromId: string; toId: string }
   /** Dropped on the header of the group starting at `start`: see `moveAnswerToHeader`. */
@@ -89,6 +93,19 @@ function updateGroup(puzzle: Puzzle, start: number, update: (group: AnswerGroup)
   return { ...puzzle, groups: puzzle.groups.map((group) => (group.start === start ? update(group) : group)) }
 }
 
+/** The answer with "Generate solution"'s flags set. A flag that is off is left out. */
+function withFlags(answer: Answer, excluded: boolean, locked: boolean): Answer {
+  const next = { ...answer }
+  delete next.excluded
+  delete next.locked
+  if (excluded) next.excluded = true
+  if (locked) next.locked = true
+  return next
+}
+
+/** Off the grid, where an answer can't be locked. */
+const offGrid = (answer: Answer): Answer => ({ ...withFlags(answer, answer.excluded === true, false), start: null })
+
 function updateAnswer(puzzle: Puzzle, id: string, update: (answer: Answer) => Answer): Puzzle {
   return { ...puzzle, answers: puzzle.answers.map((answer) => (answer.id === id ? update(answer) : answer)) }
 }
@@ -124,9 +141,8 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
         ...puzzle,
         answers: puzzle.answers.map((answer) => {
           const placement = placements.get(answer.id)
-          return placement
-            ? { ...answer, start: placement.start, dir: placement.dir, turns: placement.turns }
-            : answer
+          if (placement) return { ...answer, start: placement.start, dir: placement.dir, turns: placement.turns }
+          return action.unplace?.includes(answer.id) ? offGrid(answer) : answer
         }),
         separators: action.separators,
       }
@@ -135,7 +151,27 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
     case 'unplace-answers':
       return {
         ...puzzle,
-        answers: puzzle.answers.map((answer) => (action.ids.includes(answer.id) ? { ...answer, start: null } : answer)),
+        answers: puzzle.answers.map((answer) => (action.ids.includes(answer.id) ? offGrid(answer) : answer)),
+      }
+
+    case 'set-included':
+      return {
+        ...puzzle,
+        answers: puzzle.answers.map((answer) =>
+          action.ids.includes(answer.id)
+            ? withFlags(answer, !action.value, action.value && answer.locked === true)
+            : answer,
+        ),
+      }
+
+    case 'set-locked':
+      return {
+        ...puzzle,
+        answers: puzzle.answers.map((answer) =>
+          action.ids.includes(answer.id) && answer.start
+            ? withFlags(answer, !action.value && answer.excluded === true, action.value)
+            : answer,
+        ),
       }
 
     case 'move-answers': {
@@ -154,7 +190,7 @@ export function puzzleReducer(puzzle: Puzzle, action: PuzzleAction): Puzzle {
     }
 
     case 'unplace':
-      return updateAnswer(puzzle, action.id, (answer) => ({ ...answer, start: null }))
+      return updateAnswer(puzzle, action.id, offGrid)
 
     case 'remove': {
       const index = puzzle.answers.findIndex((answer) => answer.id === action.id)

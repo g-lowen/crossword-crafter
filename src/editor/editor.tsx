@@ -25,6 +25,7 @@ import {
   type Ref,
   type RefObject,
 } from 'react'
+import { generateSolution } from '../generate/generate'
 import { CELL, cellOrigin } from '../grid/geometry'
 import { GridView } from '../grid/grid-view'
 import { leftToRightOrder } from '../layout/anagram'
@@ -34,7 +35,7 @@ import { groupLabel, nextGroupColor } from '../model/groups'
 import { puzzleGrid, type GridSize } from '../model/page'
 import type { CellRef, Dir, Puzzle } from '../model/puzzle'
 import type { PuzzleAction } from '../model/puzzle-reducer'
-import { AnswerList } from './answer-list'
+import { AnswerList, type SelectHow } from './answer-list'
 import { CreateAnagram } from './create-anagram'
 import {
   ANSWER_LIST_ID,
@@ -63,7 +64,8 @@ import {
   validSelection,
   type Selection,
 } from './selection'
-import { isEditable } from './use-shortcuts'
+import type { Status } from './puzzle-menu'
+import { isEditable, SHORTCUT_LABELS } from './use-shortcuts'
 
 type Point = { x: number; y: number }
 
@@ -107,16 +109,21 @@ type EditorProps = {
   /** Set in the Page menu. Only affects the editor. */
   showLetters: boolean
   saveFailed: boolean
+  /** Shows a message, such as the outcome of Generate solution. */
+  onStatus: (status: Status) => void
 }
 
-export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFailed }: EditorProps) {
+export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFailed, onStatus }: EditorProps) {
   const [dragging, setDragging] = useState<DragData | null>(null)
   /** The start of the group being dragged within the list. */
   const [draggingGroup, setDraggingGroup] = useState<number | null>(null)
   const [previewStart, setPreviewStart] = useState<CellRef | null>(null)
   const [rawSelection, setSelection] = useState<Selection | null>(null)
-  // Answers picked with Ctrl+click or Ctrl+A, to move together. Replaces the single selection.
+  // Answers picked with Ctrl+click, Shift+click or Ctrl+A, to move together. Replaces the single
+  // selection. In the list, answers off the grid can be picked too.
   const [rawGroup, setGroup] = useState<string[]>([])
+  /** Where a Shift+click in the list selects from. */
+  const [anchor, setAnchor] = useState<string | null>(null)
   const pageRef = useRef<HTMLDivElement | null>(null)
   const grid = puzzleGrid(puzzle)
 
@@ -175,6 +182,9 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
   const group = rawGroup.filter((id) => piecesByAnswer.has(id))
   /** The answers the arrow keys move: the group, or the answer of the selected cell. */
   const movable = group.length > 0 ? group : selection ? [selection.answerId] : []
+  /** The selected answers in the list, which can include answers off the grid. */
+  const listed = rawGroup.filter((id) => puzzle.answers.some((answer) => answer.id === id))
+  const listSelection = listed.length > 0 ? listed : movable
 
   function clearSelection() {
     setSelection(null)
@@ -361,7 +371,9 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
 
   // Ctrl+click starts a group from the selected answer, or adds to or removes from the group.
   function toggleInGroup(answerId: string) {
-    setGroup(movable.includes(answerId) ? movable.filter((id) => id !== answerId) : [...movable, answerId])
+    setGroup(
+      listSelection.includes(answerId) ? listSelection.filter((id) => id !== answerId) : [...listSelection, answerId],
+    )
     setSelection(null)
   }
 
@@ -371,14 +383,46 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
     setSelection(selectAt(layout, cell, answerId, selection))
   }
 
-  /** A click on an answer in the list selects its first letter on the grid, if it's placed. */
-  function handleListClick(answerId: string, addToGroup: boolean) {
+  /**
+   * A click on an answer in the list selects it, and its first letter on the grid if it's placed.
+   * Ctrl+click adds it to the selection or removes it, and Shift+click selects every answer from the
+   * last one clicked.
+   */
+  function handleListClick(answerId: string, how: SelectHow) {
+    const ids = puzzle.answers.map((answer) => answer.id)
+    const from = ids.indexOf(anchor ?? '')
+    if (how === 'range' && from >= 0) {
+      const to = ids.indexOf(answerId)
+      setSelection(null)
+      setGroup(ids.slice(Math.min(from, to), Math.max(from, to) + 1))
+      return
+    }
+    setAnchor(answerId)
+    if (how === 'toggle') return toggleInGroup(answerId)
     const answer = puzzle.answers.find((a) => a.id === answerId)
     const first = answer && firstLetter(layout, answer)
-    if (!first) return clearSelection()
-    if (addToGroup) return toggleInGroup(answerId)
-    setGroup([])
-    setSelection(first)
+    setGroup(first ? [] : [answerId])
+    setSelection(first ?? null)
+  }
+
+  function generate() {
+    const result = generateSolution(puzzle)
+    if (!result.ok) {
+      onStatus({
+        kind: 'error',
+        text: "Couldn't fit the answers on the page, even after dropping rules. Smaller cells give more room.",
+      })
+      return
+    }
+    dispatch({
+      type: 'place-all',
+      placements: result.placements,
+      separators: result.separators,
+      unplace: result.unplace,
+    })
+    const rules = result.dropped.map((rule) => `"${rule.text}"`)
+    const without = rules.length === 0 ? '' : ` without the ${rules.length === 1 ? 'rule' : 'rules'} ${inWords(rules)}`
+    onStatus({ kind: 'ok', text: `Answers placed${without}. ${SHORTCUT_LABELS.undo} undoes it.` })
   }
 
   return (
@@ -416,8 +460,11 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
           }
           onEdit={(id, text) => dispatch({ type: 'set-text', id, text })}
           onRemove={(id) => dispatch({ type: 'remove', id })}
-          selectedIds={movable}
+          selectedIds={listSelection}
           onSelect={handleListClick}
+          onSetIncluded={(ids, value) => dispatch({ type: 'set-included', ids, value })}
+          onSetLocked={(ids, value) => dispatch({ type: 'set-locked', ids, value })}
+          onGenerate={generate}
         />
 
         <div className="workspace">
@@ -537,6 +584,11 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
       </DragOverlay>
     </DndContext>
   )
+}
+
+/** "a", "a and b", "a, b and c". */
+function inWords(items: string[]): string {
+  return items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`
 }
 
 /** The page the grid sits on. It has to be a child of DndContext to register as a drop target. */

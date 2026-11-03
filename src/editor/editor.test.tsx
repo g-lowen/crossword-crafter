@@ -545,18 +545,6 @@ describe('Editor', () => {
       expect(page.getByRole('button', { name: 'Center on page' })).toBeDisabled()
     })
 
-    it('generates a solution with every answer on the grid, and undoes it', () => {
-      const { container } = render(<App />)
-      const page = openPage()
-      expect(page.getByRole('button', { name: 'Generate solution' })).toBeDisabled()
-      importAnswers('madonna\nnirvana\nsantana\nrihanna')
-      fireEvent.click(page.getByRole('button', { name: 'Generate solution' }))
-      expect(container.querySelectorAll('[data-answer-handle]')).toHaveLength(4)
-      expect(screen.getByText(/^Answers placed/)).toBeInTheDocument()
-      fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
-      expect(container.querySelectorAll('[data-answer-handle]')).toHaveLength(0)
-    })
-
     it('shows the anagram numbers and bar from the anagram section', () => {
       render(<App />)
       const anagram = within(screen.getByRole('region', { name: 'Anagram' }))
@@ -573,6 +561,108 @@ describe('Editor', () => {
       expect(container.querySelectorAll('[data-letter]')).toHaveLength(3)
       fireEvent.keyDown(document.body, { key: 'L' })
       expect(container.querySelectorAll('[data-letter]').length).toBeGreaterThan(3)
+    })
+  })
+
+  describe('generate solution', () => {
+    const generateButton = () => screen.getByRole('button', { name: 'Generate solution' })
+    const handles = (container: HTMLElement) =>
+      [...container.querySelectorAll('[data-answer-handle]')].map((el) => el.getAttribute('data-answer-handle'))
+    const include = (text: string) => screen.getByLabelText(`Include ${text} in Generate solution`)
+    const lock = (text: string) => screen.getByLabelText(`Lock ${text}`)
+    const row = (text: string) => screen.getByLabelText(`Drag ${text}`)
+
+    it('sits above the list and places every answer, which undo takes back', () => {
+      const { container } = render(<App />)
+      expect(screen.queryByRole('button', { name: 'Generate solution' })).not.toBeInTheDocument()
+      importAnswers('madonna\nnirvana\nsantana\nrihanna')
+      expect(screen.getByText('4 of 4 included')).toBeInTheDocument()
+      fireEvent.click(generateButton())
+      expect(handles(container)).toHaveLength(4)
+      expect(screen.getByText(/^Answers placed/)).toBeInTheDocument()
+      fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+      expect(handles(container)).toHaveLength(0)
+    })
+
+    it('places only the checked answers and takes the others off the grid', () => {
+      const { container } = render(<App />)
+      importAnswers('madonna\nnirvana\nsantana\nrihanna')
+      fireEvent.click(generateButton())
+      const ids = handles(container)
+      fireEvent.click(include('RIHANNA'))
+      expect(include('RIHANNA')).not.toBeChecked()
+      expect(screen.getByText('3 of 4 included')).toBeInTheDocument()
+      fireEvent.click(generateButton())
+      expect(handles(container)).toHaveLength(3)
+      expect(ids.filter((id) => !handles(container).includes(id))).toHaveLength(1)
+    })
+
+    it('checks and unchecks every answer from the header, and a range with Shift+click', () => {
+      render(<App />)
+      importAnswers('abba\nqueen\nsting\nkiss')
+      const all = screen.getByLabelText('Include every answer in Generate solution')
+      fireEvent.click(all)
+      expect(['ABBA', 'QUEEN', 'STING', 'KISS'].map((text) => (include(text) as HTMLInputElement).checked)).toEqual([
+        false,
+        false,
+        false,
+        false,
+      ])
+      fireEvent.click(include('QUEEN'))
+      fireEvent.click(include('KISS'), { shiftKey: true })
+      expect(['ABBA', 'QUEEN', 'STING', 'KISS'].map((text) => (include(text) as HTMLInputElement).checked)).toEqual([
+        false,
+        true,
+        true,
+        true,
+      ])
+      expect((all as HTMLInputElement).indeterminate).toBe(true)
+      fireEvent.click(all)
+      expect(include('ABBA')).toBeChecked()
+    })
+
+    it('selects a range of answers with Shift+click, off the grid too, and sets their checkboxes together', () => {
+      render(<App />)
+      importAnswers('abba\nqueen\nsting\nkiss')
+      fireEvent.click(row('QUEEN'))
+      fireEvent.click(row('KISS'), { shiftKey: true })
+      const selected = () =>
+        [...document.querySelectorAll('.answer--selected .answer-text')].map((el) => el.textContent)
+      expect(selected()).toEqual(['QUEEN', 'STING', 'KISS'])
+      fireEvent.click(row('ABBA'), { ctrlKey: true })
+      expect(selected()).toEqual(['ABBA', 'QUEEN', 'STING', 'KISS'])
+      fireEvent.click(row('STING'), { ctrlKey: true })
+      fireEvent.click(include('QUEEN'))
+      expect(['ABBA', 'QUEEN', 'STING', 'KISS'].map((text) => (include(text) as HTMLInputElement).checked)).toEqual([
+        false,
+        false,
+        true,
+        false,
+      ])
+    })
+
+    it('locks only answers on the grid, and keeps locked answers in place', () => {
+      const { container } = render(<App />)
+      importAnswers('madonna\nnirvana\nsantana\nrihanna')
+      expect(lock('MADONNA')).toBeDisabled()
+      expect(screen.getByLabelText('Lock every answer on the grid')).toBeDisabled()
+      fireEvent.click(generateButton())
+      const first = listedAnswers()[0]!
+      const id = row(first).closest('[data-answer-id]')!.getAttribute('data-answer-id')
+      const cells = () =>
+        [...container.querySelectorAll(`[data-answer-handle="${id}"] [data-cell]`)].map((el) => el.getAttribute('data-cell'))
+      const before = cells()
+      expect(before.length).toBeGreaterThan(0)
+      fireEvent.click(lock(first))
+      expect(lock(first)).toBeChecked()
+      expect(screen.getByText('4 of 4 included, 1 locked')).toBeInTheDocument()
+      for (let i = 0; i < 3; i++) {
+        fireEvent.click(generateButton())
+        expect(cells()).toEqual(before)
+      }
+      // Unchecking leaves it out, which unlocks it too.
+      fireEvent.click(include(first))
+      expect(lock(first)).not.toBeChecked()
     })
   })
 

@@ -30,7 +30,15 @@ function puzzleOf(texts: string[], cellSizeMm = 10): Puzzle {
 function generate(puzzle: Puzzle, seed = 1) {
   const result = generateSolution(puzzle, options(seed))
   if (!result.ok) throw new Error('No solution')
-  return { ...result, puzzle: place(puzzle, result.placements, result.separators) }
+  return {
+    ...result,
+    puzzle: puzzleReducer(puzzle, {
+      type: 'place-all',
+      placements: result.placements,
+      separators: result.separators,
+      unplace: result.unplace,
+    }),
+  }
 }
 
 const place = (puzzle: Puzzle, placements: Placement[], separators: Separator[] = []) =>
@@ -198,5 +206,55 @@ describe('generateSolution', () => {
     const { start, dir } = generated.answers[0]
     expect(start).toEqual(dir === 'right' ? { row: 10, col: 13 } : { row: 9, col: 14 })
     expect(generated.separators).toEqual([])
+  })
+
+  it('leaves out answers that are not included, and takes them off the grid', () => {
+    const before = place(puzzleOf(ARTISTS), [{ id: 'ABBA', start: { row: 0, col: 0 }, dir: 'right', turns: [] }])
+    const puzzle = puzzleReducer(before, { type: 'set-included', ids: ['ABBA', 'TINA TURNER'], value: false })
+    const { puzzle: generated, unplace } = generate(puzzle)
+    expect(unplace).toEqual(['ABBA'])
+    const placed = generated.answers.filter((answer) => answer.start).map((answer) => answer.id)
+    expect(placed).toEqual(ARTISTS.filter((text) => text !== 'ABBA' && text !== 'TINA TURNER'))
+  })
+
+  it('keeps locked answers where they are and places the rest around them, without centring', () => {
+    const locked: Placement[] = [
+      { id: 'MADONNA', start: { row: 2, col: 3 }, dir: 'right', turns: [] },
+      // Sammy can lock an answer reading any way, which Generate solution itself never does.
+      { id: 'NIRVANA', start: { row: 8, col: 9 }, dir: 'up', turns: [{ atIndex: 3, dir: 'left' }] },
+    ]
+    const puzzle = puzzleReducer(place(puzzleOf(ARTISTS), locked), {
+      type: 'set-locked',
+      ids: ['MADONNA', 'NIRVANA'],
+      value: true,
+    })
+    for (const seed of [1, 2, 3]) {
+      const { puzzle: generated } = generate(puzzle, seed)
+      for (const placement of locked) {
+        const answer = generated.answers.find((a) => a.id === placement.id)!
+        expect({ id: answer.id, start: answer.start, dir: answer.dir, turns: answer.turns }).toEqual(placement)
+      }
+      const layout = layoutPuzzle(generated)
+      expect(layout.issues).toEqual([])
+      expect(linked(layout, generated)).toBe(true)
+    }
+  })
+
+  it('keeps thick borders between two locked answers, and drops the others', () => {
+    const between = { a: { row: 5, col: 5 }, b: { row: 6, col: 5 } }
+    const elsewhere = { a: { row: 0, col: 0 }, b: { row: 0, col: 1 } }
+    const puzzle = puzzleReducer(
+      {
+        ...place(puzzleOf(['ABBA', 'NIRVANA', 'MADONNA']), [
+          { id: 'ABBA', start: { row: 5, col: 2 }, dir: 'right', turns: [] },
+          { id: 'NIRVANA', start: { row: 6, col: 5 }, dir: 'right', turns: [] },
+        ]),
+        separators: [between, elsewhere],
+      },
+      { type: 'set-locked', ids: ['ABBA', 'NIRVANA'], value: true },
+    )
+    const { separators } = generate(puzzle)
+    expect(borders(separators)).toContain(borders([between])[0])
+    expect(borders(separators)).not.toContain(borders([elsewhere])[0])
   })
 })

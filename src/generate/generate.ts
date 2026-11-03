@@ -5,7 +5,8 @@ import type { Answer, CellRef, Dir, Placement, Puzzle, Separator, Turn } from '.
 import { DROP_ORDER, RULES, type Rule, type RuleId } from './rules'
 
 /**
- * Places every answer on the page at random, following the rules in `rules.ts`.
+ * Places every included answer on the page at random, following the rules in `rules.ts`. Locked
+ * answers stay where they are and the rest go around them; answers left out come off the grid.
  *
  * Answers go on one at a time, the longest first, each where it crosses the most answers already
  * placed. Then answers that cross too few others or hang apart from the rest are moved, or others
@@ -20,6 +21,8 @@ export type GenerateResult =
       placements: Placement[]
       /** Between answers that touch without crossing. */
       separators: Separator[]
+      /** Answers left out that are on the grid, to take off it. */
+      unplace: string[]
       /** Rules the solution breaks, dropped to find it. */
       dropped: Rule[]
     }
@@ -70,7 +73,10 @@ type Entry = Omit<ShapeCell, 'row' | 'col'> & { answer: number }
 
 /** The answers and what can be worked out from their letters alone. */
 type Words = {
+  /** The answers to place, locked ones included. Indices below are into this list. */
   answers: Answer[]
+  /** Where each locked answer is. */
+  fixed: (Spot | undefined)[]
   chars: string[][]
   /** For each answer, the other answers it has a letter in common with. */
   sharing: Set<number>[]
@@ -90,6 +96,8 @@ type State = {
   /** How many other answers each answer should cross. */
   needs: number[]
   minPieces: number
+  /** Locked answers, which never move. */
+  fixed: boolean[]
 }
 
 /** What the rules in play ask for, combined. */
@@ -108,6 +116,7 @@ type Found = {
   state: State
   placements: Placement[]
   separators: Separator[]
+  unplace: string[]
   missing: number
   /** Pieces beyond the fewest possible. */
   extraPieces: number
@@ -143,14 +152,16 @@ const NEIGHBOURS = Object.values(STEP)
 
 export function generateSolution(puzzle: Puzzle, options: GenerateOptions = {}): GenerateResult {
   const { random = Math.random, attempts = 200, timeLimit = 400, now = () => performance.now() } = options
-  if (puzzle.answers.length === 0) return { ok: false }
+  const answers = puzzle.answers.filter(isIncluded)
+  if (answers.length === 0) return { ok: false }
   const grid = puzzleGrid(puzzle)
   // Like Center on page, keep the anagram bar and its numbers free.
   const rows = puzzle.anagram.showNumbersAndBar && puzzle.anagram.cells.length > 0 ? grid.rows - 2 : grid.rows
   const page = { rows, columns: grid.columns }
-  const chars = puzzle.answers.map((answer) => Array.from(answer.text))
+  const chars = answers.map((answer) => Array.from(answer.text))
   const sharing = sharedLetters(chars)
-  const words: Words = { answers: puzzle.answers, chars, sharing, minPieces: countPieces(sharing) }
+  const fixed = answers.map((answer) => (isLocked(answer) ? fixedSpot(answer) : undefined))
+  const words: Words = { answers, fixed, chars, sharing, minPieces: countPieces(sharing) }
 
   // Rules no layout can keep are dropped from the start.
   const impossible: RuleId[] = RULES.filter((rule) => rule.connected && words.minPieces > 1).map((rule) => rule.id)
@@ -169,7 +180,7 @@ export function generateSolution(puzzle: Puzzle, options: GenerateOptions = {}):
     for (let i = 0; i < attempts && (i === 0 || now() < deadline); i++) {
       const state = attempt(words, page, settings, random)
       if (!state) continue
-      const found = finish(puzzle, state)
+      const found = finish(puzzle, words, state)
       if (valid(found, settings) && !found.repeat) return solution(found, dropped, words)
       if (!best || rank(found) < rank(best)) best = found
     }
@@ -178,6 +189,10 @@ export function generateSolution(puzzle: Puzzle, options: GenerateOptions = {}):
   }
   return { ok: false }
 }
+
+/** Locked answers are placed too, even when left out, as locking includes them. */
+const isIncluded = (answer: Answer) => !answer.excluded || isLocked(answer)
+const isLocked = (answer: Answer) => answer.locked === true && answer.start !== null
 
 const valid = (found: Found, settings: Settings) =>
   (!settings.mustCross || found.missing === 0) && (!settings.mustConnect || found.extraPieces === 0)
@@ -193,6 +208,7 @@ function solution(found: Found, dropped: string[], words: Words): GenerateResult
     ok: true,
     placements: found.placements,
     separators: found.separators,
+    unplace: found.unplace,
     dropped: RULES.filter((rule) => dropped.includes(rule.id) && !keeps(rule, found.state, words)),
   }
 }
@@ -279,8 +295,16 @@ function keeps(rule: Rule, state: State, words: Words): boolean {
     if (state.partners.some((partners, i) => partners.size < needs[i])) return false
   }
   if (connected && countPieces(state.partners) > 1) return false
-  if (touching && touchingPairs(state).some((pair) => touching === 'never' || !pair.endOn)) return false
-  if (allowsBends && state.spots.some((spot, i) => spot && !allowsBends(words.chars[i], spot.shape.bends))) {
+  // Locked answers are as Sammy left them, so only the answers placed around them count.
+  const moved = (pair: Separator) =>
+    [pair.a, pair.b].some((cell) => cellAt(state, cell).some((entry) => !state.fixed[entry.answer]))
+  if (touching && touchingPairs(state).some((pair) => moved(pair) && (touching === 'never' || !pair.endOn))) {
+    return false
+  }
+  if (
+    allowsBends &&
+    state.spots.some((spot, i) => spot && !state.fixed[i] && !allowsBends(words.chars[i], spot.shape.bends))
+  ) {
     return false
   }
   return true
@@ -301,17 +325,24 @@ function attempt(
     partners: answers.map(() => new Set()),
     needs: crossingNeeds(words, CROSSING_GOAL),
     minPieces: words.minPieces,
+    fixed: words.fixed.map((spot) => spot !== undefined),
   }
-  const shapes = answers.map((answer, i) => shapesFor(answer, chars[i], settings, random))
+  // Locked answers go on first, where they are, crossing whatever they share a letter with.
+  words.fixed.forEach((spot, i) => {
+    if (spot) put(state, i, { ...spot, crosses: lockedCrossings(state, spot), score: 0 })
+  })
+  const anyFixed = state.fixed.includes(true)
+  const shapes = answers.map((answer, i) => (state.fixed[i] ? [] : shapesFor(answer, chars[i], settings, random)))
   // The longest answers go first, to give the rest something to cross.
   const order = answers
-    .map((_, i) => ({ i, key: chars[i].length + random() * 4 }))
+    .flatMap((_, i) => (state.fixed[i] ? [] : [{ i, key: chars[i].length + random() * 4 }]))
     .sort((a, b) => b.key - a.key)
     .map(({ i }) => i)
 
   for (const [n, i] of order.entries()) {
+    const first = n === 0 && !anyFixed
     const chosen =
-      choose(n === 0 ? middleSpots(state, shapes[i], random) : crossingSpots(state, settings, i, shapes[i]), random) ??
+      choose(first ? middleSpots(state, shapes[i], random) : crossingSpots(state, settings, i, shapes[i]), random) ??
       choose(freeSpots(state, settings, i, shapes[i], random), random)
     if (!chosen) return null
     put(state, i, chosen)
@@ -360,7 +391,7 @@ function bestMove(state: State, settings: Settings, shapes: Shape[][], behind: n
   let best: { answer: number; option: Option; shortfall: number } | undefined
   let bestValue = Infinity
   state.spots.forEach((spot, answer) => {
-    if (!spot) return
+    if (!spot || state.fixed[answer]) return
     const old = { ...spot, crosses: [...state.partners[answer]], score: 0 }
     lift(state, answer)
     const options = crossingSpots(state, settings, answer, shapes[answer], answer === behind ? undefined : behind)
@@ -411,6 +442,43 @@ function shapesFor(answer: Answer, chars: string[], settings: Settings, random: 
   return [...sets.values()].flatMap((bends) =>
     (['right', 'down'] as const).map((dir) => makeShape(answer, chars, dir, bends, settings)),
   )
+}
+
+/**
+ * Where a locked answer is, as a shape laid out from its own start. It can read any way and turn
+ * anywhere, as Sammy left it.
+ */
+function fixedSpot(answer: Answer): Spot {
+  const { pieces } = layoutAnswer(answer, { row: 0, col: 0 })
+  const bends = answer.turns.map((turn) => turn.atIndex)
+  const cells = pieces.map((piece, i): ShapeCell => {
+    const step = STEP[piece.dir]
+    const before = { row: piece.row - step.row, col: piece.col - step.col }
+    const after = { row: piece.row + step.row, col: piece.col + step.col }
+    const across = piece.dir === 'right' || piece.dir === 'left'
+    return {
+      row: piece.row,
+      col: piece.col,
+      char: piece.char,
+      line: bends.includes(piece.index) ? 'corner' : across ? 'across' : 'down',
+      points: [...(i === 0 ? [before] : []), ...(i === pieces.length - 1 ? [after] : [])],
+    }
+  })
+  return {
+    shape: { dir: answer.dir, turns: answer.turns, bends, cells, rows: 0, columns: 0, score: 0 },
+    start: answer.start!,
+  }
+}
+
+/** The answers a locked answer shares a letter with, in the cells it shares with them. */
+function lockedCrossings(state: State, { shape, start }: Spot): number[] {
+  const crosses = new Set<number>()
+  for (const cell of shape.cells) {
+    for (const entry of cellAt(state, { row: start.row + cell.row, col: start.col + cell.col })) {
+      if (entry.char === cell.char && cell.char !== ' ') crosses.add(entry.answer)
+    }
+  }
+  return [...crosses]
 }
 
 function makeShape(answer: Answer, chars: string[], dir: Dir, bends: number[], settings: Settings): Shape {
@@ -620,9 +688,15 @@ function entryAt(answer: number, { char, line, points }: ShapeCell, start: CellR
   return { answer, char, line, points: points.map((p) => ({ row: start.row + p.row, col: start.col + p.col })) }
 }
 
+/** The index of a cell in `state.cells`, or -1 outside the page, where only a locked answer can be. */
+function cellIndex(state: State, { row, col }: CellRef): number {
+  return row < 0 || col < 0 || row >= state.rows || col >= state.columns ? -1 : row * state.columns + col
+}
+
 function put(state: State, answer: number, { shape, start, crosses }: Option) {
   for (const cell of shape.cells) {
-    state.cells[(start.row + cell.row) * state.columns + start.col + cell.col].push(entryAt(answer, cell, start))
+    const index = cellIndex(state, { row: start.row + cell.row, col: start.col + cell.col })
+    if (index >= 0) state.cells[index].push(entryAt(answer, cell, start))
   }
   state.spots[answer] = { shape, start }
   for (const other of crosses) {
@@ -635,39 +709,55 @@ function lift(state: State, answer: number) {
   const spot = state.spots[answer]
   if (!spot) return
   for (const cell of spot.shape.cells) {
-    const index = (spot.start.row + cell.row) * state.columns + spot.start.col + cell.col
-    state.cells[index] = state.cells[index].filter((entry) => entry.answer !== answer)
+    const index = cellIndex(state, { row: spot.start.row + cell.row, col: spot.start.col + cell.col })
+    if (index >= 0) state.cells[index] = state.cells[index].filter((entry) => entry.answer !== answer)
   }
   for (const other of state.partners[answer]) state.partners[other].delete(answer)
   state.partners[answer].clear()
   state.spots[answer] = undefined
 }
 
-/** A finished attempt, moved to the middle of the page with thick borders where answers touch. */
-function finish(puzzle: Puzzle, state: State): Found {
-  const placements = puzzle.answers.map((answer, i) => {
+/**
+ * A finished attempt with thick borders where answers touch, moved to the middle of the page unless
+ * locked answers hold it in place. Thick borders between two locked answers stay.
+ */
+function finish(puzzle: Puzzle, words: Words, state: State): Found {
+  const placements = words.answers.map((answer, i) => {
     const { shape, start } = state.spots[i]!
     return { id: answer.id, start, dir: shape.dir, turns: shape.turns }
   })
-  const placed = { ...puzzle, answers: puzzle.answers.map((answer, i) => ({ ...answer, ...placements[i] })) }
-  const by = centerOffset(layoutPuzzle(placed), puzzleGrid(puzzle), puzzle.anagram.showNumbersAndBar) ?? {
-    row: 0,
-    col: 0,
-  }
+  const placed = { ...puzzle, answers: words.answers.map((answer, i) => ({ ...answer, ...placements[i] })) }
+  const toCenter = state.fixed.includes(true)
+    ? null
+    : centerOffset(layoutPuzzle(placed), puzzleGrid(puzzle), puzzle.anagram.showNumbersAndBar)
+  const by = toCenter ?? { row: 0, col: 0 }
   const shift = (cell: CellRef) => ({ row: cell.row + by.row, col: cell.col + by.col })
   const centered = placements.map((placement) => ({ ...placement, start: shift(placement.start) }))
+  const lockedCell = (cell: CellRef) => {
+    const entries = cellAt(state, cell)
+    return entries.length > 0 && entries.every((entry) => state.fixed[entry.answer])
+  }
+  const kept = puzzle.separators.filter((separator) => lockedCell(separator.a) && lockedCell(separator.b))
+  const touching = touchingPairs(state)
+    .map(({ a, b }) => ({ a: shift(a), b: shift(b) }))
+    .filter((pair) => !kept.some((separator) => sameSeparator(separator, pair)))
+  const unplace = puzzle.answers.filter((answer) => answer.start && !isIncluded(answer)).map((answer) => answer.id)
   return {
     state,
     placements: centered,
-    separators: touchingPairs(state).map(({ a, b }) => ({ a: shift(a), b: shift(b) })),
+    separators: [...kept, ...touching],
+    unplace,
     missing: missing(state),
     extraPieces: countPieces(state.partners) - state.minPieces,
-    repeat: isCurrentLayout(puzzle, centered),
+    repeat: unplace.length === 0 && isCurrentLayout(words.answers, centered),
   }
 }
 
-function isCurrentLayout(puzzle: Puzzle, placements: Placement[]): boolean {
-  return puzzle.answers.every((answer, i) => {
+const sameSeparator = (x: Separator, y: Separator) =>
+  (sameCell(x.a, y.a) && sameCell(x.b, y.b)) || (sameCell(x.a, y.b) && sameCell(x.b, y.a))
+
+function isCurrentLayout(answers: Answer[], placements: Placement[]): boolean {
+  return answers.every((answer, i) => {
     const { start, dir, turns } = placements[i]
     return (
       answer.start?.row === start.row &&

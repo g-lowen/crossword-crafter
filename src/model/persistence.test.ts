@@ -85,6 +85,24 @@ describe('serializePuzzle and parsePuzzle', () => {
     ])
   })
 
+  it('reads which answers Generate solution leaves out or keeps in place, and only locks answers on the grid', () => {
+    const result = parsePuzzle(
+      saved({
+        answers: [
+          { id: 'a', text: 'ABBA', start: { row: 1, col: 1 }, locked: true },
+          { id: 'b', text: 'QUEEN', start: null, locked: true, excluded: true },
+          { id: 'c', text: 'STING', start: null, excluded: 'yes' },
+        ],
+      }),
+    )
+    const flags = result.ok && result.puzzle.answers.map(({ excluded, locked }) => ({ excluded, locked }))
+    expect(flags).toEqual([
+      { excluded: undefined, locked: true },
+      { excluded: true, locked: undefined },
+      { excluded: undefined, locked: undefined },
+    ])
+  })
+
   it('drops unknown fields', () => {
     const result = parsePuzzle(saved({ answers: [], somethingElse: 1 }))
     expect(result.ok && 'somethingElse' in result.puzzle).toBe(false)

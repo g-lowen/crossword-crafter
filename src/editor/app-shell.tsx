@@ -121,7 +121,6 @@ export function AppShell() {
               dispatch={dispatchApp}
               commands={commands}
               status={status}
-              onStatus={setStatus}
               showLetters={showLetters}
               onShowLettersChange={setShowLetters}
             />
@@ -130,6 +129,7 @@ export function AppShell() {
         }
         showLetters={showLetters}
         saveFailed={!saved}
+        onStatus={setStatus}
       />
       {feedbackUrl && (
         <Feedback
