@@ -1326,12 +1326,41 @@ button:disabled {
   line-height: 1.2;
 }
 
-.answer-box {
+/* A round area around each checkbox in the list, bigger than the box, that clicks it too. The
+   negative margin keeps the rows as they were. */
+.hit-area {
   flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin: 0 -2px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.hit-area:hover:not(.hit-area--disabled) {
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.hit-area:has(:focus-visible) {
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.hit-area--disabled {
+  cursor: default;
+}
+
+.answer-box {
+  margin: 0;
   width: 16px;
   height: 16px;
-  margin: 0 2px;
-  cursor: pointer;
+  cursor: inherit;
+}
+
+/* The round background shows the focus instead. */
+.answer-box:focus-visible {
+  outline: none;
 }
 
 /* Shift+click on a checkbox would otherwise select the text between. */
@@ -1356,7 +1385,7 @@ button:disabled {
   filter: grayscale(1);
 }
 
-.lock-box:hover:not(:disabled)::before {
+.hit-area:hover .lock-box:not(:disabled)::before {
   opacity: 0.6;
 }
 
@@ -1370,17 +1399,8 @@ button:disabled {
   filter: none;
 }
 
-.lock-box:disabled {
-  cursor: default;
-}
-
 .lock-box:disabled::before {
   opacity: 0.08;
-}
-
-.lock-box:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
 }
 
 /* Left out of Generate solution. */
@@ -1390,23 +1410,23 @@ button:disabled {
 }
 
 /* The lock sits at the right end of the row, and only shows on hover or when locked. */
-.answer-columns .lock-box {
+.answer-columns .hit-area--lock {
   margin-left: auto;
-  margin-right: 5px;
+  margin-right: 1px;
 }
 
 /* Over the row locks, which the pen and ✕ push left in edit mode. */
-.answer-columns--editing .lock-box {
-  margin-right: 57px;
+.answer-columns--editing .hit-area--lock {
+  margin-right: 53px;
 }
 
 .answer-lock {
   display: none;
 }
 
-.answer:hover .answer-lock:not(:disabled),
-.answer:focus-within .answer-lock:not(:disabled),
-.answer-lock:checked {
+.answer:hover .answer-lock:not(.answer-lock--off),
+.answer:focus-within .answer-lock:not(.answer-lock--off),
+.answer-lock--on {
   display: inline-grid;
 }
 

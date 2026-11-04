@@ -1,7 +1,7 @@
 import { useDndContext, useDroppable } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy, type SortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { groupAt, groupLabel, runStart } from '../model/groups'
 import type { Answer, AnswerGroup } from '../model/puzzle'
 import {
@@ -271,7 +271,7 @@ export function AnswerList({
                 {locked.length > 0 && `, ${locked.length} locked`}
               </span>
               <TriStateBox
-                className="lock-box"
+                lock
                 checked={placed.length > 0 && locked.length === placed.length}
                 mixed={locked.length > 0 && locked.length < placed.length}
                 disabled={placed.length === 0}
@@ -510,15 +510,16 @@ function AnswerItem({
           + New group
         </button>
       )}
-      <input
-        type="checkbox"
-        className="answer-box"
-        checked={included}
-        aria-label={`Include ${answer.text} in Generate solution`}
-        title="Include in Generate solution. Shift+click sets a range."
-        onChange={() => {}}
-        onClick={(e) => onColumn('include', answer.id, !included, e.shiftKey)}
-      />
+      <HitArea onActivate={(shift) => onColumn('include', answer.id, !included, shift)}>
+        <input
+          type="checkbox"
+          className="answer-box"
+          checked={included}
+          aria-label={`Include ${answer.text} in Generate solution`}
+          title="Include in Generate solution. Shift+click sets a range."
+          onChange={() => {}}
+        />
+      </HitArea>
       {editing ? (
         <span className="answer-handle">
           <span className="answer-number">{number}.</span>
@@ -545,20 +546,25 @@ function AnswerItem({
         </span>
       )}
       {/* Shown on hover, or when locked, to leave the answer more room. */}
-      <input
-        type="checkbox"
-        className="answer-box lock-box answer-lock"
-        checked={locked}
+      <HitArea
+        className={`answer-lock${locked ? ' answer-lock--on' : ''}${placed ? '' : ' answer-lock--off'}`}
         disabled={!placed}
-        aria-label={`Lock ${answer.text}`}
-        title={
-          placed
-            ? 'Lock in place, so Generate solution leaves it where it is. Shift+click sets a range.'
-            : 'Only answers on the grid can be locked'
-        }
-        onChange={() => {}}
-        onClick={(e) => onColumn('lock', answer.id, !locked, e.shiftKey)}
-      />
+        onActivate={(shift) => onColumn('lock', answer.id, !locked, shift)}
+      >
+        <input
+          type="checkbox"
+          className="answer-box lock-box"
+          checked={locked}
+          disabled={!placed}
+          aria-label={`Lock ${answer.text}`}
+          title={
+            placed
+              ? 'Lock in place, so Generate solution leaves it where it is. Shift+click sets a range.'
+              : 'Only answers on the grid can be locked'
+          }
+          onChange={() => {}}
+        />
+      </HitArea>
       {editable && (
         <>
           <button
@@ -585,20 +591,48 @@ function AnswerItem({
   )
 }
 
+/**
+ * A round area around a small checkbox, bigger than the box, that clicks it too. A click on the box
+ * itself, or Space on it, bubbles up here, so every click is handled once, with its Shift key.
+ */
+function HitArea({
+  className = '',
+  disabled = false,
+  onActivate,
+  children,
+}: {
+  className?: string
+  disabled?: boolean
+  onActivate: (shift: boolean) => void
+  children: ReactNode
+}) {
+  return (
+    <span
+      className={`hit-area${disabled ? ' hit-area--disabled' : ''} ${className}`}
+      onClick={(e) => {
+        if (!disabled) onActivate(e.shiftKey)
+      }}
+    >
+      {children}
+    </span>
+  )
+}
+
 /** A checkbox for a whole column, showing a dash when only some rows are checked. */
 function TriStateBox({
   checked,
   mixed,
   disabled = false,
   label,
-  className = '',
+  lock = false,
   onChange,
 }: {
   checked: boolean
   mixed: boolean
   disabled?: boolean
   label: string
-  className?: string
+  /** Drawn as a padlock, for the lock column. */
+  lock?: boolean
   /** Checks every row, or unchecks them all when every row was checked. */
   onChange: (value: boolean) => void
 }) {
@@ -607,16 +641,18 @@ function TriStateBox({
     if (ref.current) ref.current.indeterminate = mixed
   }, [mixed])
   return (
-    <input
-      ref={ref}
-      type="checkbox"
-      className={`answer-box ${className}`}
-      checked={checked}
-      disabled={disabled}
-      aria-label={label}
-      title={label}
-      onChange={() => onChange(!checked)}
-    />
+    <HitArea className={lock ? 'hit-area--lock' : ''} disabled={disabled} onActivate={() => onChange(!checked)}>
+      <input
+        ref={ref}
+        type="checkbox"
+        className={`answer-box${lock ? ' lock-box' : ''}`}
+        checked={checked}
+        disabled={disabled}
+        aria-label={label}
+        title={label}
+        onChange={() => {}}
+      />
+    </HitArea>
   )
 }
 
