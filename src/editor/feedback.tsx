@@ -121,7 +121,13 @@ export function Feedback({ url, puzzleName, puzzleText, onSent }: FeedbackProps)
               {error}
             </p>
           )}
-          <button type="button" className="primary-button" disabled={!message.trim() || sending} onClick={send}>
+          <button
+            type="button"
+            className="primary-button"
+            disabled={!message.trim() || sending}
+            aria-busy={sending}
+            onClick={send}
+          >
             {sending ? 'Sending…' : 'Send'}
           </button>
         </div>

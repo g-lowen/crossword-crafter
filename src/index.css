@@ -860,6 +860,10 @@ button:disabled {
 
 .primary-button:disabled {
   opacity: 0.7;
+}
+
+/* Only a button that is busy, such as Download while exporting, shows the busy cursor. */
+.primary-button[aria-busy='true'] {
   cursor: progress;
 }
 
@@ -1383,4 +1387,33 @@ button:disabled {
 .answer--excluded .answer-text,
 .answer--excluded .answer-number {
   opacity: 0.45;
+}
+
+/* The lock sits at the right end of the row, and only shows on hover or when locked. */
+.answer-columns .lock-box {
+  margin-left: auto;
+  margin-right: 5px;
+}
+
+/* Over the row locks, which the pen and ✕ push left in edit mode. */
+.answer-columns--editing .lock-box {
+  margin-right: 57px;
+}
+
+.answer-lock {
+  display: none;
+}
+
+.answer:hover .answer-lock:not(:disabled),
+.answer:focus-within .answer-lock:not(:disabled),
+.answer-lock:checked {
+  display: inline-grid;
+}
+
+/* Firefox's overlay scrollbars float over the list instead of taking room beside it, so the
+   locks at the right end of the rows need space to stay clear of them. */
+@supports (-moz-appearance: none) {
+  .answer-list {
+    padding-right: 14px;
+  }
 }

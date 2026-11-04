@@ -163,11 +163,14 @@ a starting point. Each click gives a new layout, the same one again only when th
 The puzzle ends up in the middle of the page, the thick borders of the old layout go, and Undo
 brings the old layout back.
 
-The list works like a table with two checkbox columns before each answer:
+The list works like a table with two checkbox columns, one on each side of the answer:
 
-- **Include** (checked by default): Generate solution places the answer. An unchecked answer is
-  left out, and taken off the grid if it is on it. Its text is greyed out.
-- **Lock** (a padlock): Generate solution leaves the answer exactly where it is, with its
+- **Include** (checked by default, before the answer): Generate solution places the answer. An
+  unchecked answer is left out, and taken off the grid if it is on it. Its text is greyed out.
+- **Lock** (a padlock at the right end of the row, left of the pen and ✕ in edit mode): it only
+  shows on hover or when the answer is locked, to leave the answer's text more room, and never
+  for an answer off the grid. In Firefox the list keeps extra room on the right, as its scrollbar
+  floats over the list. Generate solution leaves the answer exactly where it is, with its
   direction and turns, and places the others around it, crossing it where they can. Only answers
   on the grid can be locked, and locking includes them. Unchecking Include, or taking the answer
   off the grid, unlocks it. Nothing else respects a lock: a locked answer can still be dragged,

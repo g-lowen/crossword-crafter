@@ -259,13 +259,17 @@ export function AnswerList({
                 {editable ? 'Done' : 'Edit list'}
               </button>
             </div>
-            <div className="answer-columns">
+            <div className={`answer-columns${editable ? ' answer-columns--editing' : ''}`}>
               <TriStateBox
                 checked={included.length === answers.length}
                 mixed={included.length > 0 && included.length < answers.length}
                 label="Include every answer in Generate solution"
                 onChange={(value) => onSetIncluded(answers.map((answer) => answer.id), value)}
               />
+              <span className="hint" title="Generate solution places the checked answers, and leaves locked ones where they are">
+                {included.length} of {answers.length} included
+                {locked.length > 0 && `, ${locked.length} locked`}
+              </span>
               <TriStateBox
                 className="lock-box"
                 checked={placed.length > 0 && locked.length === placed.length}
@@ -274,10 +278,6 @@ export function AnswerList({
                 label="Lock every answer on the grid"
                 onChange={(value) => onSetLocked(placed.map((answer) => answer.id), value)}
               />
-              <span className="hint" title="Generate solution places the checked answers, and leaves locked ones where they are">
-                {included.length} of {answers.length} included
-                {locked.length > 0 && `, ${locked.length} locked`}
-              </span>
             </div>
             <SortableContext
               items={answers.flatMap((answer, index) => [
@@ -519,20 +519,6 @@ function AnswerItem({
         onChange={() => {}}
         onClick={(e) => onColumn('include', answer.id, !included, e.shiftKey)}
       />
-      <input
-        type="checkbox"
-        className="answer-box lock-box"
-        checked={locked}
-        disabled={!placed}
-        aria-label={`Lock ${answer.text}`}
-        title={
-          placed
-            ? 'Lock in place, so Generate solution leaves it where it is. Shift+click sets a range.'
-            : 'Only answers on the grid can be locked'
-        }
-        onChange={() => {}}
-        onClick={(e) => onColumn('lock', answer.id, !locked, e.shiftKey)}
-      />
       {editing ? (
         <span className="answer-handle">
           <span className="answer-number">{number}.</span>
@@ -558,6 +544,21 @@ function AnswerItem({
           </span>
         </span>
       )}
+      {/* Shown on hover, or when locked, to leave the answer more room. */}
+      <input
+        type="checkbox"
+        className="answer-box lock-box answer-lock"
+        checked={locked}
+        disabled={!placed}
+        aria-label={`Lock ${answer.text}`}
+        title={
+          placed
+            ? 'Lock in place, so Generate solution leaves it where it is. Shift+click sets a range.'
+            : 'Only answers on the grid can be locked'
+        }
+        onChange={() => {}}
+        onClick={(e) => onColumn('lock', answer.id, !locked, e.shiftKey)}
+      />
       {editable && (
         <>
           <button

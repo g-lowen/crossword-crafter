@@ -144,7 +144,13 @@ export function ExportPanel({ puzzle, name, dispatch }: ExportPanelProps) {
       )}
 
       <div className="panel-actions">
-        <button type="button" className="primary-button" onClick={download} disabled={progress !== null}>
+        <button
+          type="button"
+          className="primary-button"
+          onClick={download}
+          disabled={progress !== null}
+          aria-busy={progress !== null}
+        >
           {progress ? `Creating images… ${progress.done}/${progress.total}` : chosen.button}
         </button>
       </div>
