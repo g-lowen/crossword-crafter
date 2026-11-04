@@ -94,11 +94,13 @@ export function ExportPanel({ puzzle, name, dispatch }: ExportPanelProps) {
           />
         </label>
         <label>
-          <input
-            type="checkbox"
-            checked={puzzle.includeStartArrow}
-            onChange={(e) => dispatch({ type: 'set-include-start-arrow', value: e.target.checked })}
-          />{' '}
+          <span className="hit-area hit-area--inline">
+            <input
+              type="checkbox"
+              checked={puzzle.includeStartArrow}
+              onChange={(e) => dispatch({ type: 'set-include-start-arrow', value: e.target.checked })}
+            />
+          </span>{' '}
           Arrow to the start of the answer in quiz images
         </label>
       </div>

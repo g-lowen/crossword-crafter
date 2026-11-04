@@ -113,7 +113,7 @@ export function Feedback({ url, puzzleName, puzzleText, onSent }: FeedbackProps)
             <input value={name} onChange={(e) => setName(e.target.value)} />
           </label>
           <label className="side-checkbox">
-            <input type="checkbox" checked={includePuzzle} onChange={(e) => setIncludePuzzle(e.target.checked)} />
+            <span className="hit-area hit-area--inline"><input type="checkbox" checked={includePuzzle} onChange={(e) => setIncludePuzzle(e.target.checked)} /></span>
             Include the open puzzle, to show what you mean
           </label>
           {error && (

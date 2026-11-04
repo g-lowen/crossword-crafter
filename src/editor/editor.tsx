@@ -544,11 +544,13 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
           <section className="side-section" aria-label="Anagram">
             <h2>Anagram</h2>
             <label className="side-checkbox">
-              <input
-                type="checkbox"
-                checked={puzzle.anagram.showNumbersAndBar}
-                onChange={(e) => dispatch({ type: 'set-show-anagram-numbers', value: e.target.checked })}
-              />
+              <span className="hit-area hit-area--inline">
+                <input
+                  type="checkbox"
+                  checked={puzzle.anagram.showNumbersAndBar}
+                  onChange={(e) => dispatch({ type: 'set-show-anagram-numbers', value: e.target.checked })}
+                />
+              </span>
               Show anagram numbers and bar
             </label>
             <button

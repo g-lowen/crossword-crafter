@@ -664,17 +664,23 @@ button:disabled {
   height: 24px;
 }
 
+/* Round like the checkboxes' hit areas, with the same hover and focus backgrounds. */
 .icon-button {
   width: 28px;
   height: 28px;
   padding: 0;
   border: none;
   background: none;
-  border-radius: 4px;
+  border-radius: 50%;
 }
 
 .icon-button:hover:not(:disabled) {
-  background: var(--hover);
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.icon-button:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .drag-chip {
@@ -931,6 +937,11 @@ button:disabled {
   height: 30px;
 }
 
+/* Except the round icon buttons in the puzzle list, which stay circles. */
+.app-header .icon-button {
+  height: 28px;
+}
+
 .theme-switch button {
   min-width: 0;
   padding: 1px 10px;
@@ -1006,6 +1017,11 @@ button:disabled {
   gap: 10px;
   padding: 4px 2px;
   border-bottom: 1px solid var(--border-soft);
+}
+
+/* Stays a round hit area even inside a form label style. */
+.spotify-tracks .hit-area {
+  display: inline-grid;
 }
 
 .spotify-track-source {
@@ -1326,8 +1342,8 @@ button:disabled {
   line-height: 1.2;
 }
 
-/* A round area around each checkbox in the list, bigger than the box, that clicks it too. The
-   negative margin keeps the rows as they were. */
+/* A round area around a checkbox, bigger than the box, that clicks it too. The negative margin
+   keeps the rows as they were. */
 .hit-area {
   flex: none;
   display: inline-grid;
@@ -1339,7 +1355,7 @@ button:disabled {
   cursor: pointer;
 }
 
-.hit-area:hover:not(.hit-area--disabled) {
+.hit-area:hover:not(.hit-area--disabled, :has(:disabled)) {
   background: color-mix(in srgb, currentColor 14%, transparent);
 }
 
@@ -1347,8 +1363,24 @@ button:disabled {
   background: color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
-.hit-area--disabled {
+.hit-area--disabled,
+.hit-area:has(:disabled) {
   cursor: default;
+}
+
+.hit-area input {
+  margin: 0;
+  cursor: inherit;
+}
+
+.hit-area input:focus-visible {
+  outline: none;
+}
+
+/* A checkbox in a line of text, such as in front of its label. */
+.hit-area--inline {
+  margin: -3px -2px;
+  vertical-align: middle;
 }
 
 .answer-box {

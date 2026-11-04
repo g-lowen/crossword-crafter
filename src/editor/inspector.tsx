@@ -116,30 +116,36 @@ export function Inspector({ puzzle, layout, selection, dispatch, onClose }: Insp
           <legend>Cell</legend>
           {isSpace ? (
             <label>
-              <input
-                type="checkbox"
-                checked={isWide}
-                disabled={Boolean(turn)}
-                onChange={() => dispatch({ type: 'toggle-wide-space', id, index })}
-              />{' '}
+              <span className="hit-area hit-area--inline">
+                <input
+                  type="checkbox"
+                  checked={isWide}
+                  disabled={Boolean(turn)}
+                  onChange={() => dispatch({ type: 'toggle-wide-space', id, index })}
+                />
+              </span>{' '}
               Wide space (2 cells)
             </label>
           ) : (
             <>
               <label title="Show this letter in every image, even the empty grid, as a hint.">
-                <input
-                  type="checkbox"
-                  checked={isVisible}
-                  onChange={() => dispatch({ type: 'toggle-visible-letter', id, index })}
-                />{' '}
+                <span className="hit-area hit-area--inline">
+                  <input
+                    type="checkbox"
+                    checked={isVisible}
+                    onChange={() => dispatch({ type: 'toggle-visible-letter', id, index })}
+                  />
+                </span>{' '}
                 Always visible
               </label>
               <label>
-                <input
-                  type="checkbox"
-                  checked={Boolean(anagramCell)}
-                  onChange={() => dispatch({ type: 'toggle-anagram-cell', answerId: id, letterIndex: index })}
-                />{' '}
+                <span className="hit-area hit-area--inline">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(anagramCell)}
+                    onChange={() => dispatch({ type: 'toggle-anagram-cell', answerId: id, letterIndex: index })}
+                  />
+                </span>{' '}
                 Anagram letter
               </label>
               {anagramCell && (

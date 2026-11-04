@@ -75,12 +75,14 @@ export function SpotifyImport({ tracks, onAdd, onCancel }: SpotifyImportProps) {
         <ol className="spotify-tracks">
           {tracks.map((track, i) => (
             <li key={i} className={included[i] ? undefined : 'spotify-track--skipped'}>
-              <input
-                type="checkbox"
-                checked={included[i]}
-                aria-label={`Include ${track.title}`}
-                onChange={() => setIncluded(included.map((value, j) => (j === i ? !value : value)))}
-              />
+              <label className="hit-area">
+                <input
+                  type="checkbox"
+                  checked={included[i]}
+                  aria-label={`Include ${track.title}`}
+                  onChange={() => setIncluded(included.map((value, j) => (j === i ? !value : value)))}
+                />
+              </label>
               <span className="spotify-track-source">
                 <span className="spotify-track-title">{track.title}</span>
                 <span className="spotify-track-artists">{track.artists.join(', ')}</span>
