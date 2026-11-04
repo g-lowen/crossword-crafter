@@ -32,7 +32,7 @@ import { leftToRightOrder } from '../layout/anagram'
 import { describeIssue } from '../layout/describe-issue'
 import { cellKey, layoutAnswer, layoutPuzzle, type Piece } from '../layout/layout'
 import { groupLabel, nextGroupColor } from '../model/groups'
-import { puzzleGrid, type GridSize } from '../model/page'
+import { puzzleGrid } from '../model/page'
 import type { CellRef, Dir, Puzzle } from '../model/puzzle'
 import type { PuzzleAction } from '../model/puzzle-reducer'
 import { AnswerList, type SelectHow } from './answer-list'
@@ -434,7 +434,7 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="editor">
+      <div className="editor" style={{ '--grid-aspect': grid.columns / grid.rows } as CSSProperties}>
         <header className="app-header">
           {nameField}
           {menu}
@@ -468,7 +468,7 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
         />
 
         <div className="workspace">
-          <GridDropArea pageRef={pageRef} grid={grid} onBackgroundClick={clearSelection}>
+          <GridDropArea pageRef={pageRef} onBackgroundClick={clearSelection}>
             <GridView
               puzzle={puzzle}
               layout={layout}
@@ -594,12 +594,10 @@ function inWords(items: string[]): string {
 /** The page the grid sits on. It has to be a child of DndContext to register as a drop target. */
 function GridDropArea({
   pageRef,
-  grid,
   onBackgroundClick,
   children,
 }: {
   pageRef: RefObject<HTMLDivElement | null>
-  grid: GridSize
   onBackgroundClick: () => void
   children: ReactNode
 }) {
@@ -607,7 +605,6 @@ function GridDropArea({
   return (
     <div
       className="page"
-      style={{ '--grid-aspect': grid.columns / grid.rows } as CSSProperties}
       ref={(element) => {
         pageRef.current = element
         setNodeRef(element)

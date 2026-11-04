@@ -204,13 +204,16 @@ button:disabled {
 
 .editor {
   --header-height: 40px;
+  /* As wide as the page can be at this window height. Columns over rows, set by the editor. */
+  --page-width: calc((100vh - var(--header-height) - 36px) * var(--grid-aspect, 29 / 21));
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr) 250px;
+  /* The grid gets its full width first; the side columns share what's left, and hug the grid. */
+  grid-template-columns: minmax(220px, 1fr) minmax(0, var(--page-width)) minmax(250px, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas:
     'header header header'
     'answers workspace side';
-  gap: 8px 12px;
+  gap: 8px 10px;
   height: 100%;
 }
 
@@ -501,6 +504,9 @@ button:disabled {
 
 .answer-panel {
   grid-area: answers;
+  justify-self: end;
+  width: 100%;
+  max-width: 440px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -690,12 +696,10 @@ button:disabled {
   min-height: 0;
 }
 
-/* The page keeps its A4 proportions and scales to the window. */
 /* The page keeps its A4 proportions and is as big as the space allows, in both directions. */
 .page {
   align-self: start;
-  /* Columns over rows, set by the editor from the cell size. */
-  width: min(100%, calc((100vh - var(--header-height) - 36px) * var(--grid-aspect, 29 / 21)));
+  width: min(100%, var(--page-width));
 }
 
 .grid-view {
@@ -712,6 +716,9 @@ button:disabled {
 
 .side-panel {
   grid-area: side;
+  justify-self: start;
+  width: 100%;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
   gap: 10px;

@@ -40,6 +40,9 @@ without scrolling:
 - Left column: the answer list. The paste box is open while there are no answers, and folds away
   behind "+ Add answers" once there are. "Generate solution" sits above the list, full width.
 - Middle: the grid, as large as the window allows while keeping its A4 proportions.
+- The grid gets its full size first. The left and right columns share the rest of the width
+  (at least 220 and 250 px, at most 440 and 400 px) and sit close to the grid; any room beyond
+  that goes to the window edges.
 - Right column: the selected cell's settings, then Anagram ("Show anagram numbers and bar",
   "Number anagram left to right" and "Create anagram") and any issues.
 - A small Light / Dark / GG switch sits at the right end of the header. Until Sammy picks one, the
