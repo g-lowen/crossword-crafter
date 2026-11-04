@@ -675,7 +675,8 @@ function SelectionOverlay({ pieces, cell, color }: { pieces: Piece[]; cell?: Cel
         const { x, y } = cellOrigin(piece)
         return (
           <rect
-            key={`${piece.index}-${piece.widePart ?? 0}`}
+            // Several answers are tinted at once, so the index alone repeats.
+            key={`${piece.answerId}-${piece.index}-${piece.widePart ?? 0}`}
             x={x}
             y={y}
             width={CELL}

@@ -621,6 +621,23 @@ describe('Editor', () => {
       expect(include('ABBA')).toBeChecked()
     })
 
+    it('tints several selected answers on the grid without React key warnings', () => {
+      const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+      try {
+        render(<App />)
+        loadSample()
+        const rows = screen.getAllByLabelText(/^Drag /).filter((el) => el.classList.contains('answer-handle'))
+        fireEvent.click(rows[0])
+        fireEvent.click(rows[3], { shiftKey: true })
+        fireEvent.click(rows[5], { ctrlKey: true })
+        expect(document.querySelectorAll('.answer--selected')).toHaveLength(5)
+        const keyWarnings = errors.mock.calls.filter((call) => String(call[0]).includes('same key'))
+        expect(keyWarnings).toEqual([])
+      } finally {
+        errors.mockRestore()
+      }
+    })
+
     it('selects a range of answers with Shift+click, off the grid too, and sets their checkboxes together', () => {
       render(<App />)
       importAnswers('abba\nqueen\nsting\nkiss')
