@@ -26,6 +26,7 @@ import {
   type RefObject,
 } from 'react'
 import { generateSolution } from '../generate/generate'
+import type { GenerateSettings } from '../generate/rules'
 import { CELL, cellOrigin } from '../grid/geometry'
 import { GridView } from '../grid/grid-view'
 import { leftToRightOrder } from '../layout/anagram'
@@ -405,8 +406,8 @@ export function Editor({ puzzle, dispatch, nameField, menu, showLetters, saveFai
     setSelection(first ?? null)
   }
 
-  function generate() {
-    const result = generateSolution(puzzle)
+  function generate(settings: GenerateSettings) {
+    const result = generateSolution(puzzle, { settings })
     if (!result.ok) {
       onStatus({
         kind: 'error',

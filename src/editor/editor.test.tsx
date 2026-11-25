@@ -584,6 +584,34 @@ describe('Editor', () => {
       expect(handles(container)).toHaveLength(0)
     })
 
+    it('has settings for crossings and bends, remembered for next time', () => {
+      const { container, unmount } = render(<App />)
+      importAnswers("rock'n'roll\nrolling stones\nkiss")
+      const gear = screen.getByRole('button', { name: 'Generate solution settings' })
+      fireEvent.click(gear)
+      const panel = screen.getByRole('dialog', { name: 'Generate solution settings' })
+      fireEvent.click(within(panel).getByLabelText('Only bend between words'))
+      fireEvent.change(within(panel).getByLabelText('At most'), { target: { value: '1' } })
+      // At least can't go above at most.
+      expect(within(panel).getByLabelText('At least')).toHaveValue('1')
+      fireEvent.change(within(panel).getByLabelText('At least'), { target: { value: '3' } })
+      expect(within(panel).getByLabelText('At most')).toHaveValue('3')
+      expect(gear).toHaveClass('generate-gear--changed')
+      fireEvent.keyDown(panel, { key: 'Escape' })
+      expect(screen.queryByRole('dialog', { name: 'Generate solution settings' })).not.toBeInTheDocument()
+      fireEvent.click(generateButton())
+      expect(handles(container)).toHaveLength(3)
+      unmount()
+
+      render(<App />)
+      fireEvent.click(screen.getByRole('button', { name: 'Generate solution settings' }))
+      expect(screen.getByLabelText('Only bend between words')).toBeChecked()
+      expect(screen.getByLabelText('At least')).toHaveValue('3')
+      fireEvent.click(screen.getByRole('button', { name: 'Back to the defaults' }))
+      expect(screen.getByLabelText('Only bend between words')).not.toBeChecked()
+      expect(screen.getByLabelText('At most')).toHaveValue('')
+    })
+
     it('places only the checked answers and takes the others off the grid', () => {
       const { container } = render(<App />)
       importAnswers('madonna\nnirvana\nsantana\nrihanna')

@@ -182,6 +182,15 @@ The list works like a table with two checkbox columns, one on each side of the a
   and locked.
 - Stored on each answer as `excluded` and `locked`, both left out when false.
 
+A gear (⚙) beside the button opens the settings for the rules below. They hold for every puzzle
+and are remembered in the browser, like the theme:
+
+- **Only bend between words** (off by default): rule 10.
+- **Crossings per answer**: at least 0 to 6 (2 by default, rule 1) and at most 1 to 6 or no limit
+  (the default, rule 11). At least never goes above at most: changing one moves the other along.
+- **Back to the defaults**. The gear is colored while the settings differ from the defaults, and
+  its tooltip sums them up. Esc or a click outside closes the settings.
+
 With locked answers the puzzle isn't moved to the middle, and the thick borders between two
 locked answers stay. Locked answers count for the rules (crossings, hanging together), but their
 own bends and the places two locked answers touch are as Sammy left them and never break a rule.
@@ -189,10 +198,10 @@ own bends and the places two locked answers touch are as Sammy left them and nev
 The rules are in `src/generate/rules.ts`, apart from the search, so they are easy to
 change:
 
-1. Every answer crosses at least two other answers, or as many as it can: with two answers each
-   can only cross one, an answer can't cross one it has no letter in common with, and an answer
-   with its letters side by side, like U2, only crosses one. Crossings are at right angles on the
-   same letter, never on a space or a bend.
+1. Every answer crosses at least two other answers (a setting), or as many as it can: with two
+   answers each can only cross one, an answer can't cross one it has no letter in common with,
+   and an answer with its letters side by side, like U2, only crosses one. Crossings are at right
+   angles on the same letter, never on a space or a bend.
 2. The puzzle hangs together: from any answer, every other can be reached by going from answer to
    crossing answer.
 3. Every answer is inside the page, and above the anagram bar when it's shown.
@@ -201,21 +210,30 @@ change:
 6. Bends are at least 2 characters apart.
 7. No bend on the second or second to last character, where it would leave one letter sticking
    out. This is why a 4-letter answer never bends.
-8. Bends are on spaces when they can be. Every bend costs a little, so an answer only bends when
-   that wins a crossing or room, and a bend on a space costs less than one on a letter.
+8. Bends are between words when they can be (see rule 10 for what counts). Every bend costs a
+   little, so an answer only bends when that wins a crossing or room, and a bend between words
+   costs less than one in a word.
 9. Answers only touch where they cross, or end-on: where an answer ends against the side of
    another that goes at right angles there. Each place answers touch gets a thick border, and
    costs a little, so they stay few.
+10. Only with the setting: answers only bend between words, on a space, a hyphen or dash, or a
+    slash. An apostrophe only counts with at least 2 letters before it and 3 after it in the same
+    word, as in ROCK'N'ROLL, and not in DON'T, YOU'RE, O'CONNOR or the N' of GUNS N' ROSES, where
+    the space is the break. Answers without one stay straight.
+11. Only with the setting: no answer has more of its letters crossed than the most set.
 
 Answers read right or down all the way, so their bends take turns between the two.
 
 When no layout turns up, rules are dropped one at a time, the most restrictive first, until one
-does: 1, 9, 2, 5, 6, 7, then 4. Rules 3 and 8 are never dropped. A rule no layout can keep, such
-as rule 2 when an answer has no letter in common with the rest, is dropped from the start. Without
-rules 1 and 2, answers still cross as many others as they can and hang together as far as they
-can. Without rule 9, answers may lie side by side, and get thick borders there too. The message
-after generating names the rules the layout breaks. If the answers don't fit even then, a red
-message says so and nothing changes.
+does: 1, 9, 2, 5, 6, 7, 4, then 11 and 10, so the limits set in the settings go last. Rules 3 and
+8 are never dropped. A rule no layout can keep is dropped from the start: rule 2 when an answer has
+no letter in common with the rest, or when no answer may be crossed more than once and there are
+more than two. Without rules 1 and 2, answers still cross as many others as they can and hang
+together as far as they can, and rule 1 keeps steering toward more crossings when it asks for
+more. Many answers can't each cross 3 or more others without lying side by side, so with a higher
+number rule 1 often goes first, but the layout still crosses more. Without rule 9, answers may lie
+side by side, and get thick borders there too. The message after generating names the rules the
+layout breaks. If the answers don't fit even then, a red message says so and nothing changes.
 
 The search is random and gets 0.4 seconds with every rule, and a third of that for each set after,
 so on a hard puzzle it can miss a layout that keeps every rule; another click may find one. Groups

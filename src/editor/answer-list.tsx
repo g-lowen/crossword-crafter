@@ -2,6 +2,7 @@ import { useDndContext, useDroppable } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy, type SortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
+import type { GenerateSettings } from '../generate/rules'
 import { groupAt, groupLabel, runStart } from '../model/groups'
 import type { Answer, AnswerGroup } from '../model/puzzle'
 import {
@@ -13,6 +14,7 @@ import {
   type DragData,
   type GroupDragData,
 } from './drag-ids'
+import { GenerateRow } from './generate-settings'
 import { normalizeAnswer, parseAnswerList } from './parse-answer-list'
 import { PenIcon } from './pen-icon'
 import { embedLink, parseSpotifyPaste, parseSpotifyText, type SpotifyTrack } from './spotify'
@@ -71,7 +73,7 @@ type AnswerListProps = {
   onSelect: (id: string, how: SelectHow) => void
   onSetIncluded: (ids: string[], value: boolean) => void
   onSetLocked: (ids: string[], value: boolean) => void
-  onGenerate: () => void
+  onGenerate: (settings: GenerateSettings) => void
 }
 
 export function AnswerList({
@@ -224,19 +226,7 @@ export function AnswerList({
         <SpotifyImport tracks={spotifyTracks} onAdd={finish} onCancel={() => setSpotifyTracks(null)} />
       )}
 
-      {answers.length > 0 && (
-        <div className="generate-row">
-          <button
-            type="button"
-            className="primary-button"
-            disabled={included.length === 0}
-            title="Place the checked answers on the page at random, crossing each other, around the locked ones. Each click gives a new layout."
-            onClick={onGenerate}
-          >
-            Generate solution
-          </button>
-        </div>
-      )}
+      {answers.length > 0 && <GenerateRow disabled={included.length === 0} onGenerate={onGenerate} />}
 
       <section ref={setNodeRef} className={`answer-list${isOver ? ' answer-list--over' : ''}`} aria-label="Answers">
         {answers.length === 0 ? (

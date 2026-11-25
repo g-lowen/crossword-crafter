@@ -3,7 +3,7 @@ import { cellKey, layoutPuzzle, type Layout, type Piece } from '../layout/layout
 import type { CellRef, Placement, Puzzle, Separator } from '../model/puzzle'
 import { emptyPuzzle, puzzleReducer } from '../model/puzzle-reducer'
 import { generateSolution, type GenerateOptions } from './generate'
-import { maxBends } from './rules'
+import { DEFAULT_GENERATE_SETTINGS, isWordBreak, maxBends, type GenerateSettings } from './rules'
 
 /** A seeded random number generator (mulberry32), so every run of the tests is the same. */
 function seeded(seed: number) {
@@ -16,7 +16,12 @@ function seeded(seed: number) {
 }
 
 /** Seeded, and limited by attempts rather than time, so slow machines get the same results. */
-const options = (seed = 1): GenerateOptions => ({ random: seeded(seed), attempts: 60, now: () => 0 })
+const options = (seed = 1, settings: Partial<GenerateSettings> = {}): GenerateOptions => ({
+  random: seeded(seed),
+  attempts: 60,
+  now: () => 0,
+  settings: { ...DEFAULT_GENERATE_SETTINGS, ...settings },
+})
 
 /** Answers off the grid. 10 mm cells give 29 × 21 cells; 50 mm cells a page of 5 × 4. */
 function puzzleOf(texts: string[], cellSizeMm = 10): Puzzle {
@@ -27,8 +32,8 @@ function puzzleOf(texts: string[], cellSizeMm = 10): Puzzle {
   return { ...puzzle, cellSizeMm }
 }
 
-function generate(puzzle: Puzzle, seed = 1) {
-  const result = generateSolution(puzzle, options(seed))
+function generate(puzzle: Puzzle, seed = 1, settings: Partial<GenerateSettings> = {}) {
+  const result = generateSolution(puzzle, options(seed, settings))
   if (!result.ok) throw new Error('No solution')
   return {
     ...result,
@@ -53,6 +58,15 @@ function partners(layout: Layout): Map<string, Set<string>> {
       pieces.forEach((other) => other.answerId !== piece.answerId && others.add(other.answerId))
       result.set(piece.answerId, others)
     }
+  }
+  return result
+}
+
+/** How many of each answer's letters are crossed. */
+function crossedLetters(layout: Layout): Map<string, number> {
+  const result = new Map<string, number>()
+  for (const pieces of layout.cells.values()) {
+    if (pieces.length > 1) for (const piece of pieces) result.set(piece.answerId, (result.get(piece.answerId) ?? 0) + 1)
   }
   return result
 }
@@ -137,6 +151,57 @@ describe('generateSolution', () => {
     // 35 characters fit neither across nor down on a page of 29 × 21, so the answer has to bend.
     const { puzzle } = generate(puzzleOf(['A'.repeat(20) + ' ' + 'B'.repeat(14)]))
     expect(puzzle.answers[0].turns.map((turn) => turn.atIndex)).toEqual([20])
+  })
+
+  it('only bends between words when asked', () => {
+    const texts = [...ARTISTS, 'THE BEATLES', "ROCK'N'ROLL", "DON'T STOP ME NOW", 'BLINK-182', 'FLORENCE + THE MACHINE']
+    for (const seed of [1, 2, 3]) {
+      const { puzzle, dropped } = generate(puzzleOf(texts), seed, { bendBetweenWordsOnly: true })
+      expect(dropped).toEqual([])
+      for (const { text, turns } of puzzle.answers) {
+        for (const { atIndex } of turns) expect(isWordBreak(Array.from(text), atIndex)).toBe(true)
+      }
+    }
+  })
+
+  it('bends in a word when an answer only fits bent, and says so', () => {
+    // 35 characters fit neither across nor down on a page of 29 × 21.
+    const { puzzle, dropped } = generate(puzzleOf(['A'.repeat(35)]), 1, { bendBetweenWordsOnly: true })
+    expect(puzzle.answers[0].turns.length).toBeGreaterThan(0)
+    expect(dropped.map((rule) => rule.id)).toContain('bend-between-words')
+  })
+
+  it('crosses every answer at least as many times as asked', () => {
+    for (const seed of [1, 2, 3]) {
+      const { puzzle, dropped } = generate(puzzleOf(ARTISTS.slice(0, 5)), seed, { minCrossings: 1 })
+      expect(dropped).toEqual([])
+      const links = partners(layoutPuzzle(puzzle))
+      for (const text of ARTISTS.slice(0, 5)) expect(links.get(text)?.size).toBeGreaterThanOrEqual(1)
+    }
+  })
+
+  it('names the number of crossings asked for when it falls short', () => {
+    // Three crossings each is more than these answers fit without lying side by side.
+    const { dropped } = generate(puzzleOf(ARTISTS), 1, { minCrossings: 3 })
+    expect(dropped.map((rule) => rule.text)).toEqual(['every answer crosses at least 3 others'])
+  })
+
+  it('crosses no answer more often than asked', () => {
+    for (const seed of [1, 2, 3]) {
+      const { puzzle, dropped } = generate(puzzleOf(ARTISTS), seed, { minCrossings: 1, maxCrossings: 2 })
+      expect(dropped).toEqual([])
+      const layout = layoutPuzzle(puzzle)
+      expect(layout.issues).toEqual([])
+      expect(linked(layout, puzzle)).toBe(true)
+      for (const count of crossedLetters(layout).values()) expect(count).toBeLessThanOrEqual(2)
+    }
+  })
+
+  it('pairs the answers off when each may only be crossed once', () => {
+    const { puzzle, dropped } = generate(puzzleOf(ARTISTS), 1, { minCrossings: 1, maxCrossings: 1 })
+    // More than two answers can't hang together with one crossing each.
+    expect(dropped.map((rule) => rule.id)).toEqual(['connected'])
+    expect([...crossedLetters(layoutPuzzle(puzzle)).values()].every((count) => count === 1)).toBe(true)
   })
 
   it('gives a new layout every time', () => {

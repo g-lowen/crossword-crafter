@@ -2,7 +2,15 @@ import { centerOffset } from '../layout/center'
 import { layoutAnswer, layoutPuzzle } from '../layout/layout'
 import { puzzleGrid } from '../model/page'
 import type { Answer, CellRef, Dir, Placement, Puzzle, Separator, Turn } from '../model/puzzle'
-import { DROP_ORDER, RULES, type Rule, type RuleId } from './rules'
+import {
+  DEFAULT_GENERATE_SETTINGS,
+  DROP_ORDER,
+  isWordBreak,
+  rulesFor,
+  type GenerateSettings,
+  type Rule,
+  type RuleId,
+} from './rules'
 
 /**
  * Places every included answer on the page at random, following the rules in `rules.ts`. Locked
@@ -39,6 +47,8 @@ export type GenerateOptions = {
    */
   timeLimit?: number
   now?: () => number
+  /** Sammy's settings for the rules: how many crossings, and where answers may bend. */
+  settings?: GenerateSettings
 }
 
 /** Which way an answer goes through a cell. Only letters going straight across or down can be crossed. */
@@ -82,6 +92,11 @@ type Words = {
   sharing: Set<number>[]
   /** The fewest pieces the puzzle can be in: answers without a letter in common can't cross. */
   minPieces: number
+  /**
+   * How many others each answer tries to cross. Rule 1 says "try", so the search keeps aiming for
+   * it after it is dropped.
+   */
+  goal: number
 }
 
 type State = {
@@ -107,6 +122,10 @@ type Settings = {
   /** Whether the answers have to hang together, or only try to. */
   mustConnect: boolean
   touching: 'never' | 'end-on' | 'any'
+  /** The most crossed letters an answer may have, Infinity for no limit. */
+  maxCrossings: number
+  /** Whether an answer may bend at this character, whatever its other bends. */
+  bendsAt: (chars: string[], index: number) => boolean
   allowsBends: (chars: string[], bends: number[]) => boolean
   bendScore: (chars: string[], bends: number[]) => number
 }
@@ -135,12 +154,6 @@ const BENT_SHAPES = 16
 /** Random spots tried for an answer that can't cross anything. */
 const FREE_TRIES = 300
 
-/**
- * How many others each answer tries to cross. Rule 1 says "try", so the search keeps aiming for
- * it after it is dropped.
- */
-const CROSSING_GOAL = Math.max(0, ...RULES.map((rule) => rule.minCrossings ?? 0))
-
 const STEP: Record<Dir, CellRef> = {
   right: { row: 0, col: 1 },
   down: { row: 1, col: 0 },
@@ -151,7 +164,15 @@ const STEP: Record<Dir, CellRef> = {
 const NEIGHBOURS = Object.values(STEP)
 
 export function generateSolution(puzzle: Puzzle, options: GenerateOptions = {}): GenerateResult {
-  const { random = Math.random, attempts = 200, timeLimit = 400, now = () => performance.now() } = options
+  const {
+    random = Math.random,
+    attempts = 200,
+    timeLimit = 400,
+    now = () => performance.now(),
+    settings: chosen = DEFAULT_GENERATE_SETTINGS,
+  } = options
+  const all = rulesFor(chosen)
+  const maxCrossings = chosen.maxCrossings ?? Infinity
   const answers = puzzle.answers.filter(isIncluded)
   if (answers.length === 0) return { ok: false }
   const grid = puzzleGrid(puzzle)
@@ -161,18 +182,23 @@ export function generateSolution(puzzle: Puzzle, options: GenerateOptions = {}):
   const chars = answers.map((answer) => Array.from(answer.text))
   const sharing = sharedLetters(chars)
   const fixed = answers.map((answer) => (isLocked(answer) ? fixedSpot(answer) : undefined))
-  const words: Words = { answers, fixed, chars, sharing, minPieces: countPieces(sharing) }
+  const goal = Math.min(chosen.minCrossings, maxCrossings)
+  const words: Words = { answers, fixed, chars, sharing, minPieces: countPieces(sharing), goal }
 
-  // Rules no layout can keep are dropped from the start.
-  const impossible: RuleId[] = RULES.filter((rule) => rule.connected && words.minPieces > 1).map((rule) => rule.id)
+  // Rules no layout can keep are dropped from the start: hanging together, when an answer has no
+  // letter in common with the rest, or when no answer may cross more than one other.
+  const apart = words.minPieces > 1 || (maxCrossings < 2 && answers.length > 2)
+  const impossible: RuleId[] = all.filter((rule) => rule.connected && apart).map((rule) => rule.id)
   // The best attempt with each set of rules, for when a later set asks for less.
   const tried: Found[] = []
   for (let level = 0; level <= DROP_ORDER.length; level++) {
-    if (level > 0 && impossible.includes(DROP_ORDER[level - 1])) continue
+    // Dropping a rule that's already gone, or not asked for in the settings, changes nothing.
+    const next = DROP_ORDER[level - 1]
+    if (level > 0 && (impossible.includes(next) || !all.some((rule) => rule.id === next))) continue
     const dropped = [...impossible, ...DROP_ORDER.slice(0, level)]
-    const rules = RULES.filter((rule) => !dropped.includes(rule.id))
+    const rules = all.filter((rule) => !dropped.includes(rule.id))
     const earlier = tried.find((found) => rules.every((rule) => keeps(rule, found.state, words)))
-    if (earlier) return solution(earlier, dropped, words)
+    if (earlier) return solution(earlier, dropped, words, all)
 
     const settings = settingsFor(rules)
     let best: Found | undefined
@@ -181,10 +207,10 @@ export function generateSolution(puzzle: Puzzle, options: GenerateOptions = {}):
       const state = attempt(words, page, settings, random)
       if (!state) continue
       const found = finish(puzzle, words, state)
-      if (valid(found, settings) && !found.repeat) return solution(found, dropped, words)
+      if (valid(found, settings) && !found.repeat) return solution(found, dropped, words, all)
       if (!best || rank(found) < rank(best)) best = found
     }
-    if (best && valid(best, settings)) return solution(best, dropped, words)
+    if (best && valid(best, settings)) return solution(best, dropped, words, all)
     if (best) tried.push(best)
   }
   return { ok: false }
@@ -203,13 +229,13 @@ const valid = (found: Found, settings: Settings) =>
  */
 const rank = (found: Found) => found.extraPieces * 1000 + found.missing * 2 + (found.repeat ? 1 : 0)
 
-function solution(found: Found, dropped: string[], words: Words): GenerateResult {
+function solution(found: Found, dropped: string[], words: Words, all: Rule[]): GenerateResult {
   return {
     ok: true,
     placements: found.placements,
     separators: found.separators,
     unplace: found.unplace,
-    dropped: RULES.filter((rule) => dropped.includes(rule.id) && !keeps(rule, found.state, words)),
+    dropped: all.filter((rule) => dropped.includes(rule.id) && !keeps(rule, found.state, words)),
   }
 }
 
@@ -222,10 +248,16 @@ function settingsFor(rules: Rule[]): Settings {
       : rules.some((rule) => rule.touching === 'end-on')
         ? 'end-on'
         : 'any',
-    allowsBends: (chars, bends) => rules.every((rule) => rule.allowsBends?.(chars, bends) ?? true),
+    maxCrossings: Math.min(Infinity, ...rules.map((rule) => rule.maxCrossings ?? Infinity)),
+    bendsAt: (chars, index) => rules.every((rule) => rule.bendsAt?.(chars, index) ?? true),
+    allowsBends: (chars, bends) => rules.every((rule) => ruleAllows(rule, chars, bends)),
     bendScore: (chars, bends) => rules.reduce((score, rule) => score + (rule.bendScore?.(chars, bends) ?? 0), 0),
   }
 }
+
+/** Whether a rule lets an answer bend at these characters. */
+const ruleAllows = (rule: Rule, chars: string[], bends: number[]) =>
+  (rule.allowsBends?.(chars, bends) ?? true) && bends.every((bend) => rule.bendsAt?.(chars, bend) ?? true)
 
 function sharedLetters(chars: string[][]): Set<number>[] {
   const letters = chars.map((answer) => new Set(answer.filter((char) => char !== ' ')))
@@ -289,10 +321,18 @@ function shortfall(state: State): number {
 
 /** Whether a solution keeps a rule anyway, even though it was dropped to find it. */
 function keeps(rule: Rule, state: State, words: Words): boolean {
-  const { minCrossings, connected, touching, allowsBends } = rule
+  const { minCrossings, maxCrossings, connected, touching } = rule
   if (minCrossings) {
     const needs = crossingNeeds(words, minCrossings)
     if (state.partners.some((partners, i) => partners.size < needs[i])) return false
+  }
+  if (maxCrossings !== undefined) {
+    const over = state.spots.some((_, i) => {
+      const crossed = crossedBy(state, i)
+      // Crossings between locked answers are as Sammy left them.
+      return crossed.length > maxCrossings && !(state.fixed[i] && crossed.every((other) => state.fixed[other]))
+    })
+    if (over) return false
   }
   if (connected && countPieces(state.partners) > 1) return false
   // Locked answers are as Sammy left them, so only the answers placed around them count.
@@ -301,13 +341,7 @@ function keeps(rule: Rule, state: State, words: Words): boolean {
   if (touching && touchingPairs(state).some((pair) => moved(pair) && (touching === 'never' || !pair.endOn))) {
     return false
   }
-  if (
-    allowsBends &&
-    state.spots.some((spot, i) => spot && !state.fixed[i] && !allowsBends(words.chars[i], spot.shape.bends))
-  ) {
-    return false
-  }
-  return true
+  return !state.spots.some((spot, i) => spot && !state.fixed[i] && !ruleAllows(rule, words.chars[i], spot.shape.bends))
 }
 
 /** One go at placing every answer, or null when one doesn't fit anywhere. */
@@ -323,7 +357,7 @@ function attempt(
     cells: Array.from({ length: page.rows * page.columns }, () => []),
     spots: [],
     partners: answers.map(() => new Set()),
-    needs: crossingNeeds(words, CROSSING_GOAL),
+    needs: crossingNeeds(words, words.goal),
     minPieces: words.minPieces,
     fixed: words.fixed.map((spot) => spot !== undefined),
   }
@@ -419,18 +453,18 @@ function bestFew(options: Option[], random: () => number): Option[] {
     .map(({ option }) => option)
 }
 
-/** The answer's shapes for one attempt: straight, bent on spaces, and a random pick of other bends. */
+/** The answer's shapes for one attempt: straight, bent between words, and a random pick of other bends. */
 function shapesFor(answer: Answer, chars: string[], settings: Settings, random: () => number): Shape[] {
   // A bend on the first or last character changes nothing, and the layout ignores bends on wide spaces.
   const bendable = chars.flatMap((_, i) =>
-    i > 0 && i < chars.length - 1 && !answer.wideSpaces.includes(i) ? [i] : [],
+    i > 0 && i < chars.length - 1 && !answer.wideSpaces.includes(i) && settings.bendsAt(chars, i) ? [i] : [],
   )
   const sets = new Map<string, number[]>([['', []]])
   const add = (bends: number[]) => {
     if (settings.allowsBends(chars, bends)) sets.set(bends.join(), bends)
   }
   subsets(
-    bendable.filter((i) => chars[i] === ' '),
+    bendable.filter((i) => isWordBreak(chars, i)),
     3,
   ).forEach(add)
   for (let tries = 0; sets.size <= BENT_SHAPES && tries < BENT_SHAPES * 4 && bendable.length > 0; tries++) {
@@ -569,9 +603,11 @@ function freeSpots(state: State, settings: Settings, answer: number, shapes: Sha
 }
 
 function optionAt(state: State, settings: Settings, answer: number, spot: Spot): Option | null {
-  const crosses = fits(state, spot)
-  const touches = crosses && contacts(state, settings, answer, spot)
-  if (!crosses || touches === null) return null
+  const hits = fits(state, spot)
+  if (!hits || !withinMaxCrossings(state, settings, hits)) return null
+  const touches = contacts(state, settings, answer, spot)
+  if (touches === null) return null
+  const crosses = [...new Set(hits)]
   const needed = crosses.filter((other) => state.partners[other].size < state.needs[other]).length
   const score =
     CROSSING_SCORE * crosses.length + NEEDED_CROSSING_SCORE * needed + TOUCH_SCORE * touches + spot.shape.score
@@ -593,8 +629,31 @@ function choose(options: Option[], random: () => number): Option | undefined {
 }
 
 /**
- * The answers this spot crosses, or null when the answer doesn't fit there: it must stay on the
- * page, and only cross other answers at right angles on the same letter, away from bends.
+ * Whether an answer crossing these answers, once per crossed letter, keeps every answer within the
+ * most crossings allowed.
+ */
+function withinMaxCrossings(state: State, settings: Settings, hits: number[]): boolean {
+  const max = settings.maxCrossings
+  if (max === Infinity) return true
+  if (hits.length > max) return false
+  return hits.every((other) => crossedBy(state, other).length + hits.filter((hit) => hit === other).length <= max)
+}
+
+/** The other answers in the cells of an answer's crossed letters, once per cell. */
+function crossedBy(state: State, answer: number): number[] {
+  const spot = state.spots[answer]
+  if (!spot) return []
+  return spot.shape.cells.flatMap((cell) =>
+    cellAt(state, { row: spot.start.row + cell.row, col: spot.start.col + cell.col }).flatMap((entry) =>
+      entry.answer === answer ? [] : [entry.answer],
+    ),
+  )
+}
+
+/**
+ * The answers this spot crosses, once per crossed letter, or null when the answer doesn't fit
+ * there: it must stay on the page, and only cross other answers at right angles on the same letter,
+ * away from bends.
  */
 function fits(state: State, { shape, start }: Spot): number[] | null {
   if (
@@ -605,7 +664,7 @@ function fits(state: State, { shape, start }: Spot): number[] | null {
   ) {
     return null
   }
-  const crosses: number[] = []
+  const hits: number[] = []
   for (const cell of shape.cells) {
     const entries = state.cells[(start.row + cell.row) * state.columns + start.col + cell.col]
     if (entries.length === 0) continue
@@ -613,9 +672,9 @@ function fits(state: State, { shape, start }: Spot): number[] | null {
     if (entries.length > 1 || cell.char !== other.char || cell.char === ' ' || !perpendicular(cell.line, other.line)) {
       return null
     }
-    if (!crosses.includes(other.answer)) crosses.push(other.answer)
+    hits.push(other.answer)
   }
-  return crosses
+  return hits
 }
 
 const perpendicular = (a: Line, b: Line) => a !== 'corner' && b !== 'corner' && a !== b
